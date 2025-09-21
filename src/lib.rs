@@ -75,74 +75,15 @@ pub mod types; // Core data structures for moon-shine code analysis
 pub mod workflow; // Multi-phase analysis workflow with feedback loops
 pub mod orchestrator; // Unified hybrid orchestrator replacing sequential and parallel workflows
 pub mod rust_workflow_engine; // Petgraph-based workflow engine for pure Rust orchestration
-pub mod oxc_unified_workflow; // OXC-unified workflow replacing external tools
 pub mod rule_storage; // WASM-safe ESLint rule storage with assemblage_kv
 pub mod wasm_safe_linter; // WASM-compatible ESLint rule implementation
 pub mod tool_replacements; // Complete toolchain replacements (TSC, ESLint, Prettier, TSDoc)
 pub mod rules; // Modular MoonShine rule engine with AI enhancement
+pub mod oxc_rules; // Comprehensive collection of OXC-compatible rules organized by domain
 
 #[cfg(test)]
 pub mod testing; // Comprehensive testing infrastructure for London, Chicago, and E2E methodologies
 pub mod hybrid_linter; // Hybrid OXC + AI linter (WASM-safe)
-pub mod oxc_rules_adapter; // WASM-safe adapter for OXC rule implementations
-pub mod oxc_compatible_rules; // OXC-compatible rule implementations with AI enhancement
-pub mod oxc_rules_migration; // Systematically migrated OXC rules with AI enhancement
-pub mod oxc_performance_rules; // Performance-focused OXC rules with AI optimization guidance
-pub mod oxc_string_rules; // String manipulation and text pattern rules
-pub mod oxc_conditional_rules; // Conditional logic and control flow rules
-pub mod oxc_object_rules; // Object and array pattern rules
-pub mod oxc_function_rules; // Function definition and usage rules
-pub mod oxc_variable_rules; // Variable declaration and usage rules
-pub mod oxc_import_rules; // Import and export declaration rules
-pub mod oxc_error_rules; // Error handling and exception rules
-pub mod oxc_typescript_rules; // TypeScript-specific rules
-pub mod oxc_security_rules; // Security and safety rules
-pub mod oxc_advanced_security_rules; // Advanced security and cryptography rules
-pub mod oxc_react_rules; // React-specific rules
-pub mod oxc_accessibility_rules; // Accessibility (a11y) rules
-pub mod oxc_es6_rules; // ES6+ Modern JavaScript rules
-pub mod oxc_complexity_rules; // Code complexity and maintainability rules
-pub mod oxc_nodejs_rules; // Node.js specific rules
-pub mod oxc_async_rules; // Async/await and Promise rules
-pub mod oxc_jsx_advanced_rules; // Advanced JSX and React rules
-pub mod oxc_bestpractices_rules; // Best practices and style rules
-pub mod oxc_css_rules; // CSS-in-JS and styling rules
-pub mod oxc_testing_rules; // Testing framework rules
-pub mod oxc_testing_framework_rules; // Testing framework specific rules (Jest, Vitest, Playwright, Cypress)
-pub mod oxc_documentation_rules; // Documentation and comment rules
-pub mod oxc_advanced_performance_rules; // Advanced performance optimization rules
-pub mod oxc_vue_rules; // Vue.js specific rules
-pub mod oxc_angular_rules; // Angular specific rules
-pub mod oxc_build_tool_rules; // Build tool and bundling rules
-pub mod oxc_build_tool_optimization_rules; // Advanced build tool optimization rules
-pub mod oxc_database_orm_rules; // Database and ORM rules
-pub mod oxc_database_optimization_rules; // Advanced database optimization rules
-pub mod oxc_monorepo_workspace_rules; // Monorepo and workspace rules
-pub mod oxc_state_management_rules; // State management rules (Redux, Zustand, Jotai)
-pub mod oxc_graphql_rules; // GraphQL schema and resolver rules
-pub mod oxc_testing_framework_integration_rules; // Testing framework integration rules (Jest, Vitest, Playwright)
-pub mod oxc_devops_deployment_rules; // DevOps and deployment rules
-pub mod oxc_pwa_modern_web_rules; // PWA and modern web platform rules
-pub mod oxc_microfrontend_rules; // Micro-frontend architecture rules
-pub mod oxc_edge_serverless_rules; // Edge computing and serverless rules
-pub mod oxc_webrtc_realtime_rules; // WebRTC and real-time communication rules
-pub mod oxc_web_payments_commerce_rules; // Web payments and commerce rules
-pub mod oxc_enterprise_architecture_rules; // Enterprise architecture patterns rules
-pub mod oxc_accessibility_i18n_rules; // Accessibility and internationalization rules
-pub mod oxc_advanced_frameworks_rules; // Advanced framework integration rules (Svelte, SolidJS, Qwik, Astro)
-pub mod oxc_cloud_native_rules; // Cloud-native and container orchestration rules
-pub mod oxc_api_integration_rules; // API design and integration patterns rules
-pub mod oxc_data_science_ml_rules; // Data science and ML workflow rules
-pub mod oxc_blockchain_web3_rules; // Blockchain and Web3 development rules
-pub mod oxc_performance_monitoring_rules; // Performance monitoring and observability rules
-pub mod oxc_performance_profiling_rules; // Advanced performance profiling and benchmarking rules
-pub mod oxc_gaming_interactive_rules; // Gaming and interactive media rules (WebGL, WebXR)
-pub mod oxc_iot_embedded_rules; // IoT and embedded systems rules
-pub mod oxc_ar_vr_development_rules; // AR/VR development rules (WebXR, immersive)
-pub mod oxc_advanced_typescript_rules; // Advanced TypeScript rules (complex types, metaprogramming)
-pub mod oxc_functional_programming_rules; // Functional programming rules (immutability, HOF)
-pub mod oxc_design_systems_rules; // Design systems and component library rules
-pub mod oxc_enterprise_patterns_rules; // Enterprise patterns rules (DDD, CQRS, Event Sourcing)
 pub mod unified_rule_registry; // Unified registry for all OXC-compatible WASM rules
 pub mod sunlinter_integration; // SunLinter JavaScript rules integration with behavioral analysis
 pub mod sunlinter_rule_converter; // Systematic conversion framework for 192 SunLinter rules
