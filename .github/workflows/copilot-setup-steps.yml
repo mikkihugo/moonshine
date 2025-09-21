@@ -1,0 +1,82 @@
+name: "Copilot Setup Steps"
+
+# Automatically run when changes are made for validation
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Setup Moon
+        uses: moonrepo/setup-moon-action@v1
+        with:
+          auto-install: true
+
+      - name: Install WASM dependencies
+        run: |
+          # Install wasmtime for WASM runtime
+          curl https://wasmtime.dev/install.sh -sSf | bash
+          echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Moon dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.moon
+            .moon/cache
+          key: ${{ runner.os }}-moon-${{ hashFiles('.moon/**/*') }}
+
+      - name: Build WASM extension
+        run: moon run moon-shine:build
+        continue-on-error: true
+
+      - name: Run type check
+        run: moon run moon-shine:type-check
+        continue-on-error: true
+
+      - name: Run tests
+        run: moon run moon-shine:test
+        continue-on-error: true
+
+      - name: Setup Claude CLI
+        run: |
+          # Install Claude CLI for AI assistance workflows
+          curl -fsSL https://claude.ai/cli/install.sh | sh
+        continue-on-error: true
+
+      - name: Verify installation
+        run: |
+          echo "✅ Rust toolchain installed"
+          rustc --version
+          echo "✅ Moon installed"
+          moon --version
+          echo "✅ WASM target available"
+          rustup target list --installed | grep wasm32-wasip1
+          echo "✅ Environment ready for Moon Shine development"
+        continue-on-error: true
