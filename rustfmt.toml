@@ -1,6 +1,6 @@
-# Rust formatting configuration for AI development
+# Rust formatting configuration for production development
 edition = "2021"
-max_width = 160  # Increased for better AI-generated code readability
+max_width = 160  # Increased for better readability with long function signatures
 hard_tabs = false
 tab_spaces = 4
 newline_style = "Auto"
@@ -18,14 +18,13 @@ match_arm_leading_pipes = "Never"
 match_arm_blocks = false
 match_block_trailing_comma = false
 combine_control_expr = true
-imports_indent = "Block"
-imports_layout = "Mixed"
-imports_granularity = "Crate"
 group_imports = "StdExternalCrate"
-comment_width = 120  # Increased to match max_width scaling
-normalize_comments = false
-normalize_doc_attributes = false
-license_template_path = ""
 format_generated_files = false
 skip_children = false
-unstable_features = false
+# Note: The following configurations require nightly Rust and are disabled for stable builds:
+# comment_width = 120
+# normalize_comments = false 
+# normalize_doc_attributes = false
+# imports_indent = "Block"
+# imports_layout = "Mixed"
+# imports_granularity = "Crate"
