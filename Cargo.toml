@@ -1,0 +1,197 @@
+[package]
+name = "moon-shine"
+version = "2.0.0"
+edition = "2021"
+rust-version = "1.80"
+license = "MIT"
+description = "AI-powered code quality extension for moonrepo - TypeScript/JavaScript linting, fixing, and optimization"
+authors = ["ZenFlow Contributors <team@zenflow.dev>"]
+homepage = "https://github.com/zenflow/zenflow"
+repository = "https://github.com/zenflow/zenflow"
+documentation = "https://docs.zenflow.dev/moon-shine"
+readme = "README.md"
+keywords = ["moonrepo", "ai", "typescript", "linting", "dspy"]
+categories = ["development-tools", "wasm", "web-programming"]
+
+[lib]
+name = "moon_shine"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+# Standalone package - not part of workspace
+
+[features]
+default = ["wasm", "optimized-deps", "oxc_semantic", "oxc_transformer"]
+
+wasm = [
+  "dep:console_error_panic_hook",
+  "dep:lol_alloc"
+]
+
+# Dependency optimization feature
+optimized-deps = []
+
+# Minimal feature set for faster WASM builds
+minimal = ["wasm"]
+
+# Full analysis features (larger binary)
+full-analysis = ["wasm", "oxc_semantic", "oxc_transformer"]
+
+# Optional strict TypeScript analysis (regex-based)
+strict-ts = []
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+anyhow = "1.0"
+futures = "0.3"
+async-trait = "0.1"
+# High-speed WASM-compatible KV store for session storage + JSON backup
+assemblage_kv = "0.1.0"
+# csv = "1.3" # Not needed - Moon tasks handle file parsing
+# rayon = "1.8" # Removed - not WASM compatible
+
+# Note: Moon tasks handle all parsing (TypeScript, ESLint, etc.)
+# WASM extension focuses on coordination via JSON protocol
+
+# Moon WASM extensions don't need web bindings - only extism runtime
+
+# Console logging for WASM
+console_error_panic_hook = { version = "0.1", optional = true }
+lol_alloc = { version = "0.4", optional = true }
+
+# Core WASM extension dependencies
+chrono = { version = "0.4.42" }
+uuid = { version = "1.0", features = ["v4"] }
+regex = "1.11.2"
+globset = "0.4"
+extism-pdk = "1.4.1"
+moon_pdk = { version = "0.3.2", features = ["schematic"] }
+moon_pdk_api = "0.3.3"
+# Moon PDK handles extension args - clap might not be needed
+# clap = { version = "4.4", features = ["derive"] }
+
+# WASM-specific dependencies
+getrandom = { version = "0.3" }
+
+# Parallel execution support (WASM-compatible)
+threadpool = "1.8"
+
+# COPRO + Pattern Detection dependencies (always included)
+indexmap = { version = "2.0" }
+
+# OXC (JavaScript Oxidation Compiler) - Core toolchain components that actually exist
+oxc_allocator = "0.90"            # Arena-based memory allocation for massive codebases
+oxc_ast = "0.90"                  # AST types and utilities with memory-efficient design
+oxc_ast_visit = "0.90"           # AST visitor pattern for tree traversal
+oxc_cfg = "0.90"                  # Control Flow Graph analysis for complexity metrics
+oxc_codegen = "0.90"              # Fast code generation and formatting (Prettier replacement)
+oxc_diagnostics = "0.90"          # Professional error reporting and diagnostics
+# oxc_formatter = "0.90"          # Alternative to Prettier - NOT YET PUBLISHED
+oxc_isolated_declarations = "0.90" # TypeScript .d.ts generation (20x faster than TSC)
+# oxc_linter = "0.90"               # Not WASM-safe - we'll adapt their rule implementations instead
+oxc_mangler = "0.90"              # Variable name mangling for code obfuscation
+oxc_minifier = "0.90"             # JavaScript minification (production build optimization)
+oxc_parser = "0.90"               # Lightning-fast JS/TS parser (10x faster than SWC)
+oxc_semantic = { version = "0.90", optional = true }  # Advanced semantic analysis (scopes, symbols, types)
+oxc_span = "0.90"                 # Precise source location and span tracking
+oxc_transformer = { version = "0.90", optional = true }  # Powerful AST transformations and refactoring
+oxc_resolver = "11.8"             # Module resolution and dependency analysis (separate versioning)
+oxc_sourcemap = "4.1.2"           # Source map generation for debugging
+
+# Configuration and ignore pattern dependencies
+ignore = "0.4"                   # Fast .gitignore and ignore pattern matching
+serde_yaml = "0.9"              # YAML parsing for ESLint configs
+toml = "0.8"                    # TOML parsing for additional configs
+glob = "0.3"                    # Glob pattern matching for file discovery
+walkdir = "2.0"                 # Efficient directory traversal
+
+log = "0.4"                   # Logging facade
+petgraph = "0.6"                # Graph algorithms for dependency analysis
+lru = "0.12"                    # LRU cache for expensive computations
+dashmap = "6.1"                 # Concurrent hash map for thread-safe caching
+tokio-stream = "0.1"            # Async stream processing
+tokio-util = "0.7"              # Advanced async utilities for workflow coordination
+parking_lot = "0.12"            # Fast synchronization primitives
+
+# Advanced analysis features (temporarily disabled for WASM compatibility)
+# tree-sitter = "0.20"            # Alternative parser for complexity analysis
+# tree-sitter-javascript = "0.20" # JavaScript grammar for tree-sitter
+# tree-sitter-typescript = "0.20" # TypeScript grammar for tree-sitter
+similar = "2.6"                 # Text diffing for change analysis
+levenshtein = "1.0"             # String distance for similarity analysis
+
+# OXC Benefits for Moon-Shine:
+# - 10-100x faster than regex-based analysis
+# - Full semantic understanding for precise auto-fixes
+# - Memory-efficient for large TypeScript codebases
+# - WASM-compatible Rust-native implementation
+# - Professional-grade diagnostics and transformations
+
+# DSPy WASM-compatible dependencies (always included)
+bon = "3.7"
+secrecy = { version = "0.10", features = ["serde"] }
+
+# Performance optimizations for AI processing
+aho-corasick = "1.1"          # Fast multi-pattern string searching for code analysis
+
+# WASM-compatible signature macro dependencies
+serde_valid = "1.0.5"        # JSON Schema validation with derive macros (WASM-safe)
+serde-json-wasm = "1.0.1"    # Optimized JSON for WASM (deterministic, smaller size)
+paste = "1.0"                 # Token pasting for macro generation (WASM-safe)
+
+# DSPy signature macros (WASM-compatible implementation)
+# dsrs_macros = "0.1"  # Replaced with WASM-compatible declarative macros
+
+# Note: Security warnings for paste, libyml, and serde_yml are from transitive
+# dependencies in moon_pdk. These will be addressed in future moon releases.
+
+# ================================================================================
+# WASM-SPECIFIC OPTIMIZATIONS: Reduce binary size and improve performance
+# ================================================================================
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Override heavy dependencies with lighter alternatives for WASM
+rayon = { version = "1.8", optional = true }  # Disable rayon for WASM by default
+tokio = { version = "1.0", features = ["time", "rt", "macros"], default-features = false }  # Minimal tokio for WASM with select macro
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Full features for native builds
+rayon = "1.8"  # Full rayon for native
+tokio = { version = "1.0", features = ["time", "rt", "macros", "fs", "process"] }  # Full tokio for native
+
+[dev-dependencies]
+# Moon WASM runtime testing
+moon_pdk_test_utils = "0.3.3"
+starbase_sandbox = "0.9.9"  # Required for Moon PDK test utilities
+serde_test = "1.0"
+pretty_assertions = "1.4"
+
+# Comprehensive testing framework dependencies
+criterion = { version = "0.5", features = ["html_reports"] }  # Benchmarking for performance tests
+proptest = "1.4"                                              # Property-based testing
+quickcheck = "1.0"                                            # QuickCheck-style property testing
+mockall = "0.13"                                              # Mock generation for London school TDD
+tempfile = "3.8"                                              # Temporary files and directories
+test-case = "3.3"                                             # Parameterized tests
+rstest = "0.18"                                               # Fixture-based testing
+arbitrary = { version = "1.3", features = ["derive"] }       # Generate arbitrary data for property tests
+fake = { version = "2.9", features = ["derive"] }            # Generate fake data for testing
+insta = "1.34"                                                # Snapshot testing
+wiremock = "0.6"                                              # HTTP mocking for external API tests
+once_cell = "1.21"                                            # Static initialization for test fixtures
+maplit = "1.0"                                                # Convenient map/set literals
+serial_test = "3.0"                                           # Sequential test execution
+env_logger = "0.11"                                           # Logging for test debugging
+
+# Code coverage tools
+cargo-tarpaulin = "0.32"                                      # Coverage analysis for Rust
+
+# WASM optimization profiles defined at workspace root
+
+# Moon WASM extensions use extism runtime, not wasm-pack
+
+[[example]]
+name = "metasignature_quick_demo"
+path = "examples/metasignature_quick_demo.rs"
+required-features = ["wasm"]

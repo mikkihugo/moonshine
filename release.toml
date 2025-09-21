@@ -1,0 +1,20 @@
+# Release configuration for cargo-release
+pre-release-replacements = [
+  {file="README.md", search="moon-shine = .*", replace="moon-shine = \"{{version}}\"", min=0},
+  {file="README.md", search="rev = .*", replace="rev = \"{{version}}\"", min=0},
+]
+
+[package]
+release = true
+
+[[package.metadata.release.pre-release-replacements]]
+file = "README.md"
+search = "moon-shine = .*"
+replace = "moon-shine = \"{{version}}\""
+min = 0
+
+[[package.metadata.release.pre-release-replacements]]
+file = "README.md"
+search = "rev = .*"
+replace = "moon-shine = \"{{version}}\""
+min = 0

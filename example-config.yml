@@ -1,0 +1,183 @@
+# Example Moon workspace configuration for moon-shine patterns
+# Add this to your .moon/workspace.yml file
+
+extensions:
+  moon-shine:
+    # Core AI configuration
+    aiModel: "sonnet"  # or "opus", "gemini-2.5-pro", "gpt-5-codex"
+    temperature: 0.7
+    maxTokens: 8192
+
+    # COPRO optimization settings
+    enableCoproOptimization: true
+    coproBreadth: 10
+    coproDepth: 3
+    coproTemperature: 1.4
+
+    # Pattern detection configuration
+    enablePatternDetection: true
+    patternLearningRate: 0.1
+    patternMinFrequency: 0.3
+
+    # Configurable pattern rules
+    patternRules:
+      # Security patterns
+      securityPatterns:
+        - id: "hardcoded-secrets"
+          name: "Hardcoded Secrets"
+          description: "Detects potential hardcoded API keys, passwords, and tokens"
+          pattern: "(?i)(api[_-]?key|secret|token|password)\\s*[:=]\\s*['\"][a-zA-Z0-9]{16,}['\"]"
+          severity: "Critical"
+          category: "security"
+          enabled: true
+          fixTemplate: "Use environment variables: process.env.API_KEY"
+          languages: ["typescript", "javascript"]
+          impactScore: 10
+
+        - id: "sql-injection-risk"
+          name: "SQL Injection Risk"
+          description: "Detects potential SQL injection vulnerabilities in query construction"
+          pattern: "(?i)(query|execute)\\s*\\(\\s*['\"]\\s*select.*\\+.*['\"]\\s*\\)"
+          severity: "Critical"
+          category: "security"
+          enabled: true
+          fixTemplate: "Use parameterized queries or prepared statements"
+          languages: ["typescript", "javascript", "python"]
+          impactScore: 10
+
+        - id: "eval-usage"
+          name: "Dangerous eval() Usage"
+          description: "Detects usage of eval() which can lead to code injection"
+          pattern: "\\beval\\s*\\("
+          severity: "Critical"
+          category: "security"
+          enabled: true
+          fixTemplate: "Avoid eval(). Use JSON.parse() for JSON or safer alternatives"
+          languages: ["typescript", "javascript"]
+          impactScore: 9
+
+      # Performance patterns
+      performancePatterns:
+        - id: "inefficient-array-loop"
+          name: "Inefficient Array Loop"
+          description: "Detects loops that access array.length in condition repeatedly"
+          pattern: "for\\s*\\(\\s*.*\\s*;\\s*.*\\.length\\s*;\\s*.*\\)\\s*\\{"
+          severity: "Warning"
+          category: "performance"
+          enabled: true
+          fixTemplate: "Cache array length: const len = array.length; for(let i = 0; i < len; i++)"
+          languages: ["typescript", "javascript"]
+          impactScore: 6
+
+        - id: "synchronous-fs-operations"
+          name: "Synchronous File Operations"
+          description: "Detects blocking synchronous file system operations"
+          pattern: "fs\\.(readFileSync|writeFileSync|existsSync|statSync|mkdirSync)"
+          severity: "Warning"
+          category: "performance"
+          enabled: true
+          fixTemplate: "Use async variants: fs.readFile, fs.writeFile, fs.access, fs.stat, fs.mkdir"
+          languages: ["typescript", "javascript"]
+          impactScore: 7
+
+        - id: "nested-loop-complexity"
+          name: "High Complexity Nested Loops"
+          description: "Detects deeply nested loops that may impact performance"
+          pattern: "for\\s*\\([^}]*\\{[^}]*for\\s*\\([^}]*\\{[^}]*for\\s*\\("
+          severity: "Warning"
+          category: "performance"
+          enabled: true
+          fixTemplate: "Consider algorithm optimization or data structure changes"
+          languages: ["typescript", "javascript", "python", "rust"]
+          impactScore: 8
+
+      # TypeScript-specific patterns
+      typescriptPatterns:
+        - id: "any-type-usage"
+          name: "Any Type Usage"
+          description: "Detects usage of 'any' type which reduces type safety"
+          pattern: ":\\s*any(\\s|;|,|\\)|$)"
+          severity: "Warning"
+          category: "typescript"
+          enabled: true
+          fixTemplate: "Use specific types for better type safety: string, number, CustomType"
+          languages: ["typescript"]
+          impactScore: 5
+
+        - id: "missing-return-type"
+          name: "Missing Function Return Type"
+          description: "Detects functions without explicit return type annotations"
+          pattern: "(export\\s+)?(async\\s+)?function\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s*\\([^)]*\\)\\s*\\{"
+          severity: "Info"
+          category: "typescript"
+          enabled: false  # Can be noisy, disabled by default
+          fixTemplate: "Add return type: function name(): ReturnType {"
+          languages: ["typescript"]
+          impactScore: 3
+
+        - id: "non-null-assertion"
+          name: "Non-null Assertion Operator"
+          description: "Detects usage of ! operator which bypasses type checking"
+          pattern: "\\w+!\\."
+          severity: "Warning"
+          category: "typescript"
+          enabled: true
+          fixTemplate: "Use optional chaining or proper null checks instead of !"
+          languages: ["typescript"]
+          impactScore: 6
+
+      # Documentation patterns
+      documentationPatterns:
+        - id: "todo-fixme-markers"
+          name: "TODO/FIXME Markers"
+          description: "Tracks TODO, FIXME, and other development markers"
+          pattern: "(?i)(TODO|FIXME|HACK|XXX|NOTE|BUG|DEPRECATED):"
+          severity: "Info"
+          category: "documentation"
+          enabled: true
+          fixTemplate: null
+          languages: ["*"]
+          impactScore: 2
+
+        - id: "missing-jsdoc"
+          name: "Missing JSDoc Documentation"
+          description: "Detects exported functions without JSDoc comments"
+          pattern: "export\\s+(async\\s+)?function\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s*\\("
+          severity: "Info"
+          category: "documentation"
+          enabled: false  # Can be very noisy
+          fixTemplate: "Add JSDoc: /** @description Function description */"
+          languages: ["typescript", "javascript"]
+          impactScore: 3
+
+      # Custom patterns (user-defined)
+      customPatterns:
+        - id: "console-log-usage"
+          name: "Console.log in Production"
+          description: "Detects console.log statements that should be removed before production"
+          pattern: "console\\.(log|debug|info|warn)\\s*\\("
+          severity: "Warning"
+          category: "cleanup"
+          enabled: true
+          fixTemplate: "Use proper logging library or remove debug statements"
+          languages: ["typescript", "javascript"]
+          impactScore: 4
+
+        - id: "magic-numbers"
+          name: "Magic Numbers"
+          description: "Detects numeric literals that should be named constants"
+          pattern: "\\s(?!0|1)\\d{2,}(?!\\s*[a-zA-Z])"
+          severity: "Info"
+          category: "maintainability"
+          enabled: false  # Can be noisy
+          fixTemplate: "Extract to named constant: const MAX_RETRIES = 100"
+          languages: ["typescript", "javascript", "python", "rust"]
+          impactScore: 4
+
+    # Tool integration
+    enableEslintIntegration: true
+    enableTscIntegration: true
+    enablePrettierIntegration: true
+
+    # Provider preferences (optional - will use intelligent routing if not specified)
+    # preferredProviders: ["claude", "gemini", "openai"]

@@ -1,0 +1,28 @@
+$schema: 'https://moonrepo.dev/schemas/workspace.json'
+
+# Moon Shine Workspace Configuration
+# This workspace contains the moon-shine WASM extension project
+
+# Workspace settings
+projects:
+  - '.'  # Root project
+
+# VCS configuration
+vcs:
+  manager: 'git'
+  defaultBranch: 'main'
+
+# Runner configuration
+runner:
+  autoCleanCache: true
+  cacheLifetime: '7 days'
+  inheritColorsForPipedTasks: true
+  installDependencies: true
+  logRunningCommand: true
+
+# Generator configuration
+generator:
+  templates: ['**/templates/**/*']
+
+# Telemetry (disabled for privacy)
+telemetry: false

@@ -1,0 +1,53 @@
+# Tarpaulin Configuration for Moon-Shine Code Coverage
+# Achieves 100% coverage reporting with comprehensive analysis
+
+[report]
+# Generate multiple report formats for different use cases
+out = ["Html", "Xml", "Json", "Stdout"]
+
+# HTML output directory for detailed coverage visualization
+output-dir = "target/coverage/"
+
+# Include all source files for complete coverage analysis
+include-tests = false
+implicit-test-threads = true
+
+# Coverage targets and thresholds
+fail-under = 95.0  # Require 95% coverage minimum
+ignore-panics = true
+
+# Advanced coverage analysis
+branch = true  # Enable branch coverage analysis
+count = true   # Count hit counts, not just hit/miss
+exclude-files = [
+    "target/*",
+    "tests/*",
+    "benches/*",
+    "examples/*",
+]
+
+# WASM-specific configurations
+target = "wasm32-wasip1"
+features = ["wasm"]
+
+# Parallel execution for faster coverage collection
+jobs = 4
+timeout = 300  # 5-minute timeout
+
+[html]
+# Enhanced HTML reporting
+output-dir = "target/coverage/html"
+include-source = true
+line-coverage = true
+branch-coverage = true
+
+[workspace]
+# Workspace-level coverage settings
+all-features = false
+features = ["wasm", "optimized-deps"]
+
+# Test execution patterns
+run-types = ["Tests", "Doctests"]
+
+# Coverage filters
+coverage-options = "--release"

@@ -1,0 +1,15 @@
+# Proto toolchain configuration for Moon Shine
+# This file configures proto to manage toolchains for this project
+
+[tools.moon]
+version = "1.40.4"
+
+[tools.rust]
+version = "1.89.0"
+
+[tools.node]
+version = "20.0.0"
+
+[settings]
+auto-install = true
+auto-clean = true

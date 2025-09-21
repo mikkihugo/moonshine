@@ -1,0 +1,6 @@
+# This project uses proto for toolchain management
+# See .prototools for version specifications
+
+[toolchain]
+# Proto will manage the Rust version - see .prototools
+channel = "1.89.0"
