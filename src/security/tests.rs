@@ -9,7 +9,7 @@
 
 use super::*;
 use crate::testing::builders::AiSuggestionBuilder;
-use crate::testing::fixtures::{TYPESCRIPT_WITH_ISSUES, JAVASCRIPT_WITH_ISSUES};
+use crate::testing::fixtures::{JAVASCRIPT_WITH_ISSUES, TYPESCRIPT_WITH_ISSUES};
 
 #[test]
 fn test_security_analyzer_creation() {
@@ -31,9 +31,7 @@ fn test_xss_vulnerability_detection() {
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
     assert!(!vulnerabilities.is_empty());
 
-    let xss_vulns: Vec<_> = vulnerabilities.iter()
-        .filter(|v| v.vulnerability_type == VulnerabilityType::XSS)
-        .collect();
+    let xss_vulns: Vec<_> = vulnerabilities.iter().filter(|v| v.vulnerability_type == VulnerabilityType::XSS).collect();
     assert!(!xss_vulns.is_empty());
 }
 
@@ -52,7 +50,8 @@ fn test_sql_injection_detection() {
 
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
 
-    let sql_vulns: Vec<_> = vulnerabilities.iter()
+    let sql_vulns: Vec<_> = vulnerabilities
+        .iter()
         .filter(|v| v.vulnerability_type == VulnerabilityType::SQLInjection)
         .collect();
     assert!(!sql_vulns.is_empty());
@@ -79,9 +78,7 @@ fn test_csrf_vulnerability_detection() {
 
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
 
-    let csrf_vulns: Vec<_> = vulnerabilities.iter()
-        .filter(|v| v.vulnerability_type == VulnerabilityType::CSRF)
-        .collect();
+    let csrf_vulns: Vec<_> = vulnerabilities.iter().filter(|v| v.vulnerability_type == VulnerabilityType::CSRF).collect();
     assert!(!csrf_vulns.is_empty());
 }
 
@@ -98,7 +95,8 @@ fn test_insecure_random_detection() {
 
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
 
-    let random_vulns: Vec<_> = vulnerabilities.iter()
+    let random_vulns: Vec<_> = vulnerabilities
+        .iter()
         .filter(|v| v.vulnerability_type == VulnerabilityType::InsecureRandom)
         .collect();
     assert!(!random_vulns.is_empty());
@@ -121,7 +119,8 @@ fn test_hardcoded_secrets_detection() {
 
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
 
-    let secret_vulns: Vec<_> = vulnerabilities.iter()
+    let secret_vulns: Vec<_> = vulnerabilities
+        .iter()
         .filter(|v| v.vulnerability_type == VulnerabilityType::HardcodedSecrets)
         .collect();
     assert!(!secret_vulns.is_empty());
@@ -145,7 +144,8 @@ fn test_path_traversal_detection() {
 
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
 
-    let path_vulns: Vec<_> = vulnerabilities.iter()
+    let path_vulns: Vec<_> = vulnerabilities
+        .iter()
         .filter(|v| v.vulnerability_type == VulnerabilityType::PathTraversal)
         .collect();
     assert!(!path_vulns.is_empty());
@@ -182,7 +182,8 @@ fn test_typescript_specific_vulnerabilities() {
     assert!(!vulnerabilities.is_empty());
 
     // Should detect prototype pollution and type safety issues
-    let proto_vulns: Vec<_> = vulnerabilities.iter()
+    let proto_vulns: Vec<_> = vulnerabilities
+        .iter()
         .filter(|v| v.vulnerability_type == VulnerabilityType::PrototypePollution)
         .collect();
     assert!(!proto_vulns.is_empty());
@@ -235,9 +236,7 @@ fn test_security_suggestions_generation() {
         assert!(vuln.line_number > 0);
 
         // Should provide actionable recommendations
-        assert!(vuln.recommendation.contains("Use") ||
-               vuln.recommendation.contains("Implement") ||
-               vuln.recommendation.contains("Replace"));
+        assert!(vuln.recommendation.contains("Use") || vuln.recommendation.contains("Implement") || vuln.recommendation.contains("Replace"));
     }
 }
 
@@ -295,7 +294,8 @@ fn test_security_rule_customization() {
 
     let vulnerabilities = analyzer.scan_for_vulnerabilities(code_with_custom_vuln, "test.js");
 
-    let custom_vulns: Vec<_> = vulnerabilities.iter()
+    let custom_vulns: Vec<_> = vulnerabilities
+        .iter()
         .filter(|v| matches!(v.vulnerability_type, VulnerabilityType::Other(ref s) if s == "CustomVulnerability"))
         .collect();
     assert!(!custom_vulns.is_empty());
@@ -330,15 +330,18 @@ fn test_security_integration_with_ai_suggestions() {
     let vulnerabilities = analyzer.scan_for_vulnerabilities(vulnerable_code, "test.js");
 
     // Convert to AI suggestions
-    let ai_suggestions: Vec<_> = vulnerabilities.iter().map(|vuln| {
-        AiSuggestionBuilder::error()
-            .message(&format!("Security: {}", vuln.description))
-            .file_path("test.js")
-            .line_number(vuln.line_number)
-            .category(crate::linter::SuggestionCategory::Security)
-            .confidence_score(0.95)
-            .build()
-    }).collect();
+    let ai_suggestions: Vec<_> = vulnerabilities
+        .iter()
+        .map(|vuln| {
+            AiSuggestionBuilder::error()
+                .message(&format!("Security: {}", vuln.description))
+                .file_path("test.js")
+                .line_number(vuln.line_number)
+                .category(crate::linter::SuggestionCategory::Security)
+                .confidence_score(0.95)
+                .build()
+        })
+        .collect();
 
     assert_eq!(ai_suggestions.len(), vulnerabilities.len());
 
@@ -354,14 +357,20 @@ fn test_performance_with_large_files() {
     let analyzer = SecurityAnalyzer::new();
 
     // Create large file content
-    let large_content = (0..1000).map(|i| {
-        format!(r#"
+    let large_content = (0..1000)
+        .map(|i| {
+            format!(
+                r#"
             function func{}() {{
                 const data = "some data {}";
                 return process(data);
             }}
-        "#, i, i)
-    }).collect::<Vec<_>>().join("\n");
+        "#,
+                i, i
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
     let start_time = std::time::Instant::now();
     let vulnerabilities = analyzer.scan_for_vulnerabilities(&large_content, "large.js");
@@ -385,13 +394,15 @@ fn test_concurrent_security_analysis() {
         "const key = 'hardcoded123';",
     ];
 
-    let handles: Vec<_> = test_codes.into_iter().enumerate().map(|(i, code)| {
-        let analyzer = analyzer.clone();
-        let code = code.to_string();
-        std::thread::spawn(move || {
-            analyzer.scan_for_vulnerabilities(&code, &format!("test{}.js", i))
+    let handles: Vec<_> = test_codes
+        .into_iter()
+        .enumerate()
+        .map(|(i, code)| {
+            let analyzer = analyzer.clone();
+            let code = code.to_string();
+            std::thread::spawn(move || analyzer.scan_for_vulnerabilities(&code, &format!("test{}.js", i)))
         })
-    }).collect();
+        .collect();
 
     // Wait for all threads to complete
     let results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();

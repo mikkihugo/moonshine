@@ -3,13 +3,13 @@
 //! Classic TDD approach using real collaborators and state-based verification.
 //! These tests exercise the actual behavior of moon-shine components.
 
-use moon_shine::*;
 use moon_shine::testing::*;
-use std::collections::HashMap;
+use moon_shine::*;
 use pretty_assertions::assert_eq;
 use rstest::*;
-use test_case::test_case;
+use std::collections::HashMap;
 use tempfile::TempDir;
+use test_case::test_case;
 
 /// Chicago school test fixture for MoonShine configuration
 #[fixture]
@@ -51,11 +51,9 @@ mod config_tests {
     #[rstest]
     fn test_config_serialization_roundtrip(chicago_config: MoonShineConfig) {
         // Test that config can be serialized and deserialized without loss
-        let serialized = serde_json::to_string(&chicago_config)
-            .expect("Failed to serialize config");
+        let serialized = serde_json::to_string(&chicago_config).expect("Failed to serialize config");
 
-        let deserialized: MoonShineConfig = serde_json::from_str(&serialized)
-            .expect("Failed to deserialize config");
+        let deserialized: MoonShineConfig = serde_json::from_str(&serialized).expect("Failed to deserialize config");
 
         assert_eq!(chicago_config.ai_model, deserialized.ai_model);
         assert_eq!(chicago_config.include_patterns, deserialized.include_patterns);
@@ -122,65 +120,56 @@ mod analysis_tests {
 #[cfg(test)]
 mod workflow_engine_tests {
     use super::*;
+    use std::collections::HashMap;
+    use std::time::Duration;
+
+    fn step(id: &str, deps: Vec<String>) -> WorkflowStep {
+        WorkflowStep {
+            id: id.to_string(),
+            name: format!("Step {}", id),
+            description: "Chicago workflow step".to_string(),
+            depends_on: deps,
+            action: StepAction::CustomFunction {
+                function_name: "noop".to_string(),
+                parameters: HashMap::new(),
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_millis(50),
+            critical: false,
+        }
+    }
+
+    fn build_engine(steps: Vec<WorkflowStep>) -> WorkflowEngine {
+        WorkflowEngine::new(
+            steps,
+            "console.log('hello');".to_string(),
+            "src/test.ts".to_string(),
+            MoonShineConfig::default(),
+        )
+        .expect("workflow engine should construct")
+    }
 
     #[rstest]
     fn test_rust_workflow_engine_creation() {
-        let engine = RustWorkflowEngine::new();
-
-        // Chicago school: test actual state and behavior
-        assert_eq!(engine.max_parallel, 4); // Default parallelism
-        assert!(engine.context.is_empty());
+        let engine = build_engine(Vec::new());
+        let execution_plan = engine.execution_plan().expect("plan should compute");
+        assert!(execution_plan.is_empty());
     }
 
     #[rstest]
     fn test_workflow_step_execution() {
-        let mut engine = RustWorkflowEngine::new();
-
-        // Create a real workflow step
-        let step = WorkflowStep {
-            id: "test-step".to_string(),
-            action: StepAction::Analysis,
-            dependencies: vec![],
-            parallel: false,
-        };
-
-        // Add step to engine (using real API)
-        let step_id = engine.add_step(step);
-
-        assert_eq!(step_id, "test-step");
-        assert!(engine.has_step(&step_id));
+        let engine = build_engine(vec![step("test-step", vec![])]);
+        let plan = engine.execution_plan().expect("plan should be available");
+        assert_eq!(plan, vec!["test-step".to_string()]);
     }
 
     #[rstest]
     fn test_workflow_dependency_resolution() {
-        let mut engine = RustWorkflowEngine::new();
+        let engine = build_engine(vec![step("step1", vec![]), step("step2", vec!["step1".to_string()])]);
 
-        // Create dependent steps
-        let step1 = WorkflowStep {
-            id: "step1".to_string(),
-            action: StepAction::Analysis,
-            dependencies: vec![],
-            parallel: false,
-        };
-
-        let step2 = WorkflowStep {
-            id: "step2".to_string(),
-            action: StepAction::Linting,
-            dependencies: vec!["step1".to_string()],
-            parallel: false,
-        };
-
-        engine.add_step(step1);
-        engine.add_step(step2);
-
-        // Test dependency resolution with real graph
-        let execution_order = engine.get_execution_order();
-        assert_eq!(execution_order.len(), 2);
-
-        // step1 should come before step2
-        let step1_index = execution_order.iter().position(|s| s == "step1").unwrap();
-        let step2_index = execution_order.iter().position(|s| s == "step2").unwrap();
-        assert!(step1_index < step2_index);
+        let plan = engine.execution_plan().expect("plan should be available");
+        assert!(plan.iter().position(|id| id == "step1").unwrap() < plan.iter().position(|id| id == "step2").unwrap());
     }
 }
 
@@ -345,8 +334,7 @@ mod storage_tests {
         // Second session: retrieve data
         {
             let storage2 = RuleStorage::new(&storage_path);
-            let retrieved = storage2.get_rule("persistent-rule")
-                .expect("Failed to retrieve in session 2");
+            let retrieved = storage2.get_rule("persistent-rule").expect("Failed to retrieve in session 2");
 
             assert!(retrieved.is_some());
             let rule = retrieved.unwrap();
@@ -359,6 +347,25 @@ mod storage_tests {
 #[cfg(test)]
 mod integration_workflow_tests {
     use super::*;
+    use std::collections::HashMap;
+    use std::time::Duration;
+
+    fn basic_step(id: &str, deps: Vec<String>) -> WorkflowStep {
+        WorkflowStep {
+            id: id.to_string(),
+            name: format!("Step {}", id),
+            description: "Integration workflow step".to_string(),
+            depends_on: deps,
+            action: StepAction::CustomFunction {
+                function_name: "noop".to_string(),
+                parameters: HashMap::new(),
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_millis(100),
+            critical: false,
+        }
+    }
 
     #[rstest]
     fn test_complete_analysis_workflow(chicago_env: TestEnvironment) {
@@ -370,39 +377,22 @@ mod integration_workflow_tests {
 
         chicago_env.setup_test_files(test_files).expect("Failed to setup test files");
 
-        // Create real workflow engine
-        let mut engine = RustWorkflowEngine::new();
+        let steps = create_moonshine_oxc_workflow();
+        let source_path = chicago_env.temp_dir.join("src/test.ts");
+        let source = std::fs::read_to_string(&source_path).expect("Failed to read source file");
 
-        // Add analysis steps
-        engine.add_step(WorkflowStep {
-            id: "parse".to_string(),
-            action: StepAction::Analysis,
-            dependencies: vec![],
-            parallel: false,
-        });
+        let mut engine =
+            WorkflowEngine::new(steps, source, "src/test.ts".to_string(), MoonShineConfig::default()).expect("Failed to construct workflow engine");
 
-        engine.add_step(WorkflowStep {
-            id: "lint".to_string(),
-            action: StepAction::Linting,
-            dependencies: vec!["parse".to_string()],
-            parallel: false,
-        });
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("Failed to create runtime");
 
-        engine.add_step(WorkflowStep {
-            id: "format".to_string(),
-            action: StepAction::Formatting,
-            dependencies: vec!["lint".to_string()],
-            parallel: false,
-        });
+        let result = runtime.block_on(engine.execute()).expect("Workflow execution should succeed");
 
-        // Execute workflow
-        let result = engine.execute();
-
-        // Verify workflow completed
-        assert!(result.is_ok());
-        let workflow_result = result.unwrap();
-        assert!(workflow_result.success);
-        assert_eq!(workflow_result.steps_executed, 3);
+        assert!(result.success);
+        assert!(result.stats.total_steps > 0);
     }
 
     #[rstest]
@@ -414,27 +404,16 @@ mod integration_workflow_tests {
 
         chicago_env.setup_test_files(problematic_files).expect("Failed to setup problematic files");
 
-        let mut engine = RustWorkflowEngine::new();
-        engine.add_step(WorkflowStep {
-            id: "parse-broken".to_string(),
-            action: StepAction::Analysis,
-            dependencies: vec![],
-            parallel: false,
-        });
+        let steps = vec![basic_step("broken", vec!["missing".to_string()])];
 
-        // Execute and expect graceful error handling
-        let result = engine.execute();
+        let engine = WorkflowEngine::new(
+            steps,
+            "console.log('broken');".to_string(),
+            "src/broken.ts".to_string(),
+            MoonShineConfig::default(),
+        );
 
-        // Should handle errors gracefully
-        match result {
-            Ok(workflow_result) => {
-                // Workflow may succeed with error reporting
-                assert!(workflow_result.errors.len() > 0 || !workflow_result.success);
-            }
-            Err(_) => {
-                // Acceptable for workflow to fail with parse errors
-            }
-        }
+        assert!(engine.is_err(), "Workflow should reject missing dependencies");
     }
 }
 

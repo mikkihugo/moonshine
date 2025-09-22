@@ -3,12 +3,12 @@
 //! QuickCheck-style property tests to ensure correctness across wide input spaces.
 //! Tests invariants and properties that should hold for all valid inputs.
 
-use moon_shine::*;
-use moon_shine::testing::*;
-use proptest::prelude::*;
-use quickcheck::{quickcheck, TestResult};
 use arbitrary::Arbitrary;
 use fake::{Fake, Faker};
+use moon_shine::testing::*;
+use moon_shine::*;
+use proptest::prelude::*;
+use quickcheck::{quickcheck, TestResult};
 use std::collections::HashMap;
 
 /// Arbitrary implementation for MoonShineConfig
@@ -72,7 +72,8 @@ fn typescript_code_strategy() -> impl Strategy<Value = String> {
         r"import \{ [a-zA-Z_][a-zA-Z0-9_]* \} from '\./[a-zA-Z]+';",
         // Export statements
         r"export const [a-zA-Z_][a-zA-Z0-9_]* = [0-9]+;",
-    ].prop_map(|s| s.to_string())
+    ]
+    .prop_map(|s| s.to_string())
 }
 
 /// Generate file paths
@@ -84,7 +85,8 @@ fn file_path_strategy() -> impl Strategy<Value = String> {
         r"src/[a-zA-Z]+\.jsx",
         r"tests/[a-zA-Z]+\.test\.ts",
         r"[a-zA-Z]+/[a-zA-Z]+/[a-zA-Z]+\.ts",
-    ].prop_map(|s| s.to_string())
+    ]
+    .prop_map(|s| s.to_string())
 }
 
 #[cfg(test)]
@@ -152,9 +154,7 @@ mod config_properties {
         };
 
         // Property: default configs with same overrides should be identical
-        config1.ai_model == config2.ai_model &&
-        config1.include_patterns == config2.include_patterns &&
-        config1.exclude_patterns == config2.exclude_patterns
+        config1.ai_model == config2.ai_model && config1.include_patterns == config2.include_patterns && config1.exclude_patterns == config2.exclude_patterns
     }
 }
 
@@ -200,11 +200,7 @@ mod response_properties {
     }
 
     #[quickcheck]
-    fn response_time_is_monotonic(
-        exec_time1: u64,
-        exec_time2: u64,
-        message: String
-    ) -> TestResult {
+    fn response_time_is_monotonic(exec_time1: u64, exec_time2: u64, message: String) -> TestResult {
         if exec_time1 > 1_000_000 || exec_time2 > 1_000_000 {
             return TestResult::discard(); // Avoid unrealistic times
         }
@@ -230,78 +226,86 @@ mod response_properties {
         };
 
         // Property: execution time comparison should be consistent
-        TestResult::from_bool(
-            (exec_time1 < exec_time2) == (response1.execution_time_ms < response2.execution_time_ms)
-        )
+        TestResult::from_bool((exec_time1 < exec_time2) == (response1.execution_time_ms < response2.execution_time_ms))
     }
 }
 
 #[cfg(test)]
 mod workflow_properties {
     use super::*;
+    use std::collections::HashMap;
+    use std::time::Duration;
+    use tokio::runtime::Builder;
+
+    fn build_step(id: &str, deps: Vec<String>) -> WorkflowStep {
+        WorkflowStep {
+            id: id.to_string(),
+            name: format!("Step {}", id),
+            description: "Test step".to_string(),
+            depends_on: deps,
+            action: StepAction::CustomFunction {
+                function_name: "test".to_string(),
+                parameters: HashMap::new(),
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_millis(100),
+            critical: false,
+        }
+    }
+
+    fn build_engine(steps: Vec<WorkflowStep>) -> WorkflowEngine {
+        WorkflowEngine::new(steps, "console.log('test');".to_string(), "src/test.ts".to_string(), MoonShineConfig::default())
+            .expect("workflow engine should build")
+    }
 
     proptest! {
         #[test]
         fn workflow_step_ordering_property(
             step_ids in prop::collection::vec("[a-zA-Z]+", 1..10)
         ) {
-            let mut engine = RustWorkflowEngine::new();
-
-            // Add steps in arbitrary order
-            for (i, step_id) in step_ids.iter().enumerate() {
-                let dependencies = if i > 0 {
-                    vec![step_ids[i - 1].clone()]
-                } else {
-                    vec![]
-                };
-
-                engine.add_step(WorkflowStep {
-                    id: step_id.clone(),
-                    action: StepAction::Analysis,
-                    dependencies,
-                    parallel: false,
-                });
+            let mut steps = Vec::new();
+            for (i, id) in step_ids.iter().enumerate() {
+                let deps = if i == 0 { vec![] } else { vec![step_ids[i - 1].clone()] };
+                steps.push(build_step(id, deps));
             }
 
-            let execution_order = engine.get_execution_order();
+            let engine = build_engine(steps);
+            let execution_plan = engine.execution_plan().expect("topological order should succeed");
 
-            // Property: execution order should respect dependencies
-            for (i, step_id) in execution_order.iter().enumerate() {
-                if i > 0 {
-                    let prev_step = &execution_order[i - 1];
-                    prop_assert!(engine.has_step(prev_step));
-                }
-                prop_assert!(engine.has_step(step_id));
+            // every produced step must exist in the original list
+            prop_assert_eq!(execution_plan.len(), step_ids.len());
+
+            // ensure dependency chain order is respected
+            let mut index_map = std::collections::HashMap::new();
+            for (idx, id) in execution_plan.iter().enumerate() {
+                index_map.insert(id.clone(), idx);
             }
 
-            // Property: all added steps should be in execution order
-            prop_assert_eq!(execution_order.len(), step_ids.len());
+            for (i, id) in step_ids.iter().enumerate().skip(1) {
+                let predecessor = &step_ids[i - 1];
+                let current_idx = *index_map.get(id).unwrap();
+                let predecessor_idx = *index_map.get(predecessor).unwrap();
+                prop_assert!(predecessor_idx < current_idx);
+            }
         }
 
         #[test]
         fn workflow_parallel_safety_property(
             parallel_steps in prop::collection::vec("[a-zA-Z]+", 2..5)
         ) {
-            let mut engine = RustWorkflowEngine::new();
+            let steps: Vec<_> = parallel_steps
+                .iter()
+                .map(|id| build_step(id, vec![]))
+                .collect();
 
-            // Add parallel steps with no dependencies
-            for step_id in &parallel_steps {
-                engine.add_step(WorkflowStep {
-                    id: step_id.clone(),
-                    action: StepAction::Linting,
-                    dependencies: vec![],
-                    parallel: true,
-                });
-            }
+            let engine = build_engine(steps);
+            let plan = engine.execution_plan().expect("plan generation should succeed");
 
-            let execution_order = engine.get_execution_order();
-
-            // Property: parallel steps with no dependencies can execute in any order
-            prop_assert_eq!(execution_order.len(), parallel_steps.len());
-
-            // Property: all parallel steps should be present
-            for step_id in &parallel_steps {
-                prop_assert!(execution_order.contains(step_id));
+            // plan should contain the same set of steps (order is not important)
+            prop_assert_eq!(plan.len(), parallel_steps.len());
+            for id in &parallel_steps {
+                prop_assert!(plan.contains(id));
             }
         }
     }
@@ -309,14 +313,17 @@ mod workflow_properties {
     #[quickcheck]
     fn workflow_context_preservation(key: String, value: String) -> bool {
         if key.is_empty() || value.is_empty() {
-            return true; // Skip empty inputs
+            return true;
         }
 
-        let mut engine = RustWorkflowEngine::new();
-        engine.set_context_value(&key, &value);
+        let engine = build_engine(Vec::new());
+        let runtime = Builder::new_current_thread().enable_all().build().unwrap();
 
-        // Property: context values should be preserved
-        engine.get_context_value(&key) == Some(value)
+        runtime.block_on(async {
+            engine.set_context_value(&key, serde_json::json!(value.clone())).await;
+            let retrieved = engine.get_context_value(&key).await;
+            retrieved.and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default() == value
+        })
     }
 }
 
@@ -534,11 +541,7 @@ mod storage_properties {
         let retrieved2 = storage.get_rule(&rule_name2).unwrap().unwrap();
 
         // Property: different rules should be stored independently
-        TestResult::from_bool(
-            retrieved1.name == rule_name1 &&
-            retrieved2.name == rule_name2 &&
-            retrieved1.enabled != retrieved2.enabled
-        )
+        TestResult::from_bool(retrieved1.name == rule_name1 && retrieved2.name == rule_name2 && retrieved1.enabled != retrieved2.enabled)
     }
 }
 
@@ -635,7 +638,7 @@ mod rule_engine_properties {
 #[cfg(test)]
 mod fake_data_properties {
     use super::*;
-    use fake::{Fake, faker::*};
+    use fake::{faker::*, Fake};
 
     #[quickcheck]
     fn fake_data_consistency() -> bool {
@@ -645,9 +648,7 @@ mod fake_data_properties {
         let number: u32 = (0..1000u32).fake();
 
         // Property: fake data should have expected characteristics
-        !name.is_empty() &&
-        email.contains('@') &&
-        number < 1000
+        !name.is_empty() && email.contains('@') && number < 1000
     }
 
     proptest! {

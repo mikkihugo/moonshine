@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MoonShine Rule Definition",
+  "description": "Schema for defining rules in the MoonShine rulebase",
+  "type": "object",
+  "required": ["id", "name", "description", "category", "severity", "implementation"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-@/]+$",
+      "description": "ESLint-compatible rule identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable rule name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed rule description"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Security", "Performance", "CodeQuality", "TypeScript",
+        "JavaScript", "React", "NodeJS", "Testing", "Accessibility",
+        "AsyncPatterns", "AIBehavioral", "Cognitive", "Patterns",
+        "Architecture", "AIEnhanced", "Hybrid", "Excellence", "AI"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["Error", "Warning", "Info", "Style"]
+    },
+    "implementation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "StaticAnalysis" },
+            "rule_name": { "type": "string" }
+          },
+          "required": ["type", "rule_name"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "AiBehavioral" },
+            "pattern_type": { "type": "string" }
+          },
+          "required": ["type", "pattern_type"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "Regex" },
+            "pattern": { "type": "string" },
+            "flags": { "type": "string" }
+          },
+          "required": ["type", "pattern"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "AstQuery" },
+            "query": { "type": "string" },
+            "language": { "type": "string" }
+          },
+          "required": ["type", "query", "language"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "DataFlow" },
+            "source_patterns": { "type": "array", "items": { "type": "string" } },
+            "sink_patterns": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["type", "source_patterns", "sink_patterns"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "ExternalTool" },
+            "command": { "type": "string" },
+            "args": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["type", "command"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "Hybrid" },
+            "implementations": {
+              "type": "array",
+              "items": { "$ref": "#/properties/implementation" }
+            }
+          },
+          "required": ["type", "implementations"]
+        }
+      ]
+    },
+    "cost": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Execution cost estimate (1-1000)"
+    },
+    "autofix": {
+      "type": "boolean",
+      "description": "Whether rule supports automatic fixing"
+    },
+    "ai_enhanced": {
+      "type": "boolean",
+      "description": "Whether rule uses AI enhancement"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Rule tags for filtering"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other rules this rule depends on"
+    },
+    "examples": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Code examples that pass this rule"
+        },
+        "invalid": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Code examples that violate this rule"
+        }
+      }
+    },
+    "fixExample": {
+      "type": "string",
+      "description": "Example of how to fix violations"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Why this rule matters"
+    },
+    "docs_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Link to documentation"
+    },
+    "related_rules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Related rules that work together"
+    },
+    "false_positive_rate": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "description": "Expected false positive rate"
+    },
+    "performance_impact": {
+      "type": "string",
+      "enum": ["minimal", "low", "medium", "high"],
+      "description": "Runtime performance impact"
+    }
+  }
+}

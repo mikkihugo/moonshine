@@ -175,9 +175,7 @@ impl DspySignatureBuilder {
 
 impl DspyInput {
     pub fn new() -> Self {
-        Self {
-            fields: HashMap::new(),
-        }
+        Self { fields: HashMap::new() }
     }
 
     pub fn field(mut self, name: &str, value: &str) -> Self {
@@ -188,9 +186,7 @@ impl DspyInput {
 
 impl DspyOutput {
     pub fn new() -> Self {
-        Self {
-            fields: HashMap::new(),
-        }
+        Self { fields: HashMap::new() }
     }
 
     pub fn field(mut self, name: &str, value: &str) -> Self {
@@ -212,17 +208,17 @@ impl DspyOutput {
 /// - Field update capabilities
 /// - Instruction optimization
 pub trait Signature: Send + Sync + Clone {
-  /// Creates a new instance of this signature
-  fn new() -> Self;
+    /// Creates a new instance of this signature
+    fn new() -> Self;
 
-  /// Updates a field's properties
-  fn with_updated_fields(self, field_name: &str, field_type: Option<String>) -> Self;
+    /// Updates a field's properties
+    fn with_updated_fields(self, field_name: &str, field_type: Option<String>) -> Self;
 
-  /// Gets the signature's instruction string
-  fn get_instructions(&self) -> String;
+    /// Gets the signature's instruction string
+    fn get_instructions(&self) -> String;
 
-  /// Updates the signature's instructions
-  fn set_instructions(&mut self, instructions: String);
+    /// Updates the signature's instructions
+    fn set_instructions(&mut self, instructions: String);
 }
 
 /// Defines the metadata signature for an AI model within DSPy.
@@ -238,321 +234,309 @@ pub trait Signature: Send + Sync + Clone {
 /// @complexity medium
 /// @since 1.0.0
 pub trait MetaSignature: Send + Sync {
-  /// Returns a vector of demonstration `Example`s for few-shot learning.
-  ///
-  /// These examples provide the AI model with successful input-output pairs
-  /// to guide its behavior.
-  ///
-  /// @returns A `Vec<Example>` containing the demonstration examples.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn demos(&self) -> Vec<Example>;
-  /// Sets the demonstration `Example`s for few-shot learning.
-  ///
-  /// @param demos A `Vec<Example>` to set as the new demonstration examples.
-  /// @returns A `Result` indicating success or an `Error` on failure.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn set_demos(&mut self, demos: Vec<Example>) -> Result<()>;
-  /// Returns the instruction string for the AI model.
-  ///
-  /// This instruction guides the AI on what task to perform.
-  ///
-  /// @returns The instruction string as a `String`.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn instruction(&self) -> String;
-  /// Returns a `serde_json::Value` representing the input fields of the signature.
-  ///
-  /// This typically includes the name, type, and description of each input field.
-  ///
-  /// @returns A `serde_json::Value` describing the input fields.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn input_fields(&self) -> Value;
-  /// Returns a `serde_json::Value` representing the output fields of the signature.
-  ///
-  /// This typically includes the name, type, and description of each output field.
-  ///
-  /// @returns A `serde_json::Value` describing the output fields.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn output_fields(&self) -> Value;
+    /// Returns a vector of demonstration `Example`s for few-shot learning.
+    ///
+    /// These examples provide the AI model with successful input-output pairs
+    /// to guide its behavior.
+    ///
+    /// @returns A `Vec<Example>` containing the demonstration examples.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn demos(&self) -> Vec<Example>;
+    /// Sets the demonstration `Example`s for few-shot learning.
+    ///
+    /// @param demos A `Vec<Example>` to set as the new demonstration examples.
+    /// @returns A `Result` indicating success or an `Error` on failure.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn set_demos(&mut self, demos: Vec<Example>) -> Result<()>;
+    /// Returns the instruction string for the AI model.
+    ///
+    /// This instruction guides the AI on what task to perform.
+    ///
+    /// @returns The instruction string as a `String`.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn instruction(&self) -> String;
+    /// Returns a `serde_json::Value` representing the input fields of the signature.
+    ///
+    /// This typically includes the name, type, and description of each input field.
+    ///
+    /// @returns A `serde_json::Value` describing the input fields.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn input_fields(&self) -> Value;
+    /// Returns a `serde_json::Value` representing the output fields of the signature.
+    ///
+    /// This typically includes the name, type, and description of each output field.
+    ///
+    /// @returns A `serde_json::Value` describing the output fields.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn output_fields(&self) -> Value;
 
-  /// Updates the instruction string for the AI model.
-  ///
-  /// This method allows optimizers to dynamically change the task instruction
-  /// provided to the underlying language model.
-  ///
-  /// @param instruction The new instruction string.
-  /// @returns A `Result` indicating success or an `Error` on failure.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn update_instruction(&mut self, instruction: String) -> Result<()>;
+    /// Updates the instruction string for the AI model.
+    ///
+    /// This method allows optimizers to dynamically change the task instruction
+    /// provided to the underlying language model.
+    ///
+    /// @param instruction The new instruction string.
+    /// @returns A `Result` indicating success or an `Error` on failure.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn update_instruction(&mut self, instruction: String) -> Result<()>;
 
-  /// Validates input data against the signature schema
-  ///
-  /// This method checks that all required inputs are present and correctly typed.
-  ///
-  /// @param inputs The input data to validate
-  /// @returns A `Result` indicating success or validation errors
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 2.0.0
-  fn validate_inputs(&self, inputs: &serde_json::Value) -> Result<()> {
-    let input_fields = self.input_fields();
-    if let Some(fields_obj) = input_fields.as_object() {
-      for field_name in fields_obj.keys() {
-        if !inputs.get(field_name).is_some() {
-          return Err(
-            crate::error::Error::validation(field_name, "present", "missing")
-              .into(),
-          );
+    /// Validates input data against the signature schema
+    ///
+    /// This method checks that all required inputs are present and correctly typed.
+    ///
+    /// @param inputs The input data to validate
+    /// @returns A `Result` indicating success or validation errors
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity medium
+    /// @since 2.0.0
+    fn validate_inputs(&self, inputs: &serde_json::Value) -> Result<()> {
+        let input_fields = self.input_fields();
+        if let Some(fields_obj) = input_fields.as_object() {
+            for field_name in fields_obj.keys() {
+                if !inputs.get(field_name).is_some() {
+                    return Err(crate::error::Error::validation(field_name, "present", "missing").into());
+                }
+            }
         }
-      }
+        Ok(())
     }
-    Ok(())
-  }
 
-  /// Validates output data against the signature schema
-  ///
-  /// This method checks that all required outputs are present and correctly typed.
-  ///
-  /// @param outputs The output data to validate
-  /// @returns A `Result` indicating success or validation errors
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 2.0.0
-  fn validate_outputs(&self, outputs: &serde_json::Value) -> Result<()> {
-    let output_fields = self.output_fields();
-    if let Some(fields_obj) = output_fields.as_object() {
-      for field_name in fields_obj.keys() {
-        if !outputs.get(field_name).is_some() {
-          return Err(
-            crate::error::Error::validation(field_name, "present", "missing")
-              .into(),
-          );
+    /// Validates output data against the signature schema
+    ///
+    /// This method checks that all required outputs are present and correctly typed.
+    ///
+    /// @param outputs The output data to validate
+    /// @returns A `Result` indicating success or validation errors
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity medium
+    /// @since 2.0.0
+    fn validate_outputs(&self, outputs: &serde_json::Value) -> Result<()> {
+        let output_fields = self.output_fields();
+        if let Some(fields_obj) = output_fields.as_object() {
+            for field_name in fields_obj.keys() {
+                if !outputs.get(field_name).is_some() {
+                    return Err(crate::error::Error::validation(field_name, "present", "missing").into());
+                }
+            }
         }
-      }
+        Ok(())
     }
-    Ok(())
-  }
 
-  /// Gets the count of input fields
-  ///
-  /// @returns The number of input fields in this signature
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
-  fn input_fields_len(&self) -> usize {
-    self.input_fields().as_object().map_or(0, |obj| obj.len())
-  }
+    /// Gets the count of input fields
+    ///
+    /// @returns The number of input fields in this signature
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 2.0.0
+    fn input_fields_len(&self) -> usize {
+        self.input_fields().as_object().map_or(0, |obj| obj.len())
+    }
 
-  /// Gets the count of output fields
-  ///
-  /// @returns The number of output fields in this signature
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
-  fn output_fields_len(&self) -> usize {
-    self.output_fields().as_object().map_or(0, |obj| obj.len())
-  }
+    /// Gets the count of output fields
+    ///
+    /// @returns The number of output fields in this signature
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 2.0.0
+    fn output_fields_len(&self) -> usize {
+        self.output_fields().as_object().map_or(0, |obj| obj.len())
+    }
 
-  /// Gets the names of input fields
-  ///
-  /// @returns A vector of input field names
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
-  fn input_field_names(&self) -> Vec<String> {
-    self
-      .input_fields()
-      .as_object()
-      .map_or(Vec::new(), |obj| obj.keys().cloned().collect())
-  }
+    /// Gets the names of input fields
+    ///
+    /// @returns A vector of input field names
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 2.0.0
+    fn input_field_names(&self) -> Vec<String> {
+        self.input_fields().as_object().map_or(Vec::new(), |obj| obj.keys().cloned().collect())
+    }
 
-  /// Gets the names of output fields
-  ///
-  /// @returns A vector of output field names
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
-  fn output_field_names(&self) -> Vec<String> {
-    self
-      .output_fields()
-      .as_object()
-      .map_or(Vec::new(), |obj| obj.keys().cloned().collect())
-  }
+    /// Gets the names of output fields
+    ///
+    /// @returns A vector of output field names
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 2.0.0
+    fn output_field_names(&self) -> Vec<String> {
+        self.output_fields().as_object().map_or(Vec::new(), |obj| obj.keys().cloned().collect())
+    }
 
-  /// Generates a complete prompt with examples and instruction
-  ///
-  /// This method creates a full prompt by combining the instruction,
-  /// demonstration examples, and current input context.
-  ///
-  /// @param inputs Current input values for context
-  /// @returns A formatted prompt string ready for LM execution
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity high
-  /// @since 2.0.0
-  fn generate_prompt(&self, inputs: &serde_json::Value) -> String {
-    let mut prompt = String::new();
+    /// Generates a complete prompt with examples and instruction
+    ///
+    /// This method creates a full prompt by combining the instruction,
+    /// demonstration examples, and current input context.
+    ///
+    /// @param inputs Current input values for context
+    /// @returns A formatted prompt string ready for LM execution
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity high
+    /// @since 2.0.0
+    fn generate_prompt(&self, inputs: &serde_json::Value) -> String {
+        let mut prompt = String::new();
 
-    // Add instruction
-    prompt.push_str(&format!("Instruction: {}\n\n", self.instruction()));
+        // Add instruction
+        prompt.push_str(&format!("Instruction: {}\n\n", self.instruction()));
 
-    // Add few-shot examples if available
-    let demos = self.demos();
-    if !demos.is_empty() {
-      prompt.push_str("Examples:\n");
-      for (i, demo) in demos.iter().enumerate() {
-        prompt.push_str(&format!("Example {}:\n", i + 1));
+        // Add few-shot examples if available
+        let demos = self.demos();
+        if !demos.is_empty() {
+            prompt.push_str("Examples:\n");
+            for (i, demo) in demos.iter().enumerate() {
+                prompt.push_str(&format!("Example {}:\n", i + 1));
 
-        // Add input fields from demo
+                // Add input fields from demo
+                for field_name in self.input_field_names() {
+                    if let Some(value) = demo.data.get(&field_name) {
+                        prompt.push_str(&format!("{}: {}\n", field_name, value));
+                    }
+                }
+
+                prompt.push_str("---\n");
+
+                // Add output fields from demo
+                for field_name in self.output_field_names() {
+                    if let Some(value) = demo.data.get(&field_name) {
+                        prompt.push_str(&format!("{}: {}\n", field_name, value));
+                    }
+                }
+
+                prompt.push_str("\n");
+            }
+            prompt.push_str("\n");
+        }
+
+        // Add current inputs
+        prompt.push_str("Current Task:\n");
         for field_name in self.input_field_names() {
-          if let Some(value) = demo.data.get(&field_name) {
-            prompt.push_str(&format!("{}: {}\n", field_name, value));
-          }
+            if let Some(value) = inputs.get(&field_name) {
+                prompt.push_str(&format!("{}: {}\n", field_name, value));
+            }
         }
 
         prompt.push_str("---\n");
-
-        // Add output fields from demo
+        prompt.push_str("Please provide the output in the following format:\n");
         for field_name in self.output_field_names() {
-          if let Some(value) = demo.data.get(&field_name) {
-            prompt.push_str(&format!("{}: {}\n", field_name, value));
-          }
+            prompt.push_str(&format!("{}: [your answer]\n", field_name));
         }
 
-        prompt.push_str("\n");
-      }
-      prompt.push_str("\n");
+        prompt
+    }
+    /// Appends a new field to the signature.
+    ///
+    /// This method allows for dynamic modification of the signature's fields.
+    ///
+    /// @param name The name of the field to append.
+    /// @param value The `serde_json::Value` representing the field's definition.
+    /// @returns A `Result` indicating success or an `Error` on failure.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn append(&mut self, name: &str, value: Value) -> Result<()>;
+
+    // Prefix optimization support
+    /// Returns the current prefix string for the AI model.
+    ///
+    /// The prefix is typically prepended to the prompt, often used for few-shot learning.
+    ///
+    /// @returns The prefix string as a `String`.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn prefix(&self) -> String {
+        String::new() // Default empty prefix
     }
 
-    // Add current inputs
-    prompt.push_str("Current Task:\n");
-    for field_name in self.input_field_names() {
-      if let Some(value) = inputs.get(&field_name) {
-        prompt.push_str(&format!("{}: {}\n", field_name, value));
-      }
+    /// Updates the prefix string for the AI model.
+    ///
+    /// @param prefix The new prefix string.
+    /// @returns A `Result` indicating success or an `Error` on failure.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    fn update_prefix(&mut self, prefix: String) -> Result<()> {
+        // Production: Store prefix for future prompt generation and formatting
+        // Default implementation provides basic prefix storage functionality
+        // Concrete implementations can override for more sophisticated prefix handling
+
+        // Store the prefix in a normalized format for consistent usage
+        let normalized_prefix = if prefix.is_empty() {
+            "Default:".to_string()
+        } else if prefix.ends_with(':') {
+            prefix
+        } else {
+            format!("{}:", prefix)
+        };
+
+        // Log prefix update for debugging
+        // debug!("DSPy Signature: Updated prefix to '{}'", normalized_prefix);
+
+        // Note: This default implementation doesn't store the prefix permanently
+        // Concrete signature implementations should override this method to:
+        // 1. Store the prefix in their internal state
+        // 2. Update any cached prompt templates
+        // 3. Invalidate any compiled signatures that depend on the prefix
+
+        Ok(())
     }
-
-    prompt.push_str("---\n");
-    prompt.push_str("Please provide the output in the following format:\n");
-    for field_name in self.output_field_names() {
-      prompt.push_str(&format!("{}: [your answer]\n", field_name));
-    }
-
-    prompt
-  }
-  /// Appends a new field to the signature.
-  ///
-  /// This method allows for dynamic modification of the signature's fields.
-  ///
-  /// @param name The name of the field to append.
-  /// @param value The `serde_json::Value` representing the field's definition.
-  /// @returns A `Result` indicating success or an `Error` on failure.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn append(&mut self, name: &str, value: Value) -> Result<()>;
-
-  // Prefix optimization support
-  /// Returns the current prefix string for the AI model.
-  ///
-  /// The prefix is typically prepended to the prompt, often used for few-shot learning.
-  ///
-  /// @returns The prefix string as a `String`.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn prefix(&self) -> String {
-    String::new() // Default empty prefix
-  }
-
-  /// Updates the prefix string for the AI model.
-  ///
-  /// @param prefix The new prefix string.
-  /// @returns A `Result` indicating success or an `Error` on failure.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  fn update_prefix(&mut self, prefix: String) -> Result<()> {
-    // Production: Store prefix for future prompt generation and formatting
-    // Default implementation provides basic prefix storage functionality
-    // Concrete implementations can override for more sophisticated prefix handling
-
-    // Store the prefix in a normalized format for consistent usage
-    let normalized_prefix = if prefix.is_empty() {
-      "Default:".to_string()
-    } else if prefix.ends_with(':') {
-      prefix
-    } else {
-      format!("{}:", prefix)
-    };
-
-    // Log prefix update for debugging
-    // debug!("DSPy Signature: Updated prefix to '{}'", normalized_prefix);
-
-    // Note: This default implementation doesn't store the prefix permanently
-    // Concrete signature implementations should override this method to:
-    // 1. Store the prefix in their internal state
-    // 2. Update any cached prompt templates
-    // 3. Invalidate any compiled signatures that depend on the prefix
-
-    Ok(())
-  }
 }

@@ -1,0 +1,76 @@
+{
+  "name": "Enterprise Strict",
+  "description": "Comprehensive rules for enterprise codebases with high standards",
+  "extends": ["@moonshine/base"],
+  "rules": {
+    "no-unused-vars": "error",
+    "no-console": "error",
+    "no-debugger": "error",
+    "no-alert": "error",
+    "eqeqeq": "error",
+    "curly": "error",
+    "complexity": ["error", { "max": 10 }],
+    "max-depth": ["error", { "max": 4 }],
+    "max-params": ["error", { "max": 5 }],
+
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-script-url": "error",
+    "detect-sql-injection": "error",
+    "no-hardcoded-secrets": "error",
+    "no-security-vulnerabilities": "error",
+    "no-csrf-vulnerability": "error",
+    "no-prototype-pollution": "error",
+
+    "prefer-const": "error",
+    "prefer-template": "warn",
+    "object-shorthand": "warn",
+    "prefer-destructuring": "warn",
+    "no-array-constructor": "error",
+    "no-new-object": "error",
+
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "warn",
+    "@typescript-eslint/prefer-readonly": "warn",
+    "@typescript-eslint/naming-convention": "warn",
+
+    "react/jsx-key": "error",
+    "react/jsx-no-bind": "warn",
+    "react/no-unstable-nested-components": "error",
+    "react/jsx-no-constructed-context-values": "warn",
+
+    "node/no-deprecated-api": "error",
+    "node/no-sync": "error",
+    "node/prefer-promises/fs": "warn",
+
+    "jest/no-focused-tests": "error",
+    "jest/no-disabled-tests": "error",
+    "jest/expect-expect": "warn",
+    "jest/valid-expect": "error",
+
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/aria-props": "error",
+    "jsx-a11y/aria-role": "error",
+    "jsx-a11y/anchor-is-valid": "error",
+
+    "@moonshine/production-excellence-suite": "warn",
+    "@moonshine/ai-code-quality-oracle": "info",
+    "@moonshine/architecture-analysis-1": "info",
+    "@moonshine/excellence-1": "warn"
+  },
+  "settings": {
+    "moonshine": {
+      "ai_enabled": true,
+      "enterprise_mode": true,
+      "categories": ["Security", "Performance", "CodeQuality", "TypeScript", "React", "NodeJS", "Testing", "Accessibility", "Hybrid"],
+      "execution_timeout": 15000,
+      "enable_comprehensive_analysis": true,
+      "require_documentation": true,
+      "enforce_naming_conventions": true,
+      "enable_architecture_analysis": true
+    }
+  }
+}

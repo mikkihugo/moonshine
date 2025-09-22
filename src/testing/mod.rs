@@ -8,18 +8,18 @@
 //! @complexity high
 //! @since 2.0.0
 
-pub mod mocks;
-pub mod fixtures;
 pub mod assertions;
 pub mod builders;
 pub mod e2e;
-pub mod stress_tests;
 pub mod edge_cases;
+pub mod fixtures;
+pub mod mocks;
+pub mod stress_tests;
 pub mod workflow_transitions;
 
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::path::Path;
-use chrono::{DateTime, Utc};
 
 use crate::config::MoonShineConfig;
 use crate::error::Result;
@@ -81,12 +81,7 @@ pub struct ChicagoContext {
 impl ChicagoContext {
     pub fn new() -> Self {
         Self {
-            real_dependencies: vec![
-                "config".to_string(),
-                "workflow".to_string(),
-                "analysis".to_string(),
-                "linter".to_string(),
-            ],
+            real_dependencies: vec!["config".to_string(), "workflow".to_string(), "analysis".to_string(), "linter".to_string()],
             integration_scope: IntegrationScope::ModuleLevel,
             created_at: Utc::now(),
         }
@@ -149,9 +144,9 @@ pub struct PerformanceRequirements {
 impl Default for PerformanceRequirements {
     fn default() -> Self {
         Self {
-            max_execution_time_ms: 5000,  // 5 seconds max
-            max_memory_usage_mb: 100,     // 100 MB max
-            min_throughput_ops_sec: 10,   // 10 operations/sec min
+            max_execution_time_ms: 5000, // 5 seconds max
+            max_memory_usage_mb: 100,    // 100 MB max
+            min_throughput_ops_sec: 10,  // 10 operations/sec min
         }
     }
 }

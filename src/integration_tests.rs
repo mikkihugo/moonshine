@@ -84,7 +84,7 @@ async fn test_unified_workflow_engine_integration() -> Result<()> {
     let step_ids: Vec<_> = result.step_results.iter().map(|r| r.step_id.as_str()).collect();
     assert!(step_ids.contains(&"oxc-parse"));
     assert!(step_ids.contains(&"oxc-rules"));
-    assert!(step_ids.contains(&"sunlinter-behavioral"));
+    assert!(step_ids.contains(&"behavioral-behavioral"));
     assert!(step_ids.contains(&"oxc-types"));
     assert!(step_ids.contains(&"ai-enhance"));
     assert!(step_ids.contains(&"oxc-codegen"));

@@ -30,10 +30,23 @@ use crate::dspy::adapter::Adapter;
 /// @complexity low
 /// @since 1.0.0
 pub struct Settings {
-  /// The Language Model (LM) instance used by DSPy.
-  pub lm: LM,
-  /// The adapter responsible for formatting prompts and parsing responses for the LM.
-  pub adapter: Arc<dyn Adapter>,
+    /// The Language Model (LM) instance used by DSPy.
+    pub lm: LM,
+    /// The adapter responsible for formatting prompts and parsing responses for the LM.
+    pub adapter: Arc<dyn Adapter>,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        // Create a default LM and adapter for settings
+        use crate::config::MoonShineConfig;
+        use crate::dspy::adapter::ChatAdapter;
+
+        Self {
+            lm: LM::new("default".to_string(), MoonShineConfig::default()),
+            adapter: Arc::new(ChatAdapter::default()),
+        }
+    }
 }
 
 /// A lazily initialized, globally accessible `RwLock` holding the DSPy settings.
@@ -46,8 +59,7 @@ pub struct Settings {
 /// @mvp core
 /// @complexity low
 /// @since 1.0.0
-pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> =
-  LazyLock::new(|| RwLock::new(None));
+pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> = LazyLock::new(|| RwLock::new(None));
 
 /// Retrieves the globally configured Language Model (LM).
 ///
@@ -63,13 +75,13 @@ pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> =
 /// @complexity low
 /// @since 1.0.0
 pub fn get_lm() -> LM {
-  GLOBAL_SETTINGS
-    .read()
-    .expect("Global settings lock poisoned")
-    .as_ref()
-    .expect("DSPy settings not configured - call configure() first")
-    .lm
-    .clone()
+    GLOBAL_SETTINGS
+        .read()
+        .expect("Global settings lock poisoned")
+        .as_ref()
+        .expect("DSPy settings not configured - call configure() first")
+        .lm
+        .clone()
 }
 
 /// Configures the global DSPy settings with a Language Model (LM) and an Adapter.
@@ -87,11 +99,9 @@ pub fn get_lm() -> LM {
 /// @complexity low
 /// @since 1.0.0
 pub fn configure(lm: LM, adapter: impl Adapter + 'static) {
-  let settings = Settings {
-    lm,
-    adapter: Arc::new(adapter),
-  };
-  *GLOBAL_SETTINGS
-    .write()
-    .expect("Global settings lock poisoned") = Some(settings);
+    let settings = Settings {
+        lm,
+        adapter: Arc::new(adapter),
+    };
+    *GLOBAL_SETTINGS.write().expect("Global settings lock poisoned") = Some(settings);
 }

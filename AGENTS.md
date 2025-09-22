@@ -119,7 +119,7 @@ The engine supports comprehensive analysis pipelines:
 
 #### **Analysis Steps** (Parallel Execution)
 - **OXC Rules**: 582+ linting rules with AI enhancement
-- **SunLinter Behavioral**: 192 behavioral patterns with hybrid analysis
+- **Behavioral Behavioral**: 192 behavioral patterns with hybrid analysis
 - **Type Analysis**: TypeScript type checking and inference
 
 #### **Enhancement Steps** (Conditional Execution)

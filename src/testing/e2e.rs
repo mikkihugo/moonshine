@@ -8,17 +8,17 @@
 //! @complexity high
 //! @since 2.0.0
 
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::config::MoonShineConfig;
 use crate::analysis::{AnalysisResults, MoonShineResponse};
+use crate::config::MoonShineConfig;
 use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 // Note: WorkflowEngine, WorkflowStep, WorkflowPhase are mock types for E2E testing
-use crate::error::{Result, Error};
-use crate::testing::{TestEnvironment, PerformanceRequirements};
+use crate::error::{Error, Result};
+use crate::testing::{PerformanceRequirements, TestEnvironment};
 
 /// E2E test scenario definition
 #[derive(Debug, Clone)]
@@ -222,10 +222,7 @@ impl E2ETestEngine {
         let validation_results = self.validate_outcomes(&analysis_results, &scenario.expected_outcomes)?;
 
         // Check performance requirements
-        let performance_passed = self.check_performance_requirements(
-            &performance_metrics,
-            &scenario.performance_requirements,
-        );
+        let performance_passed = self.check_performance_requirements(&performance_metrics, &scenario.performance_requirements);
 
         // Execute teardown steps
         for step in &scenario.teardown_steps {
@@ -299,11 +296,7 @@ impl E2ETestEngine {
     }
 
     /// Execute the main workflow for testing
-    async fn execute_workflow(
-        &self,
-        config: &MoonShineConfig,
-        input_files: &HashMap<String, String>,
-    ) -> Result<AnalysisResults> {
+    async fn execute_workflow(&self, config: &MoonShineConfig, input_files: &HashMap<String, String>) -> Result<AnalysisResults> {
         // Create mock workflow engine for testing
         // In real implementation, this would use the actual WorkflowEngine
         let mut suggestions = Vec::new();
@@ -353,11 +346,7 @@ impl E2ETestEngine {
     }
 
     /// Validate outcomes against expectations
-    fn validate_outcomes(
-        &self,
-        results: &AnalysisResults,
-        expected: &ExpectedOutcomes,
-    ) -> Result<Vec<ValidationResult>> {
+    fn validate_outcomes(&self, results: &AnalysisResults, expected: &ExpectedOutcomes) -> Result<Vec<ValidationResult>> {
         let mut validation_results = Vec::new();
 
         // Check suggestion count
@@ -367,21 +356,13 @@ impl E2ETestEngine {
                 passed: results.suggestions.len() == expected_count,
                 expected_value: expected_count.to_string(),
                 actual_value: results.suggestions.len().to_string(),
-                message: format!(
-                    "Expected {} suggestions, got {}",
-                    expected_count,
-                    results.suggestions.len()
-                ),
+                message: format!("Expected {} suggestions, got {}", expected_count, results.suggestions.len()),
             });
         }
 
         // Check error count
         if let Some(expected_errors) = expected.error_count {
-            let actual_errors = results
-                .suggestions
-                .iter()
-                .filter(|s| matches!(s.severity, SuggestionSeverity::Error))
-                .count();
+            let actual_errors = results.suggestions.iter().filter(|s| matches!(s.severity, SuggestionSeverity::Error)).count();
 
             validation_results.push(ValidationResult {
                 check_name: "error_count".to_string(),
@@ -399,10 +380,7 @@ impl E2ETestEngine {
                 passed: results.files_processed == expected_files,
                 expected_value: expected_files.to_string(),
                 actual_value: results.files_processed.to_string(),
-                message: format!(
-                    "Expected {} files processed, got {}",
-                    expected_files, results.files_processed
-                ),
+                message: format!("Expected {} files processed, got {}", expected_files, results.files_processed),
             });
         }
 
@@ -410,13 +388,8 @@ impl E2ETestEngine {
     }
 
     /// Check performance requirements
-    fn check_performance_requirements(
-        &self,
-        metrics: &PerformanceMetrics,
-        requirements: &PerformanceRequirements,
-    ) -> bool {
-        metrics.execution_time.as_millis() as u64 <= requirements.max_execution_time_ms
-            && metrics.memory_usage_mb <= requirements.max_memory_usage_mb
+    fn check_performance_requirements(&self, metrics: &PerformanceMetrics, requirements: &PerformanceRequirements) -> bool {
+        metrics.execution_time.as_millis() as u64 <= requirements.max_execution_time_ms && metrics.memory_usage_mb <= requirements.max_memory_usage_mb
     }
 
     /// Estimate memory usage (mock implementation)
@@ -500,13 +473,10 @@ pub struct E2EScenarios;
 impl E2EScenarios {
     /// Full analysis pipeline scenario
     pub fn full_analysis_pipeline() -> E2EScenario {
-        E2EScenario::new(
-            "full_analysis_pipeline",
-            "Complete TypeScript analysis workflow from input to suggestions",
-        )
-        .with_input_file(
-            "src/component.tsx",
-            r#"
+        E2EScenario::new("full_analysis_pipeline", "Complete TypeScript analysis workflow from input to suggestions")
+            .with_input_file(
+                "src/component.tsx",
+                r#"
 import React from 'react';
 
 interface Props {
@@ -520,51 +490,42 @@ const Component: React.FC<Props> = ({ data }) => {
 
 export default Component;
 "#,
-        )
-        .expect_suggestions(2)
-        .expect_errors(1)
-        .max_execution_time(Duration::from_secs(5))
+            )
+            .expect_suggestions(2)
+            .expect_errors(1)
+            .max_execution_time(Duration::from_secs(5))
     }
 
     /// Configuration management scenario
     pub fn configuration_management() -> E2EScenario {
-        E2EScenario::new(
-            "configuration_management",
-            "Test configuration loading, validation, and application",
-        )
-        .with_setup_step(SetupStep::CreateFile {
-            path: "moon-shine.toml".to_string(),
-            content: r#"
+        E2EScenario::new("configuration_management", "Test configuration loading, validation, and application")
+            .with_setup_step(SetupStep::CreateFile {
+                path: "moon-shine.toml".to_string(),
+                content: r#"
 ai_model = "test-model"
 max_files = 50
 include_patterns = ["**/*.ts", "**/*.tsx"]
 exclude_patterns = ["**/node_modules/**"]
 cache_enabled = true
 "#
-            .to_string(),
-        })
-        .with_input_file("src/test.ts", "const x: any = 123;")
-        .expect_suggestions(1)
-        .max_execution_time(Duration::from_secs(2))
+                .to_string(),
+            })
+            .with_input_file("src/test.ts", "const x: any = 123;")
+            .expect_suggestions(1)
+            .max_execution_time(Duration::from_secs(2))
     }
 
     /// Error recovery scenario
     pub fn error_recovery() -> E2EScenario {
-        E2EScenario::new(
-            "error_recovery",
-            "Test graceful error handling and recovery mechanisms",
-        )
-        .with_input_file("src/invalid.ts", "This is not valid TypeScript syntax {{{")
-        .expect_errors(0) // Should recover gracefully, not crash
-        .max_execution_time(Duration::from_secs(3))
+        E2EScenario::new("error_recovery", "Test graceful error handling and recovery mechanisms")
+            .with_input_file("src/invalid.ts", "This is not valid TypeScript syntax {{{")
+            .expect_errors(0) // Should recover gracefully, not crash
+            .max_execution_time(Duration::from_secs(3))
     }
 
     /// Performance optimization scenario
     pub fn performance_optimization() -> E2EScenario {
-        let mut scenario = E2EScenario::new(
-            "performance_optimization",
-            "Test performance with large number of files",
-        );
+        let mut scenario = E2EScenario::new("performance_optimization", "Test performance with large number of files");
 
         // Add multiple files to test performance
         for i in 0..20 {

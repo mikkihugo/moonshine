@@ -153,7 +153,6 @@ impl EnhancedWasmRule for ArchitectureComplianceRule {
 ### **Core Architecture**
 1. `src/oxc_compatible_rules.rs` - OXC-compatible rule engine with AI enhancement
 2. `src/oxc_rules_adapter.rs` - WASM-safe adapter for OXC patterns
-3. `src/hybrid_linter.rs` - Main hybrid linter implementation
 
 ### **Documentation**
 1. `HYBRID_ARCHITECTURE.md` - Technical architecture details

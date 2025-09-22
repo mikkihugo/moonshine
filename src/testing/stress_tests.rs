@@ -8,18 +8,18 @@
 //! @complexity high
 //! @since 2.0.0
 
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 use tokio::time::timeout;
 
-use crate::testing::{TestEnvironment, PerformanceRequirements};
+use crate::analysis::AnalysisResults;
+use crate::config::MoonShineConfig;
+use crate::error::Result;
+use crate::testing::assertions::{MoonShineAssertions, PerformanceAssertions};
 use crate::testing::builders::{AnalysisResultsBuilder, ConfigBuilder, LintIssueBuilder};
 use crate::testing::fixtures::{TestDataBuilder, TYPESCRIPT_WITH_ISSUES};
-use crate::testing::assertions::{MoonShineAssertions, PerformanceAssertions};
-use crate::config::MoonShineConfig;
-use crate::analysis::AnalysisResults;
+use crate::testing::{PerformanceRequirements, TestEnvironment};
 use crate::wasm_safe_linter::{LintIssue, LintSeverity};
-use crate::error::Result;
 
 /// Stress test configuration
 #[derive(Debug, Clone)]
@@ -104,7 +104,7 @@ impl StressTestRunner {
                     .message("TypeScript any type used")
                     .severity(LintSeverity::Warning)
                     .line(i as u32 % 100 + 1)
-                    .build()
+                    .build(),
             );
         }
 
@@ -127,7 +127,11 @@ impl StressTestRunner {
             execution_time,
             memory_used_mb: 250, // Simulated memory usage
             operations_completed: 5000,
-            error_message: if !passed { Some("Large codebase stress test failed".to_string()) } else { None },
+            error_message: if !passed {
+                Some("Large codebase stress test failed".to_string())
+            } else {
+                None
+            },
         });
 
         Ok(())
@@ -159,8 +163,7 @@ impl StressTestRunner {
         }
 
         let execution_time = start_time.elapsed();
-        let passed = completed == self.config.concurrent_operations
-            && execution_time < Duration::from_secs(10);
+        let passed = completed == self.config.concurrent_operations && execution_time < Duration::from_secs(10);
 
         self.results.push(StressTestResult {
             test_name: test_name.to_string(),
@@ -169,8 +172,13 @@ impl StressTestRunner {
             memory_used_mb: 150,
             operations_completed: completed,
             error_message: if !passed {
-                Some(format!("Concurrent test failed: {}/{} operations completed", completed, self.config.concurrent_operations))
-            } else { None },
+                Some(format!(
+                    "Concurrent test failed: {}/{} operations completed",
+                    completed, self.config.concurrent_operations
+                ))
+            } else {
+                None
+            },
         });
 
         Ok(())
@@ -186,12 +194,14 @@ impl StressTestRunner {
 
         for i in 0..100 {
             // Create large analysis results that would consume memory
-            let suggestions: Vec<LintIssue> = (0..1000).map(|j| {
-                LintIssueBuilder::warning()
-                    .message(&format!("Memory pressure test suggestion {} from iteration {}", j, i))
-                    .line(j as u32 % 500 + 1)
-                    .build()
-            }).collect();
+            let suggestions: Vec<LintIssue> = (0..1000)
+                .map(|j| {
+                    LintIssueBuilder::warning()
+                        .message(&format!("Memory pressure test suggestion {} from iteration {}", j, i))
+                        .line(j as u32 % 500 + 1)
+                        .build()
+                })
+                .collect();
 
             let results = AnalysisResultsBuilder::new()
                 .suggestions(suggestions)
@@ -203,9 +213,7 @@ impl StressTestRunner {
         }
 
         // Verify we can handle large amounts of data
-        let total_suggestions: usize = large_data_structures.iter()
-            .map(|r| r.suggestions.len())
-            .sum();
+        let total_suggestions: usize = large_data_structures.iter().map(|r| r.suggestions.len()).sum();
 
         let execution_time = start_time.elapsed();
         let passed = total_suggestions == 100_000 // 100 iterations * 1000 suggestions each
@@ -252,8 +260,7 @@ impl StressTestRunner {
 
         let execution_time = start_time.elapsed();
         let operations_per_second = operations_completed as f64 / execution_time.as_secs_f64();
-        let passed = operations_completed == target_operations
-            && operations_per_second > 1000.0; // At least 1000 ops/sec
+        let passed = operations_completed == target_operations && operations_per_second > 1000.0; // At least 1000 ops/sec
 
         self.results.push(StressTestResult {
             test_name: test_name.to_string(),
@@ -263,7 +270,9 @@ impl StressTestRunner {
             operations_completed,
             error_message: if !passed {
                 Some(format!("High frequency test failed: {:.0} ops/sec", operations_per_second))
-            } else { None },
+            } else {
+                None
+            },
         });
 
         Ok(())
@@ -293,8 +302,7 @@ impl StressTestRunner {
         }
 
         let execution_time = start_time.elapsed();
-        let passed = errors_handled == target_errors
-            && execution_time < Duration::from_secs(5);
+        let passed = errors_handled == target_errors && execution_time < Duration::from_secs(5);
 
         self.results.push(StressTestResult {
             test_name: test_name.to_string(),
@@ -340,8 +348,7 @@ impl StressTestRunner {
         }
 
         let execution_time = start_time.elapsed();
-        let passed = configs_tested == stress_configs.len()
-            && execution_time < Duration::from_secs(2);
+        let passed = configs_tested == stress_configs.len() && execution_time < Duration::from_secs(2);
 
         self.results.push(StressTestResult {
             test_name: test_name.to_string(),
@@ -349,7 +356,11 @@ impl StressTestRunner {
             execution_time,
             memory_used_mb: 50,
             operations_completed: configs_tested,
-            error_message: if !passed { Some("Configuration overload test failed".to_string()) } else { None },
+            error_message: if !passed {
+                Some("Configuration overload test failed".to_string())
+            } else {
+                None
+            },
         });
 
         Ok(())
@@ -402,8 +413,7 @@ impl StressTestSummary {
             println!("\n❌ Failed tests:");
             for result in &self.results {
                 if !result.passed {
-                    println!("  - {}: {}", result.test_name,
-                           result.error_message.as_deref().unwrap_or("Unknown error"));
+                    println!("  - {}: {}", result.test_name, result.error_message.as_deref().unwrap_or("Unknown error"));
                 }
             }
         }

@@ -1,0 +1,52 @@
+{
+  "name": "Performance Optimized",
+  "description": "Performance-focused rules for gaming, real-time apps, and high-throughput systems",
+  "extends": ["@moonshine/base"],
+  "rules": {
+    "prefer-const": "error",
+    "prefer-template": "warn",
+    "object-shorthand": "warn",
+    "prefer-destructuring": "warn",
+    "prefer-spread": "warn",
+    "prefer-object-spread": "warn",
+    "no-array-constructor": "error",
+    "no-new-object": "error",
+
+    "no-useless-concat": "warn",
+    "prefer-numeric-literals": "warn",
+    "prefer-arrow-callback": "warn",
+    "prefer-rest-params": "warn",
+    "prefer-exponentiation-operator": "warn",
+    "prefer-nullish-coalescing": "warn",
+    "prefer-optional-chaining": "warn",
+    "no-constructor-return": "error",
+    "grouped-accessor-pairs": "warn",
+
+    "react/jsx-no-bind": "error",
+    "react/jsx-no-constructed-context-values": "error",
+    "react/no-unstable-nested-components": "error",
+    "react/hook-use-state": "warn",
+
+    "@typescript-eslint/prefer-nullish-coalescing": "warn",
+    "@typescript-eslint/prefer-optional-chain": "warn",
+    "@typescript-eslint/prefer-readonly": "warn",
+    "@typescript-eslint/prefer-as-const": "warn",
+
+    "require-await": "warn",
+    "no-await-in-loop": "error",
+    "prefer-promise-reject-errors": "warn",
+
+    "no-console": "off",
+    "no-debugger": "warn"
+  },
+  "settings": {
+    "moonshine": {
+      "ai_enabled": true,
+      "performance_mode": "optimized",
+      "categories": ["Performance", "React", "TypeScript", "AsyncPatterns"],
+      "execution_timeout": 5000,
+      "enable_performance_profiling": true,
+      "cache_aggressive": true
+    }
+  }
+}

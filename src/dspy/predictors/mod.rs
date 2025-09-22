@@ -19,9 +19,9 @@ pub mod predict;
 pub use predict::*;
 
 use crate::data::{Example, Prediction};
+use crate::dspy::core::signature::{DspyExample, DspyInput, DspyOutput, DspySignature};
 use crate::dspy::LM;
 use crate::token_usage::LmUsage;
-use crate::dspy::core::signature::{DspySignature, DspyInput, DspyOutput, DspyExample};
 use anyhow::Result;
 
 // Concrete predictor implementations for testing
@@ -73,7 +73,9 @@ impl FewShotPredictor {
 
         for output_field in &self.signature.outputs {
             let mock_value = if let Some(example) = self.examples.first() {
-                example.outputs.iter()
+                example
+                    .outputs
+                    .iter()
                     .find(|(name, _)| name == &output_field.name)
                     .map(|(_, value)| value.clone())
                     .unwrap_or_else(|| format!("Mock {} from examples", output_field.name))
@@ -127,35 +129,31 @@ impl ReactPredictor {
 /// @since 1.0.0
 #[allow(async_fn_in_trait)]
 pub trait Predictor: Send + Sync {
-  /// Performs a standard forward pass, generating a `Prediction` from an `Example`.
-  ///
-  /// @param inputs The input `Example` for the prediction.
-  /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
-  async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction>;
-  /// Performs a forward pass using a specific language model configuration.
-  ///
-  /// This method allows overriding the default language model settings for a particular prediction.
-  ///
-  /// @param inputs The input `Example` for the prediction.
-  /// @param lm A mutable reference to the `LM` (Language Model) instance to use.
-  /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
-  async fn forward_with_config(
-    &self,
-    inputs: Example,
-    lm: &mut LM,
-  ) -> anyhow::Result<Prediction>;
+    /// Performs a standard forward pass, generating a `Prediction` from an `Example`.
+    ///
+    /// @param inputs The input `Example` for the prediction.
+    /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity medium
+    /// @since 1.0.0
+    async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction>;
+    /// Performs a forward pass using a specific language model configuration.
+    ///
+    /// This method allows overriding the default language model settings for a particular prediction.
+    ///
+    /// @param inputs The input `Example` for the prediction.
+    /// @param lm A mutable reference to the `LM` (Language Model) instance to use.
+    /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity medium
+    /// @since 1.0.0
+    async fn forward_with_config(&self, inputs: Example, lm: &mut LM) -> anyhow::Result<Prediction>;
 }
 
 /// A dummy `Predictor` implementation for testing and placeholder purposes.
@@ -171,43 +169,39 @@ pub trait Predictor: Send + Sync {
 pub struct DummyPredict;
 
 impl Predictor for DummyPredict {
-  /// Implements the `forward` method for `DummyPredict`.
-  ///
-  /// It returns a `Prediction` containing the input data and default `LmUsage`.
-  ///
-  /// @param inputs The input `Example`.
-  /// @returns An `anyhow::Result` containing a `Prediction`.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction> {
-    Ok(Prediction::new(inputs.data, LmUsage::default()))
-  }
+    /// Implements the `forward` method for `DummyPredict`.
+    ///
+    /// It returns a `Prediction` containing the input data and default `LmUsage`.
+    ///
+    /// @param inputs The input `Example`.
+    /// @returns An `anyhow::Result` containing a `Prediction`.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction> {
+        Ok(Prediction::new(inputs.data, LmUsage::default()))
+    }
 
-  /// Implements the `forward_with_config` method for `DummyPredict`.
-  ///
-  /// It returns a `Prediction` containing the input data and default `LmUsage`,
-  /// ignoring the provided `lm` configuration.
-  ///
-  /// @param inputs The input `Example`.
-  /// @param lm A mutable reference to the `LM` instance (ignored).
-  /// @returns An `anyhow::Result` containing a `Prediction`.
-  ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
-  async fn forward_with_config(
-    &self,
-    inputs: Example,
-    _lm: &mut LM,
-  ) -> anyhow::Result<Prediction> {
-    // Default implementation - specific predictors should override this
-    // Using the lm parameter name with underscore to indicate intentional non-use
-    Ok(Prediction::new(inputs.data, LmUsage::default()))
-  }
+    /// Implements the `forward_with_config` method for `DummyPredict`.
+    ///
+    /// It returns a `Prediction` containing the input data and default `LmUsage`,
+    /// ignoring the provided `lm` configuration.
+    ///
+    /// @param inputs The input `Example`.
+    /// @param lm A mutable reference to the `LM` instance (ignored).
+    /// @returns An `anyhow::Result` containing a `Prediction`.
+    ///
+    /// @category dspy-method
+    /// @safe team
+    /// @mvp core
+    /// @complexity low
+    /// @since 1.0.0
+    async fn forward_with_config(&self, inputs: Example, _lm: &mut LM) -> anyhow::Result<Prediction> {
+        // Default implementation - specific predictors should override this
+        // Using the lm parameter name with underscore to indicate intentional non-use
+        Ok(Prediction::new(inputs.data, LmUsage::default()))
+    }
 }

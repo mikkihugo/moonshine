@@ -13,12 +13,7 @@ We have successfully created:
    - Implements rules with proper visitor pattern
    - Maintains WASM compatibility
 
-2. **AI Enhancement Layer** (`hybrid_linter.rs`)
-   - Adds intelligent suggestions beyond static analysis
-   - Provides contextual explanations
-   - Generates auto-fix recommendations
-
-3. **Type-Aware Analysis** (Moon Task Delegation)
+2. **Type-Aware Analysis** (Moon Task Delegation)
    - Follows OXLint's pattern of external type checking
    - WASM coordinates, Moon tasks execute TypeScript analysis
    - Maintains performance while enabling advanced rules

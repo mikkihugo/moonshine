@@ -388,26 +388,17 @@ impl TestScenario {
 
     /// Get test complexity from metadata
     pub fn complexity(&self) -> String {
-        self.metadata
-            .get("complexity")
-            .cloned()
-            .unwrap_or_else(|| "medium".to_string())
+        self.metadata.get("complexity").cloned().unwrap_or_else(|| "medium".to_string())
     }
 
     /// Check if scenario is performance-focused
     pub fn is_performance_test(&self) -> bool {
-        self.metadata
-            .get("test_type")
-            .map(|t| t == "performance")
-            .unwrap_or(false)
+        self.metadata.get("test_type").map(|t| t == "performance").unwrap_or(false)
     }
 
     /// Get files as vector of tuples
     pub fn files_vec(&self) -> Vec<(String, String)> {
-        self.files
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
+        self.files.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
     }
 }
 
@@ -429,13 +420,7 @@ impl TestFixtures {
     pub fn scenarios_for_type(test_type: &str) -> Vec<TestScenario> {
         Self::all_scenarios()
             .into_iter()
-            .filter(|scenario| {
-                scenario
-                    .metadata
-                    .get("test_type")
-                    .map(|t| t == test_type)
-                    .unwrap_or(false)
-            })
+            .filter(|scenario| scenario.metadata.get("test_type").map(|t| t == test_type).unwrap_or(false))
             .collect()
     }
 
@@ -450,10 +435,7 @@ impl TestFixtures {
 
     /// Get simple scenarios for unit testing
     pub fn unit_test_scenarios() -> Vec<TestScenario> {
-        vec![
-            TestDataBuilder::typescript_with_issues(),
-            TestDataBuilder::clean_typescript(),
-        ]
+        vec![TestDataBuilder::typescript_with_issues(), TestDataBuilder::clean_typescript()]
     }
 
     /// Get complex scenarios for integration testing

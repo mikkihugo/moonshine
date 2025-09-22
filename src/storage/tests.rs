@@ -7,10 +7,10 @@
 //! @complexity medium
 //! @since 2.0.0
 
-use std::collections::HashMap;
 use super::*;
-use crate::testing::builders::{AnalysisResultsBuilder, AiSuggestionBuilder};
 use crate::testing::assertions::MoonShineAssertions;
+use crate::testing::builders::{AiSuggestionBuilder, AnalysisResultsBuilder};
+use std::collections::HashMap;
 
 #[tokio::test]
 async fn test_storage_initialization() {
@@ -88,9 +88,7 @@ async fn test_bulk_operations() {
         let results = AnalysisResultsBuilder::new()
             .files_processed(i)
             .processing_time(i as u64 * 100)
-            .suggestion(AiSuggestionBuilder::info()
-                .message(&format!("Bulk test suggestion {}", i))
-                .build())
+            .suggestion(AiSuggestionBuilder::info().message(&format!("Bulk test suggestion {}", i)).build())
             .build();
         analyses.insert(key, results);
     }
@@ -152,9 +150,7 @@ async fn test_concurrent_access() {
             let key = format!("concurrent_{}", i);
             let results = AnalysisResultsBuilder::new()
                 .files_processed(i)
-                .suggestion(AiSuggestionBuilder::info()
-                    .message(&format!("Concurrent test {}", i))
-                    .build())
+                .suggestion(AiSuggestionBuilder::info().message(&format!("Concurrent test {}", i)).build())
                 .build();
 
             storage.store_analysis(&key, &results).await.unwrap();
@@ -185,13 +181,15 @@ async fn test_storage_limits() {
     let mut storage = Storage::new().await.unwrap();
 
     // Test large data storage
-    let large_suggestions: Vec<_> = (0..1000).map(|i| {
-        AiSuggestionBuilder::warning()
-            .message(&format!("Large dataset suggestion {}", i))
-            .file_path(&format!("src/large_file_{}.ts", i / 100))
-            .line_number(i % 1000 + 1)
-            .build()
-    }).collect();
+    let large_suggestions: Vec<_> = (0..1000)
+        .map(|i| {
+            AiSuggestionBuilder::warning()
+                .message(&format!("Large dataset suggestion {}", i))
+                .file_path(&format!("src/large_file_{}.ts", i / 100))
+                .line_number(i % 1000 + 1)
+                .build()
+        })
+        .collect();
 
     let large_results = AnalysisResultsBuilder::new()
         .suggestions(large_suggestions)
@@ -261,16 +259,20 @@ async fn test_storage_serialization() {
 
     // Create complex analysis results with various data types
     let complex_results = AnalysisResultsBuilder::new()
-        .suggestion(AiSuggestionBuilder::error()
-            .message("Complex error with special chars: 🚀💥🔥")
-            .file_path("src/unicode_test.ts")
-            .confidence_score(0.95)
-            .build())
-        .suggestion(AiSuggestionBuilder::warning()
-            .message("Warning with newlines\nand\ttabs")
-            .file_path("src/formatting_test.ts")
-            .confidence_score(0.75)
-            .build())
+        .suggestion(
+            AiSuggestionBuilder::error()
+                .message("Complex error with special chars: 🚀💥🔥")
+                .file_path("src/unicode_test.ts")
+                .confidence_score(0.95)
+                .build(),
+        )
+        .suggestion(
+            AiSuggestionBuilder::warning()
+                .message("Warning with newlines\nand\ttabs")
+                .file_path("src/formatting_test.ts")
+                .confidence_score(0.75)
+                .build(),
+        )
         .files_processed(42)
         .processing_time(1337)
         .metadata("complex_field", "complex_value")

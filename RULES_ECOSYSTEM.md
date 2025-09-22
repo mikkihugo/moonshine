@@ -29,7 +29,7 @@ The moon-shine WASM extension now features a comprehensive, enterprise-grade OXC
 
 ### Technical Architecture Highlights
 
-- **🎯 Zero SunLinter Overlap**: Complementary static analysis vs AI behavioral rules
+- **🎯 Zero Overlap**: Complementary static analysis vs AI behavioral rules
 - **🚀 WASM-First Design**: Sub-1ms execution per rule, <1MB memory per module
 - **🤖 AI Enhancement Layer**: Confidence-scored suggestions for every rule violation
 - **🔧 Enterprise Integration**: Full registry system with 7 rule categories and 4 fix statuses

@@ -8,14 +8,14 @@
 //! @complexity medium
 //! @since 2.0.0
 
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use async_trait::async_trait;
 
 use crate::analysis::{AnalysisResults, MoonShineResponse};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 use crate::config::MoonShineConfig;
-use crate::error::{Result, Error};
+use crate::error::{Error, Result};
+use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Mock AI provider for isolated testing
 #[derive(Debug, Clone)]
@@ -74,7 +74,9 @@ impl MockAiProvider {
 
         let should_fail = *self.should_fail.lock().unwrap();
         if should_fail {
-            return Err(Error::Configuration { message: "Mock failure".to_string() });
+            return Err(Error::Configuration {
+                message: "Mock failure".to_string(),
+            });
         }
 
         let mut responses = self.responses.lock().unwrap();
@@ -124,10 +126,11 @@ impl MockFileSystem {
         *count += 1;
 
         let files = self.files.lock().unwrap();
-        files
-            .get(path)
-            .cloned()
-            .ok_or_else(|| Error::Config { message: format!("File not found: {}", path), field: None, value: None })
+        files.get(path).cloned().ok_or_else(|| Error::Config {
+            message: format!("File not found: {}", path),
+            field: None,
+            value: None,
+        })
     }
 
     /// Write file to mock file system
@@ -200,7 +203,11 @@ impl MockConfigProvider {
 
         let should_fail = *self.should_fail_load.lock().unwrap();
         if should_fail {
-            return Err(Error::Config { message: "Mock config load failure".to_string(), field: None, value: None });
+            return Err(Error::Config {
+                message: "Mock config load failure".to_string(),
+                field: None,
+                value: None,
+            });
         }
 
         let config = self.config.lock().unwrap();
@@ -258,7 +265,10 @@ impl MockWorkflowEngine {
 
         let should_fail = *self.should_fail.lock().unwrap();
         if should_fail {
-            return Err(Error::Config { message: "Mock workflow failure".to_string(), field: None });
+            return Err(Error::Config {
+                message: "Mock workflow failure".to_string(),
+                field: None,
+            });
         }
 
         // Simulate execution time
@@ -271,21 +281,19 @@ impl MockWorkflowEngine {
         } else {
             // Return default mock results
             Ok(AnalysisResults {
-                suggestions: vec![
-                    LintIssue {
-                        message: "Mock suggestion".to_string(),
-                        severity: SuggestionSeverity::Info,
-                        category: SuggestionCategory::BestPractices,
-                        line: 1,
-                        column: 1,
-                        rule_id: Some("mock-rule".to_string()),
-                        suggested_fix: Some("Mock fix".to_string()),
-                        confidence: 0.9,
-                        auto_fixable: false,
-                        impact_score: 0,
-                        related_suggestions: vec![],
-                    }
-                ],
+                suggestions: vec![LintIssue {
+                    message: "Mock suggestion".to_string(),
+                    severity: SuggestionSeverity::Info,
+                    category: SuggestionCategory::BestPractices,
+                    line: 1,
+                    column: 1,
+                    rule_id: Some("mock-rule".to_string()),
+                    suggested_fix: Some("Mock fix".to_string()),
+                    confidence: 0.9,
+                    auto_fixable: false,
+                    impact_score: 0,
+                    related_suggestions: vec![],
+                }],
                 // files_processed, processing_time_ms, metadata fields removed
                 ..Default::default()
             })
@@ -322,7 +330,10 @@ impl MockCache {
     pub fn put(&self, key: &str, value: &str) -> Result<()> {
         let should_fail = *self.should_fail.lock().unwrap();
         if should_fail {
-            return Err(Error::Config { message: "Mock cache failure".to_string(), field: None });
+            return Err(Error::Config {
+                message: "Mock cache failure".to_string(),
+                field: None,
+            });
         }
 
         let mut cache = self.cache.lock().unwrap();
@@ -418,9 +429,8 @@ export default Component;
         );
 
         // Setup expected AI responses
-        self.ai_provider.expect_response(
-            r#"{"suggestions": [{"message": "Use proper logging", "severity": "warning"}]}"#,
-        );
+        self.ai_provider
+            .expect_response(r#"{"suggestions": [{"message": "Use proper logging", "severity": "warning"}]}"#);
 
         // Setup cache data
         let _ = self.cache.put("analysis:src/component.tsx", "cached_result");
@@ -428,9 +438,7 @@ export default Component;
 
     /// Verify all mocks were called as expected
     pub fn verify_all(&self) -> bool {
-        self.ai_provider.verify_prompts()
-            && self.file_system.read_count() > 0
-            && self.config_provider.load_count() > 0
+        self.ai_provider.verify_prompts() && self.file_system.read_count() > 0 && self.config_provider.load_count() > 0
     }
 }
 

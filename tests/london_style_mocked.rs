@@ -3,13 +3,13 @@
 //! Mockist TDD approach with complete isolation and behavior verification.
 //! Tests focus on interactions between objects rather than state.
 
-use moon_shine::*;
-use moon_shine::testing::*;
 use mockall::predicate::*;
 use mockall::*;
-use std::collections::HashMap;
+use moon_shine::testing::*;
+use moon_shine::*;
 use pretty_assertions::assert_eq;
 use rstest::*;
+use std::collections::HashMap;
 use test_case::test_case;
 
 /// Mock AI provider for testing AI interactions
@@ -116,10 +116,7 @@ mod ai_assistance_tests {
     fn test_prompt_optimization_workflow() {
         let mut mock_ai = MockAIProvider::new();
 
-        let input_prompts = vec![
-            "Fix this code".to_string(),
-            "Make it better".to_string(),
-        ];
+        let input_prompts = vec!["Fix this code".to_string(), "Make it better".to_string()];
 
         let expected_optimized = vec![
             "Fix TypeScript compilation errors and improve code quality".to_string(),
@@ -183,11 +180,7 @@ mod file_operations_tests {
     fn test_file_listing_with_pattern_matching() {
         let mut mock_fs = MockFileSystem::new();
 
-        let expected_files = vec![
-            "src/app.ts".to_string(),
-            "src/utils.ts".to_string(),
-            "src/components/button.tsx".to_string(),
-        ];
+        let expected_files = vec!["src/app.ts".to_string(), "src/utils.ts".to_string(), "src/components/button.tsx".to_string()];
 
         mock_fs
             .expect_list_files()
@@ -207,17 +200,9 @@ mod file_operations_tests {
     fn test_file_existence_check() {
         let mut mock_fs = MockFileSystem::new();
 
-        mock_fs
-            .expect_file_exists()
-            .with(eq("tsconfig.json"))
-            .times(1)
-            .returning(|_| true);
+        mock_fs.expect_file_exists().with(eq("tsconfig.json")).times(1).returning(|_| true);
 
-        mock_fs
-            .expect_file_exists()
-            .with(eq("missing.ts"))
-            .times(1)
-            .returning(|_| false);
+        mock_fs.expect_file_exists().with(eq("missing.ts")).times(1).returning(|_| false);
 
         assert!(mock_fs.file_exists("tsconfig.json"));
         assert!(!mock_fs.file_exists("missing.ts"));
@@ -233,10 +218,7 @@ mod configuration_tests {
         let mut mock_config = MockConfigProvider::new();
 
         // Mock configuration behavior
-        mock_config
-            .expect_get_ai_model()
-            .times(1)
-            .returning(|| Some("claude-3-opus".to_string()));
+        mock_config.expect_get_ai_model().times(1).returning(|| Some("claude-3-opus".to_string()));
 
         mock_config
             .expect_get_include_patterns()
@@ -353,17 +335,9 @@ mod workflow_coordination_tests {
     fn test_execution_order_calculation() {
         let mut mock_executor = MockWorkflowExecutor::new();
 
-        let expected_order = vec![
-            "parse".to_string(),
-            "analyze".to_string(),
-            "lint".to_string(),
-            "format".to_string(),
-        ];
+        let expected_order = vec!["parse".to_string(), "analyze".to_string(), "lint".to_string(), "format".to_string()];
 
-        mock_executor
-            .expect_get_execution_order()
-            .times(1)
-            .returning(move || expected_order.clone());
+        mock_executor.expect_get_execution_order().times(1).returning(move || expected_order.clone());
 
         let order = mock_executor.get_execution_order();
 
@@ -404,10 +378,7 @@ mod complex_workflow_orchestration_tests {
         let mut mock_executor = MockWorkflowExecutor::new();
 
         // Set up the complete interaction chain
-        mock_config
-            .expect_get_ai_model()
-            .times(1)
-            .returning(|| Some("claude-3-opus".to_string()));
+        mock_config.expect_get_ai_model().times(1).returning(|| Some("claude-3-opus".to_string()));
 
         mock_fs
             .expect_list_files()
@@ -423,21 +394,14 @@ mod complex_workflow_orchestration_tests {
 
         mock_ai
             .expect_analyze_code()
-            .with(
-                eq("function main() { console.log('Hello'); }"),
-                eq("typescript")
-            )
+            .with(eq("function main() { console.log('Hello'); }"), eq("typescript"))
             .times(1)
             .returning(|_, _| Ok("Analysis: Code quality is good".to_string()));
 
         mock_executor
             .expect_get_execution_order()
             .times(1)
-            .returning(|| vec![
-                "discovery".to_string(),
-                "analysis".to_string(),
-                "reporting".to_string(),
-            ]);
+            .returning(|| vec!["discovery".to_string(), "analysis".to_string(), "reporting".to_string()]);
 
         // Execute the coordinated workflow
         let ai_model = mock_config.get_ai_model();
@@ -503,17 +467,21 @@ mod complex_workflow_orchestration_tests {
             .expect_execute_step()
             .with(eq("parallel_analyze_1"), eq(&context1))
             .times(1)
-            .returning(|_, _| Ok(maplit::hashmap! {
-                "result".to_string() => "analysis1_complete".to_string(),
-            }));
+            .returning(|_, _| {
+                Ok(maplit::hashmap! {
+                    "result".to_string() => "analysis1_complete".to_string(),
+                })
+            });
 
         mock_executor
             .expect_execute_step()
             .with(eq("parallel_analyze_2"), eq(&context2))
             .times(1)
-            .returning(|_, _| Ok(maplit::hashmap! {
-                "result".to_string() => "analysis2_complete".to_string(),
-            }));
+            .returning(|_, _| {
+                Ok(maplit::hashmap! {
+                    "result".to_string() => "analysis2_complete".to_string(),
+                })
+            });
 
         // Execute parallel steps
         let result1 = mock_executor.execute_step("parallel_analyze_1", &context1);
@@ -585,14 +553,10 @@ mod mock_verification_tests {
         let mut mock_ai = MockAIProvider::new();
 
         // Expect this method is never called
-        mock_ai
-            .expect_suggest_fixes()
-            .times(0);
+        mock_ai.expect_suggest_fixes().times(0);
 
         // Only call analyze_code, not suggest_fixes
-        mock_ai
-            .expect_analyze_code()
-            .returning(|_, _| Ok("Clean code".to_string()));
+        mock_ai.expect_analyze_code().returning(|_, _| Ok("Clean code".to_string()));
 
         let _result = mock_ai.analyze_code("clean code", "typescript");
 
@@ -619,23 +583,17 @@ impl MockScenarioBuilder {
     }
 
     pub fn with_successful_analysis(mut self) -> Self {
-        self.ai_provider
-            .expect_analyze_code()
-            .returning(|_, _| Ok("Analysis successful".to_string()));
+        self.ai_provider.expect_analyze_code().returning(|_, _| Ok("Analysis successful".to_string()));
         self
     }
 
     pub fn with_file_system_errors(mut self) -> Self {
-        self.file_system
-            .expect_read_file()
-            .returning(|_| Err("IO Error".to_string()));
+        self.file_system.expect_read_file().returning(|_| Err("IO Error".to_string()));
         self
     }
 
     pub fn with_default_config(mut self) -> Self {
-        self.config_provider
-            .expect_get_ai_model()
-            .returning(|| Some("default-model".to_string()));
+        self.config_provider.expect_get_ai_model().returning(|| Some("default-model".to_string()));
         self
     }
 
@@ -650,10 +608,8 @@ mod scenario_builder_tests {
 
     #[rstest]
     fn test_scenario_builder_usage() {
-        let (mut mock_ai, mut mock_fs, mut mock_config, mut mock_executor) = MockScenarioBuilder::new()
-            .with_successful_analysis()
-            .with_default_config()
-            .build();
+        let (mut mock_ai, mut mock_fs, mut mock_config, mut mock_executor) =
+            MockScenarioBuilder::new().with_successful_analysis().with_default_config().build();
 
         // Use the pre-configured mocks
         let model = mock_config.get_ai_model();

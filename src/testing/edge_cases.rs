@@ -11,13 +11,13 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::testing::builders::{AnalysisResultsBuilder, ConfigBuilder, LintIssueBuilder};
-use crate::testing::fixtures::{TestDataBuilder, ExpectedIssue};
-use crate::testing::assertions::{MoonShineAssertions, ConfigAssertions};
-use crate::config::MoonShineConfig;
 use crate::analysis::AnalysisResults;
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::config::MoonShineConfig;
 use crate::error::Result;
+use crate::testing::assertions::{ConfigAssertions, MoonShineAssertions};
+use crate::testing::builders::{AnalysisResultsBuilder, ConfigBuilder, LintIssueBuilder};
+use crate::testing::fixtures::{ExpectedIssue, TestDataBuilder};
+use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Edge case test scenarios
 pub struct EdgeCaseTests;
@@ -63,9 +63,10 @@ impl EdgeCaseTests {
             EdgeCaseScenario {
                 name: "many_small_functions".to_string(),
                 description: "File with 1000 tiny functions".to_string(),
-                input_content: (0..1000).map(|i| {
-                    format!("function func{}() {{ return {}; }}\n", i, i)
-                }).collect::<Vec<_>>().join(""),
+                input_content: (0..1000)
+                    .map(|i| format!("function func{}() {{ return {}; }}\n", i, i))
+                    .collect::<Vec<_>>()
+                    .join(""),
                 expected_behavior: EdgeCaseExpectation::SuggestionsWithinRange(0, 50),
                 should_pass: true,
             },
@@ -85,7 +86,8 @@ impl EdgeCaseTests {
                         let y = ;
                     class MissingBrace
                     export default
-                "#.to_string(),
+                "#
+                .to_string(),
                 expected_behavior: EdgeCaseExpectation::ErrorsExpected,
                 should_pass: true, // Should handle gracefully
             },
@@ -307,36 +309,34 @@ impl EdgeCaseRunner {
 
         // Handle syntax errors
         if content.contains("{{{") || content.contains("unclosed") {
-            issues.push(LintIssueBuilder::error()
-                .message("Syntax error detected")
-                .line(1)
-                .build());
+            issues.push(LintIssueBuilder::error().message("Syntax error detected").line(1).build());
         }
 
         // Handle very long lines
         for (line_num, line) in content.lines().enumerate() {
             if line.len() > 1000 {
-                issues.push(LintIssueBuilder::warning()
-                    .message("Line too long - consider breaking it up")
-                    .line(line_num as u32 + 1)
-                    .build());
+                issues.push(
+                    LintIssueBuilder::warning()
+                        .message("Line too long - consider breaking it up")
+                        .line(line_num as u32 + 1)
+                        .build(),
+                );
             }
         }
 
         // Handle deeply nested structures
         if content.contains(&"{".repeat(50)) {
-            issues.push(LintIssueBuilder::warning()
-                .message("Deeply nested structure - consider refactoring")
-                .line(1)
-                .build());
+            issues.push(
+                LintIssueBuilder::warning()
+                    .message("Deeply nested structure - consider refactoring")
+                    .line(1)
+                    .build(),
+            );
         }
 
         // Handle extremely long identifiers
         if content.contains(&"a".repeat(100)) {
-            issues.push(LintIssueBuilder::warning()
-                .message("Identifier name too long")
-                .line(1)
-                .build());
+            issues.push(LintIssueBuilder::warning().message("Identifier name too long").line(1).build());
         }
 
         issues
@@ -346,19 +346,13 @@ impl EdgeCaseRunner {
     fn validate_scenario_result(&self, scenario: &EdgeCaseScenario, suggestions: &[LintIssue]) -> bool {
         match &scenario.expected_behavior {
             EdgeCaseExpectation::NoSuggestions => suggestions.is_empty(),
-            EdgeCaseExpectation::SuggestionsWithinRange(min, max) => {
-                suggestions.len() >= *min && suggestions.len() <= *max
-            },
-            EdgeCaseExpectation::ErrorsExpected => {
-                suggestions.iter().any(|s| matches!(s.severity, SuggestionSeverity::Error))
-            },
+            EdgeCaseExpectation::SuggestionsWithinRange(min, max) => suggestions.len() >= *min && suggestions.len() <= *max,
+            EdgeCaseExpectation::ErrorsExpected => suggestions.iter().any(|s| matches!(s.severity, SuggestionSeverity::Error)),
             EdgeCaseExpectation::GracefulFailure => {
                 // Should not crash - if we got here, it's graceful
                 true
-            },
-            EdgeCaseExpectation::SpecificSuggestionCount(count) => {
-                suggestions.len() == *count
-            },
+            }
+            EdgeCaseExpectation::SpecificSuggestionCount(count) => suggestions.len() == *count,
         }
     }
 }
@@ -410,8 +404,7 @@ impl EdgeCaseSummary {
             println!("\n❌ Failed edge cases:");
             for result in &self.results {
                 if !result.passed {
-                    println!("  - {}: {}", result.test_name,
-                           result.error_message.as_deref().unwrap_or("Unknown error"));
+                    println!("  - {}: {}", result.test_name, result.error_message.as_deref().unwrap_or("Unknown error"));
                 }
             }
         }
@@ -506,11 +499,15 @@ mod edge_case_tests {
             match scenario.expected_behavior {
                 EdgeCaseExpectation::NoSuggestions => {
                     // Validate expectation logic
-                    assert!(scenario.input_content.trim().is_empty() ||
-                           scenario.input_content.lines().all(|line|
-                               line.trim().is_empty() || line.trim().starts_with("//")));
-                },
-                _ => {}, // Other expectations are valid
+                    assert!(
+                        scenario.input_content.trim().is_empty()
+                            || scenario
+                                .input_content
+                                .lines()
+                                .all(|line| line.trim().is_empty() || line.trim().starts_with("//"))
+                    );
+                }
+                _ => {} // Other expectations are valid
             }
         }
     }

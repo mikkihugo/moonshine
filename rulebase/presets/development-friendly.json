@@ -1,0 +1,55 @@
+{
+  "name": "Development Friendly",
+  "description": "Helpful warnings without blocking development flow",
+  "extends": ["@moonshine/base"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "no-debugger": "warn",
+    "no-alert": "warn",
+    "eqeqeq": "warn",
+    "curly": "warn",
+
+    "prefer-const": "warn",
+    "prefer-template": "warn",
+    "object-shorthand": "warn",
+    "prefer-destructuring": "warn",
+
+    "no-eval": "warn",
+    "no-implied-eval": "warn",
+    "detect-sql-injection": "warn",
+    "no-hardcoded-secrets": "warn",
+
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/prefer-optional-chain": "warn",
+    "@typescript-eslint/prefer-nullish-coalescing": "warn",
+
+    "react/jsx-key": "warn",
+    "react/jsx-no-undef": "warn",
+    "react/jsx-uses-vars": "warn",
+    "react/no-unescaped-entities": "warn",
+
+    "node/no-missing-import": "warn",
+    "node/no-missing-require": "warn",
+    "node/no-deprecated-api": "warn",
+
+    "jest/no-focused-tests": "warn",
+    "jest/no-disabled-tests": "warn",
+    "jest/valid-expect": "warn",
+
+    "@moonshine/ai-code-quality-oracle": "info",
+    "@moonshine/cognitive-analysis-1": "info",
+    "@moonshine/patterns-analysis-1": "info"
+  },
+  "settings": {
+    "moonshine": {
+      "ai_enabled": true,
+      "development_mode": true,
+      "categories": ["CodeQuality", "TypeScript", "React", "NodeJS", "Testing"],
+      "execution_timeout": 5000,
+      "enable_helpful_suggestions": true,
+      "auto_fix_safe_issues": true
+    }
+  }
+}

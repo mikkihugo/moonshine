@@ -8,12 +8,12 @@
 //! @complexity medium
 //! @since 2.0.0
 
-use std::collections::HashMap;
 use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 
 use crate::analysis::{AnalysisResults, MoonShineResponse};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 use crate::linter::SuggestionCategory;
+use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 // AI Suggestion Builder for testing
 #[derive(Debug, Clone)]
@@ -165,7 +165,6 @@ impl LintIssueBuilder {
     }
 }
 
-
 /// Builder for analysis results
 #[derive(Debug, Clone)]
 pub struct AnalysisResultsBuilder {
@@ -175,9 +174,7 @@ pub struct AnalysisResultsBuilder {
 impl AnalysisResultsBuilder {
     /// Create new analysis results builder
     pub fn new() -> Self {
-        Self {
-            suggestions: Vec::new(),
-        }
+        Self { suggestions: Vec::new() }
     }
 
     /// Add suggestion
@@ -210,8 +207,20 @@ impl AnalysisResultsBuilder {
     /// Create results with TypeScript issues
     pub fn typescript_issues() -> Self {
         Self::new()
-            .suggestion(LintIssueBuilder::new().rule_name("typescript_any_type").message("TypeScript any type used").severity(LintSeverity::Warning).build())
-            .suggestion(LintIssueBuilder::new().rule_name("console_log_warning").message("console.log used").severity(LintSeverity::Warning).build())
+            .suggestion(
+                LintIssueBuilder::new()
+                    .rule_name("typescript_any_type")
+                    .message("TypeScript any type used")
+                    .severity(LintSeverity::Warning)
+                    .build(),
+            )
+            .suggestion(
+                LintIssueBuilder::new()
+                    .rule_name("console_log_warning")
+                    .message("console.log used")
+                    .severity(LintSeverity::Warning)
+                    .build(),
+            )
     }
 
     /// Create results for TypeScript analysis
@@ -260,12 +269,7 @@ impl AnalysisResultsBuilder {
 
         // Add suggestions proportional to file count
         for i in 0..file_count.min(10) {
-            builder = builder.suggestion(
-                LintIssueBuilder::warning()
-                    .line(i as u32)
-                    .message(&format!("Issue in file {}", i))
-                    .build(),
-            );
+            builder = builder.suggestion(LintIssueBuilder::warning().line(i as u32).message(&format!("Issue in file {}", i)).build());
         }
 
         builder
@@ -445,10 +449,7 @@ impl WorkflowStepBuilder {
 
     /// Create pre-analysis step
     pub fn pre_analysis() -> Self {
-        Self::new("pre_analysis")
-            .description("Prepare files for analysis")
-            .duration(50)
-            .success()
+        Self::new("pre_analysis").description("Prepare files for analysis").duration(50).success()
     }
 
     /// Create analysis step
@@ -552,19 +553,14 @@ mod tests {
     #[test]
     fn test_analysis_results_builder() {
         let issue = LintIssueBuilder::warning().build();
-        let results = AnalysisResultsBuilder::new()
-            .suggestion(issue)
-            .build();
+        let results = AnalysisResultsBuilder::new().suggestion(issue).build();
 
         assert_eq!(results.suggestions.len(), 1);
     }
 
     #[test]
     fn test_config_builder() {
-        let config = ConfigBuilder::new()
-            .ai_model("custom-model")
-            .include_pattern("**/*.tsx")
-            .build();
+        let config = ConfigBuilder::new().ai_model("custom-model").include_pattern("**/*.tsx").build();
 
         assert_eq!(config.ai_model.as_deref(), Some("custom-model"));
         assert!(config.include_patterns.as_ref().map_or(false, |v| v.contains(&"**/*.tsx".to_string())));

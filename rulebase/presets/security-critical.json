@@ -1,0 +1,43 @@
+{
+  "name": "Security Critical",
+  "description": "Maximum security rules for banking, healthcare, and critical infrastructure",
+  "extends": ["@moonshine/base"],
+  "rules": {
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-script-url": "error",
+    "detect-sql-injection": "error",
+    "no-hardcoded-secrets": "error",
+    "no-security-vulnerabilities": "error",
+    "no-csrf-vulnerability": "error",
+    "no-xxe": "error",
+    "no-ssrf": "error",
+    "no-prototype-pollution": "error",
+    "no-path-traversal": "error",
+    "no-command-injection": "error",
+    "no-insecure-deserialization": "error",
+    "no-timing-attack": "error",
+    "no-weak-crypto": "error",
+    "secure-cookies": "error",
+    "no-open-redirect": "error",
+    "content-security-policy": "error",
+    "no-cors-wildcard": "error",
+    "@moonshine/production-excellence-suite": "error",
+    "@moonshine/excellence-1": "error",
+    "node/no-deprecated-api": "error",
+    "node/no-process-exit": "error",
+    "node/no-sync": "error",
+    "no-console": "error",
+    "no-debugger": "error",
+    "no-alert": "error"
+  },
+  "settings": {
+    "moonshine": {
+      "ai_enabled": true,
+      "security_mode": "strict",
+      "categories": ["Security", "Hybrid"],
+      "execution_timeout": 30000,
+      "enable_all_security_checks": true
+    }
+  }
+}

@@ -36,7 +36,7 @@ let enhanced_issues = ai_enhancer.enhance_lint_issues(lint_issues, source, &prog
    - Uses visitor pattern for AST traversal
    - Maintains compatibility with OXC diagnostic format
 
-3. **AI Enhancement Layer** (`hybrid_linter.rs`)
+3. **AI Enhancement Layer** (Workflow + Provider Router)
    - Enhances rule violations with AI insights
    - Generates intelligent fix suggestions
    - Provides contextual explanations
@@ -128,7 +128,6 @@ pub fn enhance_lint_issues(&self, issues: Vec<LintIssue>) -> Vec<LintIssue> {
 
 ### Core Architecture
 - `src/oxc_rules_adapter.rs` - WASM-safe rule engine with OXC compatibility
-- `src/hybrid_linter.rs` - Main linter combining OXC + AI capabilities
 - `HYBRID_ARCHITECTURE.md` - Detailed architectural documentation
 - `CONVERSION_PATTERNS.md` - Patterns for converting SunLint JS → OXC Rust
 

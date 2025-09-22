@@ -30,11 +30,10 @@ async fn test_chain_of_thought_predictor() {
         DspySignature::new()
             .input("problem", "Programming problem to solve")
             .output("solution", "Step-by-step solution")
-            .build()
+            .build(),
     );
 
-    let input = DspyInput::new()
-        .field("problem", "How to fix TypeScript 'any' type usage?");
+    let input = DspyInput::new().field("problem", "How to fix TypeScript 'any' type usage?");
 
     let result = predictor.predict(input).await;
     assert!(result.is_ok());
@@ -66,8 +65,7 @@ async fn test_few_shot_predictor() {
         metadata: HashMap::new(),
     });
 
-    let input = DspyInput::new()
-        .field("code", "const z: any = 'hello';");
+    let input = DspyInput::new().field("code", "const z: any = 'hello';");
 
     let result = predictor.predict(input).await;
     assert!(result.is_ok());
@@ -86,8 +84,7 @@ async fn test_react_predictor() {
 
     let mut predictor = ReactPredictor::new(signature);
 
-    let input = DspyInput::new()
-        .field("task", "Analyze the complexity of this function and suggest improvements");
+    let input = DspyInput::new().field("task", "Analyze the complexity of this function and suggest improvements");
 
     let result = predictor.predict(input).await;
     assert!(result.is_ok());
@@ -129,8 +126,7 @@ async fn test_copro_optimizer() {
     let optimized_predictor = optimization_result.unwrap();
 
     // Test optimized predictor
-    let input = DspyInput::new()
-        .field("code", "let y: any = 'test';");
+    let input = DspyInput::new().field("code", "let y: any = 'test';");
 
     let result = optimized_predictor.predict(input).await;
     assert!(result.is_ok());
@@ -165,8 +161,7 @@ async fn test_teleprompter_optimization() {
     let optimized_predictor = optimized.unwrap();
 
     // Test with new input
-    let input = DspyInput::new()
-        .field("problem", "Nested callback functions");
+    let input = DspyInput::new().field("problem", "Nested callback functions");
 
     let result = optimized_predictor.predict(input).await;
     assert!(result.is_ok());
@@ -232,18 +227,14 @@ async fn test_signature_macro_generation() {
 
 #[tokio::test]
 async fn test_dspy_metrics_collection() {
-    let signature = DspySignature::new()
-        .input("query", "User query")
-        .output("response", "AI response")
-        .build();
+    let signature = DspySignature::new().input("query", "User query").output("response", "AI response").build();
 
     let mut predictor = ChainOfThoughtPredictor::new(signature);
     let mut metrics_collector = DspyMetrics::new();
 
     // Simulate multiple predictions and collect metrics
     for i in 0..5 {
-        let input = DspyInput::new()
-            .field("query", &format!("Test query {}", i));
+        let input = DspyInput::new().field("query", &format!("Test query {}", i));
 
         let start_time = std::time::Instant::now();
         let result = predictor.predict(input).await;
@@ -251,11 +242,7 @@ async fn test_dspy_metrics_collection() {
 
         assert!(result.is_ok());
 
-        metrics_collector.record_prediction(
-            execution_time,
-            result.is_ok(),
-            if result.is_ok() { result.unwrap().fields.len() } else { 0 }
-        );
+        metrics_collector.record_prediction(execution_time, result.is_ok(), if result.is_ok() { result.unwrap().fields.len() } else { 0 });
     }
 
     let summary = metrics_collector.get_summary();
@@ -290,9 +277,7 @@ async fn test_dspy_chain_composition() {
     let issues = analyze_result.get_field("issues").unwrap();
 
     // Step 2: Fix issues
-    let fix_input = DspyInput::new()
-        .field("code", input_code)
-        .field("issues", issues);
+    let fix_input = DspyInput::new().field("code", input_code).field("issues", issues);
     let fix_result = fixer.predict(fix_input).await.unwrap();
     let fixed_code = fix_result.get_field("fixed_code").unwrap();
 
@@ -331,9 +316,7 @@ async fn test_dspy_context_preservation() {
     let mut predictor = ChainOfThoughtPredictor::new(signature);
 
     // First interaction
-    let input1 = DspyInput::new()
-        .field("context", "")
-        .field("query", "What is TypeScript?");
+    let input1 = DspyInput::new().field("context", "").field("query", "What is TypeScript?");
 
     let result1 = predictor.predict(input1).await.unwrap();
     let response1 = result1.get_field("response").unwrap();
@@ -384,9 +367,7 @@ async fn test_dspy_batch_processing() {
     }
 
     // Extract quality scores
-    let scores: Vec<_> = batch_results.iter()
-        .map(|r| r.as_ref().unwrap().get_field("quality_score").unwrap())
-        .collect();
+    let scores: Vec<_> = batch_results.iter().map(|r| r.as_ref().unwrap().get_field("quality_score").unwrap()).collect();
 
     assert_eq!(scores.len(), 5);
     for score in &scores {
@@ -406,16 +387,12 @@ fn test_dspy_signature_validation() {
     assert!(valid_sig.validate().is_ok());
 
     // Test invalid signature (no inputs)
-    let invalid_sig = DspySignature::new()
-        .output("output1", "Output without inputs")
-        .build();
+    let invalid_sig = DspySignature::new().output("output1", "Output without inputs").build();
 
     assert!(invalid_sig.validate().is_err());
 
     // Test invalid signature (no outputs)
-    let invalid_sig2 = DspySignature::new()
-        .input("input1", "Input without outputs")
-        .build();
+    let invalid_sig2 = DspySignature::new().input("input1", "Input without outputs").build();
 
     assert!(invalid_sig2.validate().is_err());
 }
@@ -428,26 +405,22 @@ fn test_dspy_input_output_validation() {
         .build();
 
     // Valid input
-    let valid_input = DspyInput::new()
-        .field("required_field", "some value");
+    let valid_input = DspyInput::new().field("required_field", "some value");
 
     assert!(signature.validate_input(&valid_input).is_ok());
 
     // Invalid input (missing required field)
-    let invalid_input = DspyInput::new()
-        .field("wrong_field", "wrong value");
+    let invalid_input = DspyInput::new().field("wrong_field", "wrong value");
 
     assert!(signature.validate_input(&invalid_input).is_err());
 
     // Valid output
-    let valid_output = DspyOutput::new()
-        .field("result", "some result");
+    let valid_output = DspyOutput::new().field("result", "some result");
 
     assert!(signature.validate_output(&valid_output).is_ok());
 
     // Invalid output (missing required field)
-    let invalid_output = DspyOutput::new()
-        .field("wrong_field", "wrong value");
+    let invalid_output = DspyOutput::new().field("wrong_field", "wrong value");
 
     assert!(signature.validate_output(&invalid_output).is_err());
 }

@@ -43,9 +43,9 @@ macro_rules! assert_moonshine {
 use std::time::Duration;
 
 use crate::analysis::{AnalysisResults, MoonShineResponse};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 use crate::config::MoonShineConfig;
-use crate::error::{Result, Error};
+use crate::error::{Error, Result};
+use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Custom assertion trait for MoonShine analysis results
 pub trait MoonShineAssertions {
@@ -86,22 +86,15 @@ impl MoonShineAssertions for AnalysisResults {
             Ok(())
         } else {
             Err(Error::Config {
-                message: format!(
-                    "Expected {} suggestions, got {}",
-                    expected,
-                    self.suggestions.len()
-                ),
+                message: format!("Expected {} suggestions, got {}", expected, self.suggestions.len()),
                 field: None,
-                value: None
+                value: None,
             })
         }
     }
 
     fn assert_has_error_severity(&self) -> Result<()> {
-        let has_error = self
-            .suggestions
-            .iter()
-            .any(|s| matches!(s.severity, LintSeverity::Error));
+        let has_error = self.suggestions.iter().any(|s| matches!(s.severity, LintSeverity::Error));
 
         if has_error {
             Ok(())
@@ -109,16 +102,13 @@ impl MoonShineAssertions for AnalysisResults {
             Err(Error::Config {
                 message: "Expected at least one error severity issue".to_string(),
                 field: None,
-                value: None
+                value: None,
             })
         }
     }
 
     fn assert_has_warning_severity(&self) -> Result<()> {
-        let has_warning = self
-            .suggestions
-            .iter()
-            .any(|s| matches!(s.severity, LintSeverity::Warning));
+        let has_warning = self.suggestions.iter().any(|s| matches!(s.severity, LintSeverity::Warning));
 
         if has_warning {
             Ok(())
@@ -126,16 +116,13 @@ impl MoonShineAssertions for AnalysisResults {
             Err(Error::Config {
                 message: "Expected at least one warning severity issue".to_string(),
                 field: None,
-                value: None
+                value: None,
             })
         }
     }
 
     fn assert_has_info_severity(&self) -> Result<()> {
-        let has_info = self
-            .suggestions
-            .iter()
-            .any(|s| matches!(s.severity, LintSeverity::Info));
+        let has_info = self.suggestions.iter().any(|s| matches!(s.severity, LintSeverity::Info));
 
         if has_info {
             Ok(())
@@ -143,16 +130,13 @@ impl MoonShineAssertions for AnalysisResults {
             Err(Error::Config {
                 message: "Expected at least one info severity issue".to_string(),
                 field: None,
-                value: None
+                value: None,
             })
         }
     }
 
     fn assert_contains_message(&self, pattern: &str) -> Result<()> {
-        let has_pattern = self
-            .suggestions
-            .iter()
-            .any(|s| s.message.contains(pattern));
+        let has_pattern = self.suggestions.iter().any(|s| s.message.contains(pattern));
 
         if has_pattern {
             Ok(())
@@ -160,7 +144,7 @@ impl MoonShineAssertions for AnalysisResults {
             Err(Error::Config {
                 message: format!("Expected issue message containing '{}'", pattern),
                 field: None,
-                value: None
+                value: None,
             })
         }
     }
@@ -172,7 +156,7 @@ impl MoonShineAssertions for AnalysisResults {
             Err(Error::Config {
                 message: format!("Expected no issues, got {}", self.suggestions.len()),
                 field: None,
-                value: None
+                value: None,
             })
         }
     }
@@ -223,8 +207,8 @@ impl ConfigAssertions for MoonShineConfig {
         if self.ai_model.as_ref().map_or(false, |s| !s.is_empty()) {
             Ok(())
         } else {
-            Err(Error::Configuration { message:
-                "Expected AI model to be configured".to_string(),
+            Err(Error::Configuration {
+                message: "Expected AI model to be configured".to_string(),
             })
         }
     }
@@ -291,7 +275,7 @@ impl PerformanceAssertions for PerformanceMetrics {
             Ok(())
         } else {
             Err(Error::Configuration {
-                message: format!("Memory usage {}MB exceeds maximum {}MB", self.memory_usage_mb, max_mb)
+                message: format!("Memory usage {}MB exceeds maximum {}MB", self.memory_usage_mb, max_mb),
             })
         }
     }
@@ -307,7 +291,7 @@ impl PerformanceAssertions for PerformanceMetrics {
             Ok(())
         } else {
             Err(Error::Configuration {
-                message: format!("Throughput {:.2} ops/sec below minimum {:.2} ops/sec", actual_throughput, min_ops_per_sec)
+                message: format!("Throughput {:.2} ops/sec below minimum {:.2} ops/sec", actual_throughput, min_ops_per_sec),
             })
         }
     }

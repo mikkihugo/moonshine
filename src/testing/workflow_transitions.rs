@@ -8,15 +8,15 @@
 //! @complexity high
 //! @since 2.0.0
 
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
-use crate::testing::builders::{AnalysisResultsBuilder, LintIssueBuilder};
-use crate::testing::assertions::PerformanceAssertions;
-use crate::config::MoonShineConfig;
 use crate::analysis::AnalysisResults;
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::config::MoonShineConfig;
 use crate::error::Result;
+use crate::testing::assertions::PerformanceAssertions;
+use crate::testing::builders::{AnalysisResultsBuilder, LintIssueBuilder};
+use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Workflow phase definition for testing
 #[derive(Debug, Clone)]
@@ -290,9 +290,10 @@ impl WorkflowTransitionTester {
         let suggestions = self.simulate_phase_execution(phase).await;
 
         // Check for restart condition (validation phase only)
-        let restart_triggered = phase.validation && suggestions.iter().any(|s|
-            matches!(s.severity, SuggestionSeverity::Error) && s.message.contains("requires restart")
-        );
+        let restart_triggered = phase.validation
+            && suggestions
+                .iter()
+                .any(|s| matches!(s.severity, SuggestionSeverity::Error) && s.message.contains("requires restart"));
 
         // Record feedback loop if this phase creates one
         if restart_triggered {
@@ -328,51 +329,64 @@ impl WorkflowTransitionTester {
 
         match phase.name.as_str() {
             "tsc" => {
-                suggestions.push(LintIssueBuilder::error()
-                    .message("Type 'string' is not assignable to type 'number'")
-                    .category(SuggestionCategory::TypeSafety)
-                    .line(42)
-                    .build());
-            },
+                suggestions.push(
+                    LintIssueBuilder::error()
+                        .message("Type 'string' is not assignable to type 'number'")
+                        .category(SuggestionCategory::TypeSafety)
+                        .line(42)
+                        .build(),
+                );
+            }
             "eslint-fix" => {
-                suggestions.push(LintIssueBuilder::warning()
-                    .message("Prefer const assertion")
-                    .category(SuggestionCategory::CodeStyle)
-                    .line(15)
-                    .build());
-            },
+                suggestions.push(
+                    LintIssueBuilder::warning()
+                        .message("Prefer const assertion")
+                        .category(SuggestionCategory::CodeStyle)
+                        .line(15)
+                        .build(),
+                );
+            }
             "oxc-rules-analysis" => {
-                suggestions.push(LintIssueBuilder::info()
-                    .message("Consider using nullish coalescing operator")
-                    .category(SuggestionCategory::BestPractices)
-                    .line(23)
-                    .build());
-            },
+                suggestions.push(
+                    LintIssueBuilder::info()
+                        .message("Consider using nullish coalescing operator")
+                        .category(SuggestionCategory::BestPractices)
+                        .line(23)
+                        .build(),
+                );
+            }
             "security-analysis" => {
-                suggestions.push(LintIssueBuilder::error()
-                    .message("Potential XSS vulnerability detected")
-                    .category(SuggestionCategory::Security)
-                    .line(67)
-                    .build());
-            },
+                suggestions.push(
+                    LintIssueBuilder::error()
+                        .message("Potential XSS vulnerability detected")
+                        .category(SuggestionCategory::Security)
+                        .line(67)
+                        .build(),
+                );
+            }
             "final-validation" => {
                 // Validation phase - sometimes triggers restart
-                if self.execution_results.len() % 3 == 0 { // Every 3rd execution
-                    suggestions.push(LintIssueBuilder::error()
-                        .message("Critical validation failure - requires restart")
-                        .category(SuggestionCategory::Validation)
-                        .line(1)
-                        .build());
+                if self.execution_results.len() % 3 == 0 {
+                    // Every 3rd execution
+                    suggestions.push(
+                        LintIssueBuilder::error()
+                            .message("Critical validation failure - requires restart")
+                            .category(SuggestionCategory::Validation)
+                            .line(1)
+                            .build(),
+                    );
                 }
-            },
+            }
             _ => {
                 // Generic AI provider phases
                 if phase.command == "ai-provider" {
-                    suggestions.push(LintIssueBuilder::info()
-                        .message(format!("AI enhancement from {}", phase.name))
-                        .category(SuggestionCategory::AiEnhanced)
-                        .line(10)
-                        .build());
+                    suggestions.push(
+                        LintIssueBuilder::info()
+                            .message(format!("AI enhancement from {}", phase.name))
+                            .category(SuggestionCategory::AiEnhanced)
+                            .line(10)
+                            .build(),
+                    );
                 }
             }
         }
@@ -576,9 +590,7 @@ mod workflow_transition_tests {
         let tester = WorkflowTransitionTester::new();
 
         // Find blocking phases
-        let blocking_phases: Vec<_> = tester.phases.iter()
-            .filter(|p| p.blocking)
-            .collect();
+        let blocking_phases: Vec<_> = tester.phases.iter().filter(|p| p.blocking).collect();
 
         assert!(!blocking_phases.is_empty());
 
@@ -592,9 +604,7 @@ mod workflow_transition_tests {
         let tester = WorkflowTransitionTester::new();
 
         // Find validation phases
-        let validation_phases: Vec<_> = tester.phases.iter()
-            .filter(|p| p.validation)
-            .collect();
+        let validation_phases: Vec<_> = tester.phases.iter().filter(|p| p.validation).collect();
 
         assert_eq!(validation_phases.len(), 1);
         assert_eq!(validation_phases[0].name, "final-validation");
@@ -610,9 +620,13 @@ mod workflow_transition_tests {
 
             // Should complete within 2x expected duration (allows for variance)
             let max_allowed = phase.expected_duration_ms * 2;
-            assert!(result.execution_time.as_millis() as u64 <= max_allowed,
-                   "Phase {} took too long: {}ms > {}ms",
-                   phase.name, result.execution_time.as_millis(), max_allowed);
+            assert!(
+                result.execution_time.as_millis() as u64 <= max_allowed,
+                "Phase {} took too long: {}ms > {}ms",
+                phase.name,
+                result.execution_time.as_millis(),
+                max_allowed
+            );
         }
     }
 

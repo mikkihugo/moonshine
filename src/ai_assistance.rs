@@ -40,13 +40,7 @@ impl AiEnhancer {
     }
 
     /// Enhance lint issues with AI-powered suggestions and explanations
-    pub fn enhance_lint_issues(
-        &self,
-        lint_issues: Vec<crate::wasm_safe_linter::LintIssue>,
-        source: &str,
-        _program: &oxc_ast::ast::Program,
-        _semantic: &oxc_semantic::Semantic,
-    ) -> anyhow::Result<Vec<crate::wasm_safe_linter::LintIssue>> {
+    pub fn enhance_lint_issues(&self, lint_issues: Vec<crate::rulebase::RuleResult>, source: &str) -> anyhow::Result<Vec<crate::rulebase::RuleResult>> {
         let mut enhanced_issues = Vec::new();
 
         for mut issue in lint_issues {
@@ -81,55 +75,48 @@ impl Default for AiEnhancer {
 }
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use crate::dspy::core::settings::Settings;
-  use crate::wasm_safe_linter::LintIssue;
+    use super::*;
+    use crate::dspy::core::settings::Settings;
+    use crate::rulebase::RuleResult;
 
-  #[test]
-  fn test_new_and_default() {
-    let settings = Settings::default();
-    let enhancer = AiEnhancer::new(settings.clone()).unwrap();
-    assert_eq!(enhancer.settings, settings);
+    #[test]
+    fn test_new_and_default() {
+        let settings = Settings::default();
+        let enhancer = AiEnhancer::new(settings.clone()).unwrap();
+        assert_eq!(enhancer.settings, settings);
 
-    let default_enhancer = AiEnhancer::default();
-    assert_eq!(default_enhancer.settings, Settings::default());
-  }
+        let default_enhancer = AiEnhancer::default();
+        assert_eq!(default_enhancer.settings, Settings::default());
+    }
 
-  #[test]
-  fn test_enhance_diagnostic() {
-    let enhancer = AiEnhancer::default();
-    let result = enhancer.enhance_diagnostic("let x = 1;", "Unused variable");
-    assert_eq!(result, vec!["AI suggestion: Unused variable"]);
-  }
+    #[test]
+    fn test_enhance_diagnostic() {
+        let enhancer = AiEnhancer::default();
+        let result = enhancer.enhance_diagnostic("let x = 1;", "Unused variable");
+        assert_eq!(result, vec!["AI suggestion: Unused variable"]);
+    }
 
-  #[test]
-  fn test_explain_diagnostic() {
-    let enhancer = AiEnhancer::default();
-    let result = enhancer.explain_diagnostic("let x = 1;", "Unused variable");
-    assert_eq!(result, Some("This issue occurs because: Unused variable".to_string()));
-  }
+    #[test]
+    fn test_explain_diagnostic() {
+        let enhancer = AiEnhancer::default();
+        let result = enhancer.explain_diagnostic("let x = 1;", "Unused variable");
+        assert_eq!(result, Some("This issue occurs because: Unused variable".to_string()));
+    }
 
-  #[test]
-  fn test_suggest_fixes() {
-    let enhancer = AiEnhancer::default();
-    let result = enhancer.suggest_fixes("let x = 1;", "Unused variable");
-    assert_eq!(result, vec!["Consider fixing: Unused variable"]);
-  }
+    #[test]
+    fn test_suggest_fixes() {
+        let enhancer = AiEnhancer::default();
+        let result = enhancer.suggest_fixes("let x = 1;", "Unused variable");
+        assert_eq!(result, vec!["Consider fixing: Unused variable"]);
+    }
 
-  #[test]
-  fn test_enhance_lint_issues() {
-    let enhancer = AiEnhancer::default();
-    let mut issue = LintIssue {
-      message: "Unused variable".to_string(),
-      suggestion: None,
-      ..Default::default()
-    };
-    let issues = vec![issue.clone()];
-    // Use dummy values for oxc_ast::ast::Program and oxc_semantic::Semantic
-    let program = unsafe { std::mem::zeroed() };
-    let semantic = unsafe { std::mem::zeroed() };
-    let enhanced = enhancer.enhance_lint_issues(issues, "let x = 1;", &program, &semantic).unwrap();
-    assert_eq!(enhanced[0].message, "Unused variable (AI: Consider fixing: Unused variable)");
-    assert_eq!(enhanced[0].suggestion, Some("This issue occurs because: Unused variable".to_string()));
-  }
+    #[test]
+    fn test_enhance_lint_issues() {
+        let enhancer = AiEnhancer::default();
+        let issue = RuleResult::new("test-rule".to_string(), "Unused variable".to_string());
+        let issues = vec![issue];
+        let enhanced = enhancer.enhance_lint_issues(issues, "let x = 1;").unwrap();
+        assert_eq!(enhanced[0].message, "Unused variable (AI: Consider fixing: Unused variable)");
+        assert_eq!(enhanced[0].suggestion, Some("This issue occurs because: Unused variable".to_string()));
+    }
 }
