@@ -168,7 +168,7 @@ impl RustDocSignature {
             demos: vec![
                 // Example demonstrating comprehensive RustDoc generation
                 example! {
-                    "file_path": "input" => "src/wasm_safe_linter.rs",
+                    "file_path": "input" => "src/javascript_typescript_linter.rs",
                     "code": "input" => "pub async fn process_lint_results(results: Vec<LintResult>) -> Result<ProcessedResults> {\n    optimize_results(results).await\n}",
                     "missing_count": "input" => "1",
                     "current_coverage": "input" => "65",
@@ -874,7 +874,7 @@ pub async fn process_wasm_lint(config: LintConfig) -> Result<LintResults> {
         "#;
 
         let result = generator.generate_rustdoc(
-            "src/wasm_safe_linter.rs",
+            "src/javascript_typescript_linter.rs",
             test_code,
             75
         ).await;

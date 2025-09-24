@@ -1,0 +1,107 @@
+{
+  "security_patterns": [
+    {
+      "id": "eval-usage",
+      "name": "Eval Usage",
+      "description": "Detects dangerous eval() usage",
+      "pattern": "eval\\s*\\(",
+      "severity": "Warning",
+      "category": "security",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["*"],
+      "impact_score": 10
+    },
+    {
+      "id": "console-log",
+      "name": "Console Log",
+      "description": "Detects console.log statements",
+      "pattern": "console\\.(log|debug|info|warn|error)",
+      "severity": "Warning",
+      "category": "security",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["*"],
+      "impact_score": 3
+    },
+    {
+      "id": "hardcoded-secrets",
+      "name": "Hardcoded Secrets",
+      "description": "Detects potential hardcoded secrets",
+      "pattern": "(password|secret|key|token)\\s*[:=]\\s*['\"][^'\"]+['\"]",
+      "severity": "Warning",
+      "category": "security",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["*"],
+      "impact_score": 9
+    }
+  ],
+  "performance_patterns": [
+    {
+      "id": "nested-loops",
+      "name": "Nested Loops",
+      "description": "Detects potentially inefficient nested loops",
+      "pattern": "for\\s*\\([^}]*\\{\\s*[^}]*for\\s*\\(",
+      "severity": "Warning",
+      "category": "performance",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["typescript", "javascript"],
+      "impact_score": 7
+    },
+    {
+      "id": "sync-fs",
+      "name": "Synchronous FS",
+      "description": "Detects synchronous filesystem operations",
+      "pattern": "fs\\.(readFileSync|writeFileSync|existsSync)",
+      "severity": "Warning",
+      "category": "performance",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["typescript", "javascript"],
+      "impact_score": 6
+    }
+  ],
+  "typescript_patterns": [
+    {
+      "id": "any-type",
+      "name": "Any Type Usage",
+      "description": "Detects usage of 'any' type",
+      "pattern": ":\\s*any\\b",
+      "severity": "Info",
+      "category": "typescript",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["typescript"],
+      "impact_score": 5
+    },
+    {
+      "id": "non-null-assertion",
+      "name": "Non-null Assertion",
+      "description": "Detects risky non-null assertions",
+      "pattern": "!\\s*[;\\.,\\)\\]]",
+      "severity": "Info",
+      "category": "typescript",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["typescript"],
+      "impact_score": 6
+    }
+  ],
+  "documentation_patterns": [
+    {
+      "id": "todo-markers",
+      "name": "TODO/FIXME Markers",
+      "description": "Detects documentation markers indicating incomplete work",
+      "pattern": "(?i)(TODO|FIXME|HACK|XXX|NOTE|BUG|DEPRECATED):",
+      "severity": "Info",
+      "category": "documentation",
+      "enabled": true,
+      "fix_template": null,
+      "languages": ["*"],
+      "impact_score": 2
+    }
+  ],
+  "custom_patterns": []
+}

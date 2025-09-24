@@ -117,26 +117,24 @@ impl<'a> ComplexityAnalyzer<'a> {
                     self.exit_block();
                 }
             }
-            Statement::Class(class_decl) => {
+            Statement::ClassDeclaration(class_decl) => {
                 self.class_count += 1;
 
-                if let Some(body) = &class_decl.body {
+                let body = &class_decl.body;
                     self.enter_block();
                     for element in &body.body {
                         match element {
                             ClassElement::MethodDefinition(method) => {
-                                if let Some(Function::FunctionExpression(func)) = &method.value {
-                                    self.parameter_counts.push(func.params.items.len() as u32);
-                                    if func.r#async {
-                                        self.async_function_count += 1;
-                                    }
+                                let func = &method.value;
+                                self.parameter_counts.push(func.params.items.len() as u32);
+                                if func.r#async {
+                                    self.async_function_count += 1;
                                 }
                             }
                             _ => {}
                         }
                     }
-                    self.exit_block();
-                }
+                self.exit_block();
             }
             Statement::TSInterfaceDeclaration(_) => {
                 self.interface_count += 1;
@@ -246,7 +244,7 @@ impl<'a> ComplexityAnalyzer<'a> {
             Statement::FunctionDeclaration(_) => {
                 self.add_operator("function");
             }
-            Statement::Class(_) => {
+            Statement::ClassDeclaration(_) => {
                 self.add_operator("class");
             }
             Statement::TSInterfaceDeclaration(_) => {
@@ -346,11 +344,9 @@ impl<'a> ComplexityAnalyzer<'a> {
                     BinaryOperator::ShiftLeft => self.add_operator("<<"),
                     BinaryOperator::ShiftRight => self.add_operator(">>"),
                     BinaryOperator::ShiftRightZeroFill => self.add_operator(">>>"),
-                    BinaryOperator::BitwiseOr => self.add_operator("|"),
-                    BinaryOperator::BitwiseXor => self.add_operator("^"),
+                    BinaryOperator::BitwiseOR => self.add_operator("|"),
+                    BinaryOperator::BitwiseXOR => self.add_operator("^"),
                     BinaryOperator::BitwiseAnd => self.add_operator("&"),
-                    BinaryOperator::LogicalOr => self.add_operator("||"),
-                    BinaryOperator::LogicalAnd => self.add_operator("&&"),
                     BinaryOperator::In => self.add_operator("in"),
                     BinaryOperator::Instanceof => self.add_operator("instanceof"),
                 }
@@ -362,8 +358,8 @@ impl<'a> ComplexityAnalyzer<'a> {
             Expression::UnaryExpression(unary_expr) => {
                 // Add unary operators
                 match unary_expr.operator {
-                    UnaryOperator::Plus => self.add_operator("+"),
-                    UnaryOperator::Minus => self.add_operator("-"),
+                    UnaryOperator::UnaryPlus => self.add_operator("+"),
+                    UnaryOperator::UnaryMinus => self.add_operator("-"),
                     UnaryOperator::LogicalNot => self.add_operator("!"),
                     UnaryOperator::BitwiseNot => self.add_operator("~"),
                     UnaryOperator::Typeof => self.add_operator("typeof"),
@@ -381,6 +377,18 @@ impl<'a> ComplexityAnalyzer<'a> {
                 }
 
                 self.collect_expression_halstead(&update_expr.argument);
+            }
+            Expression::LogicalExpression(logical_expr) => {
+                // Handle logical operators (&&, ||)
+                match logical_expr.operator {
+                    LogicalOperator::And => self.add_operator("&&"),
+                    LogicalOperator::Or => self.add_operator("||"),
+                    LogicalOperator::Coalesce => self.add_operator("??"),
+                }
+
+                // Recursively analyze left and right expressions
+                self.analyze_expression(&logical_expr.left);
+                self.analyze_expression(&logical_expr.right);
             }
             Expression::AssignmentExpression(assign_expr) => {
                 // Add assignment operators
@@ -422,7 +430,8 @@ impl<'a> ComplexityAnalyzer<'a> {
                     }
                 }
             }
-            Expression::MemberExpression(member_expr) => {
+            expr if expr.as_member_expression().is_some() => {
+                let member_expr = expr.as_member_expression().unwrap();
                 match member_expr {
                     MemberExpression::ComputedMemberExpression(_) => {
                         self.add_operator("[]"); // Computed member access
@@ -581,7 +590,7 @@ impl<'a> ComplexityAnalyzer<'a> {
             Expression::NullLiteral(_) => {
                 self.add_operand("null");
             }
-            Expression::UndefinedLiteral(_) => {
+            Expression::Identifier(id) if id.name == "undefined" => {
                 self.add_operand("undefined");
             }
             Expression::Super(_) => {

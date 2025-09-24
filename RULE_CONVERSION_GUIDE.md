@@ -50,7 +50,7 @@ src/rules/
 //! @complexity [low|medium|high]
 //! @since 2.1.0
 
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 use crate::rules::utils::span_to_line_col_legacy;
 use oxc_ast::ast::{Program, [specific AST types needed]};
 use oxc_ast_visit::Visit;
@@ -238,7 +238,7 @@ pub fn check_ai_rule(rule_id: &str, program: &Program, semantic: &Semantic, code
 ### Dependencies
 ```rust
 // Standard imports for all rules
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 use crate::rules::utils::span_to_line_col_legacy;
 use oxc_ast::ast::{Program, [specific types]};
 use oxc_ast_visit::Visit;

@@ -18,6 +18,7 @@
 //! @complexity high
 //! @since 1.0.0
 
+use crate::moon_host::PluginError;
 use thiserror::Error;
 
 /// Represents all possible errors that can occur within the `moon-shine` extension.
@@ -73,11 +74,11 @@ pub enum Error {
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
-    /// Error originating from the Extism PDK (WASM plugin development kit).
-    #[error("Extism PDK operation failed")]
-    ExtismPdk {
+    /// Error originating from the Moon host runtime (via Extism PDK bindings).
+    #[error("Moon host operation failed")]
+    MoonHost {
         #[from]
-        source: extism_pdk::Error,
+        source: PluginError,
     },
 
     /// Configuration-related error.
@@ -655,7 +656,7 @@ impl Error {
             Self::AIExecution { .. } => true,        // Can fallback to other AI providers or tools
             Self::Serialization { .. } => false,     // Data corruption
             Self::Io { .. } => true,                 // Can retry or skip file
-            Self::ExtismPdk { .. } => false,         // WASM runtime issue
+            Self::MoonHost { .. } => false,          // WASM runtime issue
             Self::Config { .. } => false,            // Invalid configuration
             Self::Analysis { .. } => true,           // Can skip problematic files
             Self::Wasm { .. } => false,              // Runtime issue
@@ -693,7 +694,7 @@ impl Error {
             Self::AIExecution { .. } => ErrorSeverity::Warning,
             Self::Serialization { .. } => ErrorSeverity::Error,
             Self::Io { .. } => ErrorSeverity::Warning,
-            Self::ExtismPdk { .. } => ErrorSeverity::Critical,
+            Self::MoonHost { .. } => ErrorSeverity::Critical,
             Self::Config { .. } => ErrorSeverity::Error,
             Self::Analysis { .. } => ErrorSeverity::Info,
             Self::Wasm { .. } => ErrorSeverity::Critical,
@@ -731,7 +732,7 @@ impl Error {
             Self::AIExecution { .. } => "ai_execution",
             Self::Serialization { .. } => "serialization",
             Self::Io { .. } => "io",
-            Self::ExtismPdk { .. } => "extism_pdk",
+            Self::MoonHost { .. } => "moon_host",
             Self::Config { .. } => "config",
             Self::Analysis { .. } => "analysis",
             Self::Wasm { .. } => "wasm",
@@ -794,7 +795,7 @@ impl Error {
             }
             Self::Serialization { .. } => "Data processing error: Please check input format".to_string(),
             Self::Io { path, .. } => format!("File operation failed on '{}': Please check file permissions", path),
-            Self::ExtismPdk { .. } => "Extension runtime error: Please restart the operation".to_string(),
+            Self::MoonHost { .. } => "Extension runtime error: Please restart the operation".to_string(),
             Self::Wasm { operation, .. } => {
                 format!("Runtime error during '{}': Please try again", operation)
             }

@@ -286,9 +286,7 @@ pub fn load_prompt_from_storage(rule_type: &str, config: Option<&MoonShineConfig
 /// @complexity medium
 /// @since 1.0.0
 pub fn log_optimized_prompt(rule_type: &str, optimized_template: &str, confidence_score: f32, training_examples: usize, success_rate: f32) {
-    use extism_pdk::info;
-
-    info!(
+    moon_info!(
         "DSPy COPRO optimization: {} improved to {:.2}% success rate ({} examples)",
         rule_type,
         success_rate * 100.0,
@@ -314,10 +312,9 @@ pub fn log_optimized_prompt(rule_type: &str, optimized_template: &str, confidenc
     .to_string();
 
     if let Err(e) = crate::moon_pdk_interface::write_file_to_host(file_path, &update_info) {
-        use extism_pdk::error;
-        error!("Failed to persist optimized prompt update: {}", e);
+        moon_error!("Failed to persist optimized prompt update: {}", e);
     } else {
-        info!("Optimized prompt update for {} logged to {}", rule_type, file_path);
+        moon_info!("Optimized prompt update for {} logged to {}", rule_type, file_path);
     }
 }
 
@@ -363,8 +360,6 @@ pub fn get_installation_info() -> serde_json::Value {
 /// @complexity low
 /// @since 1.0.0
 pub fn log_optimized_prompt_update(rule_type: &str, optimized_data: &serde_json::Value, file_path: &str) {
-    use extism_pdk::info;
-
     let update_info = serde_json::json!({
         "action": "update_optimized_prompt",
         "rule_type": rule_type,
@@ -375,10 +370,9 @@ pub fn log_optimized_prompt_update(rule_type: &str, optimized_data: &serde_json:
     .to_string();
 
     if let Err(e) = crate::moon_pdk_interface::write_file_to_host(file_path, &update_info) {
-        use extism_pdk::error;
-        error!("Failed to persist optimized prompt update: {}", e);
+        moon_error!("Failed to persist optimized prompt update: {}", e);
     } else {
-        info!("Optimized prompt update for {} logged to {}", rule_type, file_path);
+        moon_info!("Optimized prompt update for {} logged to {}", rule_type, file_path);
     }
 }
 

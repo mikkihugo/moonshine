@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "templates": {
+    "typescript_compilation_fixer": {
+      "name": "TypeScript Compilation Fixer",
+      "template": "🔥 **COMPILATION + CRITICAL ERRORS** (Pass 1 Focus)\n- TypeScript compilation errors (TS2XXX codes) - HIGHEST PRIORITY\n- Syntax errors, type errors, compilation failures\n- Security issues (no-eval, no-implied-eval)\n- Runtime errors (no-undef, no-unreachable)\n- Promise handling (no-floating-promises)\n\n**GOAL**: TypeScript compilation success + 0 critical runtime errors\n\nAnalyze and fix the following {language} code for compilation and critical runtime errors:\n\nFile: {file_path}\nCurrent Issues ({error_count} compilation errors, {warning_count} critical warnings):\n{issues_list}\n\nCode:\n{code}\n\nReturn only the corrected code that compiles successfully and eliminates all critical runtime errors.",
+      "variables": ["language", "file_path", "error_count", "warning_count", "issues_list", "code"]
+    },
+    "method_implementation_completer": {
+      "name": "Method Implementation Completer",
+      "template": "⚡ **TYPE SAFETY + IMPLEMENTATION** (Pass 2 Focus)\n- Remaining TypeScript strict mode violations\n- Type assertion and casting issues\n- **IMPLEMENT unused parameters in method bodies instead of prefixing with underscore**\n- **COMPLETE async method implementations with full business logic**\n- Missing return types and explicit any usage\n- Interface and type definition errors\n\n**GOAL**: Full parameter usage + complete async implementations + strict types\n\nImprove type safety and implement complete method logic for the following {language} code:\n\nFile: {file_path}\nType Safety Issues ({error_count} errors, {warning_count} warnings):\n{issues_list}\n\nCode:\n{code}\n\nIMPORTANT:\n- Use ALL method parameters meaningfully in the method body\n- Implement complete async method business logic, not placeholders\n- Replace 'any' types with proper TypeScript interfaces\n- Add explicit return types\n\nReturn the fully implemented code with strict type safety.",
+      "variables": ["language", "file_path", "error_count", "warning_count", "issues_list", "code"]
+    },
+    "google_style_modernizer": {
+      "name": "Google Style Modernizer",
+      "template": "🎨 **CODE QUALITY + GOOGLE STYLE** (Pass 3 Focus)\n- **Google TypeScript Style**: Use nullish coalescing (??) over logical OR (||)\n- **Google TypeScript Style**: Use optional chaining (?.) over manual null checks\n- **Modern patterns**: prefer-optional-chain, prefer-nullish-coalescing ESLint rules\n- Complexity reduction (complexity, max-lines, cognitive-complexity)\n- Best practices (prefer-const, no-var, prefer-readonly)\n- Performance optimizations and dead code elimination\n\n**GOAL**: Modern TypeScript patterns + Google style compliance + reduced complexity\n\nApply Google TypeScript style and modern patterns to the following {language} code:\n\nFile: {file_path}\nCode Quality Issues ({error_count} errors, {warning_count} warnings):\n{issues_list}\n\nCode:\n{code}\n\nIMPORTANT:\n- Replace || with ?? where appropriate (nullish coalescing)\n- Replace manual null checks with ?. (optional chaining)\n- Reduce cyclomatic complexity\n- Apply modern TypeScript patterns\n- Follow Google TypeScript style guide\n\nReturn the modernized, Google-style compliant code.",
+      "variables": ["language", "file_path", "error_count", "warning_count", "issues_list", "code"]
+    },
+    "code_analysis": {
+      "name": "Code Analysis",
+      "template": "Analyze the following {language} code for potential issues:\n\n{code}\n\nProvide specific suggestions for improvement.",
+      "variables": ["language", "code"]
+    },
+    "type_fixing": {
+      "name": "Type Fixing",
+      "template": "Fix TypeScript type errors in the following code:\n\n{code}\n\nReturn the corrected code with proper types.",
+      "variables": ["code"]
+    },
+    "eslint_fixing": {
+      "name": "ESLint Fixing",
+      "template": "Fix ESLint issues in the following {language} code:\n\n{code}\n\nReturn the corrected code.",
+      "variables": ["language", "code"]
+    }
+  }
+}

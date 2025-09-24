@@ -45,7 +45,7 @@ use std::time::Duration;
 use crate::analysis::{AnalysisResults, MoonShineResponse};
 use crate::config::MoonShineConfig;
 use crate::error::{Error, Result};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 
 /// Custom assertion trait for MoonShine analysis results
 pub trait MoonShineAssertions {

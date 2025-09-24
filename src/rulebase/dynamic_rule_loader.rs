@@ -7,8 +7,7 @@ use crate::error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[cfg(feature = "embedded_rulebase")]
-use crate::rulebase::iter_builtin_rules;
+use crate::rulebase::compiled;
 
 /// Rule loader that reads from generated JSON
 #[derive(Debug)]
@@ -121,101 +120,69 @@ impl RuleLoader {
                 generator: String::new(),
             },
         };
-        loader.load_from_embedded_json()?;
+        loader.load_from_compiled_definitions()?;
         Ok(loader)
     }
 
-    /// Load rules from embedded JSON file
-    #[cfg(feature = "embedded_rulebase")]
-    fn load_from_embedded_json(&mut self) -> Result<()> {
-        self.load_from_compiled_rules()
-    }
-
-    #[cfg(not(feature = "embedded_rulebase"))]
-    fn load_from_embedded_json(&mut self) -> Result<()> {
-        let bundled_json = include_str!("../../rulebase/output/moonshine-rulebase-complete.json");
-        let rulebase: Rulebase = serde_json::from_str(bundled_json).map_err(|e| Error::Configuration(format!("Invalid bundled rulebase: {}", e)))?;
-        self.load_from_rulebase(rulebase.rulebase)?;
-        Ok(())
-    }
-
-    #[cfg(feature = "embedded_rulebase")]
-    fn load_from_compiled_rules(&mut self) -> Result<()> {
-        println!("📦 Loading rules from compiled definitions...");
-
-        let mut static_rules = 0usize;
-        let mut behavioral_rules = 0usize;
-        let mut hybrid_rules = 0usize;
-
-        for def in iter_builtin_rules() {
-            let implementation = match def.implementation.kind.as_str() {
-                "StaticAnalysis" => {
-                    let name = def.implementation.rule_name.clone().unwrap_or_default();
-                    RuleImplementation::StaticAnalysis { rule_name: name }
-                }
-                "AiBehavioral" => {
-                    let pattern = def.implementation.rule_name.clone().unwrap_or_default();
-                    RuleImplementation::AiBehavioral { pattern_type: pattern }
-                }
-                "JavaScript" => RuleImplementation::JavaScript {
-                    code: def.implementation.code.clone().unwrap_or_default(),
+    fn load_from_compiled_definitions(&mut self) -> Result<()> {
+        for def in compiled::all_rules_iter() {
+            let implementation = match def.implementation_type {
+                "StaticAnalysis" => RuleImplementation::StaticAnalysis {
+                    rule_name: def.rule_name.to_string(),
                 },
+                "AiBehavioral" => RuleImplementation::AiBehavioral {
+                    pattern_type: def.rule_name.to_string(),
+                },
+                "JavaScript" => RuleImplementation::JavaScript { code: String::new() },
                 "ExternalTool" => RuleImplementation::ExternalTool {
-                    command: def.implementation.command.clone().unwrap_or_default(),
-                    args: def.implementation.args.clone().unwrap_or_default(),
+                    command: String::new(),
+                    args: Vec::new(),
                 },
                 "Hybrid" => RuleImplementation::Hybrid { implementations: Vec::new() },
                 "Regex" => RuleImplementation::Regex {
-                    pattern: def.implementation.rule_name.clone().unwrap_or_default(),
-                    flags: def.implementation.code.clone().unwrap_or_default(),
+                    pattern: def.rule_name.to_string(),
+                    flags: String::new(),
                 },
                 "AstQuery" => RuleImplementation::AstQuery {
-                    query: def.implementation.rule_name.clone().unwrap_or_default(),
-                    language: def.implementation.code.clone().unwrap_or_else(|| "typescript".to_string()),
+                    query: def.rule_name.to_string(),
+                    language: "typescript".to_string(),
                 },
                 other => {
                     return Err(Error::Config {
                         message: format!("Unsupported rule implementation: {}", other),
-                        field: Some("implementation.kind".to_string()),
+                        field: Some("implementation_type".to_string()),
                         value: Some(other.to_string()),
                     })
                 }
             };
 
             let rule = RuleDefinition {
-                id: def.id.clone(),
-                name: def.name.clone(),
-                description: def.description.clone(),
-                category: def.category.clone(),
-                severity: def.severity.clone(),
+                id: def.id.to_string(),
+                name: def.name.to_string(),
+                description: def.description.to_string(),
+                category: def.category.as_str().to_string(),
+                severity: def.severity.as_str().to_string(),
                 implementation,
                 cost: def.cost,
                 autofix: def.autofix,
-                ai_enhanced: def.ai_enhanced,
-                tags: def.tags.clone(),
-                dependencies: def.dependencies.clone(),
-                config_schema: def.config_schema.clone(),
+                ai_enhanced: false,
+                tags: Vec::new(),
+                dependencies: Vec::new(),
+                config_schema: None,
             };
-
-            match rule.category.as_str() {
-                "Behavioral" => behavioral_rules += 1,
-                "Hybrid" => hybrid_rules += 1,
-                _ => static_rules += 1,
-            }
 
             self.definitions.insert(rule.id.clone(), rule);
         }
 
         self.metadata = RulebaseMetadata {
-            total_rules: self.definitions.len(),
-            static_rules,
-            behavioral_rules,
-            hybrid_rules,
+            total_rules: compiled::TOTAL_RULES,
+            static_rules: compiled::STATIC_RULES_COUNT,
+            behavioral_rules: compiled::BEHAVIORAL_RULES_COUNT,
+            hybrid_rules: compiled::HYBRID_RULES_COUNT,
             generated_at: "compiled".to_string(),
-            generator: "embedded-json".to_string(),
+            generator: "rulebase-generator".to_string(),
         };
 
-        println!("✅ Loaded {} compiled rules", self.definitions.len());
         Ok(())
     }
 
@@ -284,11 +251,6 @@ impl RuleLoader {
     /// Get count of rules by category
     pub fn count_rules_by_category(&self, category: &str) -> usize {
         self.definitions.values().filter(|rule| rule.category == category).count()
-    }
-
-    /// Check if rule exists by ID
-    pub fn has_rule(&self, rule_id: &str) -> bool {
-        self.definitions.contains_key(rule_id)
     }
 
     /// Get all available rule categories

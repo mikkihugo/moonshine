@@ -18,7 +18,6 @@ use crate::error::{Error, Result};
 use crate::prompts::{get_prompt, PromptTemplate};
 use crate::provider_router::{self, AIContext, AIRequest};
 use aho_corasick::AhoCorasick;
-use extism_pdk::{debug, info};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -1462,7 +1461,7 @@ impl AiLinter {
         let mut phase_results = Vec::new();
         let mut collected_suggestions = Vec::new();
 
-        info!("Starting comprehensive analysis for {} ({})", file_path, language);
+        moon_info!("Starting comprehensive analysis for {} ({})", file_path, language);
 
         // Phase 1: Compilation and Critical Issues
         let phase1_start = Instant::now();
@@ -1547,7 +1546,7 @@ impl AiLinter {
         let quality_score = self.calculate_quality_score(&metrics, &filtered_suggestions, content);
 
         let total_time = start_time.elapsed().as_millis() as u64;
-        info!(
+        moon_info!(
             "Comprehensive analysis completed for {} in {}ms - {} suggestions found",
             file_path,
             total_time,
@@ -1596,7 +1595,7 @@ impl AiLinter {
         let router = provider_router::get_ai_router();
         let response = router.execute(request).await?;
 
-        debug!("Phase {} routed to provider {}", phase_name, response.provider_used);
+        moon_debug!("Phase {} routed to provider {}", phase_name, response.provider_used);
 
         Ok(self.parse_ai_response(&response.content, &response.provider_used, phase_name))
     }
@@ -1750,7 +1749,7 @@ impl AiLinter {
             }
         }
 
-        debug!("Falling back to text parser for provider {} during {} phase", provider, phase_name);
+        moon_debug!("Falling back to text parser for provider {} during {} phase", provider, phase_name);
         // <!-- TODO: The `parse_text_response_enhanced` function relies on keyword matching for severity and category. This can be inaccurate. Consider improving the text parsing with more sophisticated NLP techniques or by encouraging AI models to return structured JSON even for text responses. -->
         self.parse_text_response_enhanced(response, phase_name)
     }
@@ -3127,10 +3126,10 @@ impl AiLinter {
                     self.parse_moon_task_output(task, &stdout, &mut results)?;
                 }
                 Ok(result) => {
-                    debug!("Moon task {} failed: {}", task, String::from_utf8_lossy(&result.stderr));
+                    moon_debug!("Moon task {} failed: {}", task, String::from_utf8_lossy(&result.stderr));
                 }
                 Err(e) => {
-                    debug!("Failed to execute Moon task {}: {}", task, e);
+                    moon_debug!("Failed to execute Moon task {}: {}", task, e);
                 }
             }
         }

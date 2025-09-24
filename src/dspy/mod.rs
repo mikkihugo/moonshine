@@ -57,14 +57,14 @@ macro_rules! prediction {
     { $($key:literal => $value:expr),* $(,)? } => {{
         use std::collections::HashMap;
         use $crate::data::Prediction;
-        use $crate::token_usage::LmUsage;
+        use $crate::token_usage::LanguageModelUsageMetrics;
 
         let mut fields = HashMap::new();
         $(
             fields.insert($key.to_string(), serde_json::to_value($value).expect("Failed to serialize value to JSON"));
         )*
 
-        Prediction::new(fields, LmUsage::default())
+        Prediction::new(fields, LanguageModelUsageMetrics::default())
     }};
 }
 

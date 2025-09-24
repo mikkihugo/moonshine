@@ -40,11 +40,11 @@ impl Default for Settings {
     fn default() -> Self {
         // Create a default LM and adapter for settings
         use crate::config::MoonShineConfig;
-        use crate::dspy::adapter::ChatAdapter;
+        use crate::dspy::adapter::ConversationHistoryAdapter;
 
         Self {
             lm: LM::new("default".to_string(), MoonShineConfig::default()),
-            adapter: Arc::new(ChatAdapter::default()),
+            adapter: Arc::new(ConversationHistoryAdapter::default()),
         }
     }
 }

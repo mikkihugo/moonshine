@@ -12,8 +12,8 @@ use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 use crate::analysis::{AnalysisResults, MoonShineResponse};
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 use crate::linter::SuggestionCategory;
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 // AI Suggestion Builder for testing
 #[derive(Debug, Clone)]

@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use crate::analysis::{AnalysisResults, MoonShineResponse};
 use crate::config::MoonShineConfig;
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 // Note: WorkflowEngine, WorkflowStep, WorkflowPhase are mock types for E2E testing
 use crate::error::{Error, Result};
 use crate::testing::{PerformanceRequirements, TestEnvironment};
@@ -306,7 +306,7 @@ impl E2ETestEngine {
             if content.contains("console.log") {
                 suggestions.push(LintIssue {
                     message: "Consider using proper logging instead of console.log".to_string(),
-                    severity: SuggestionSeverity::Warning,
+                    severity: LintSeverity::Warning,
                     category: SuggestionCategory::BestPractices,
                     line: 1,
                     column: 1,
@@ -322,7 +322,7 @@ impl E2ETestEngine {
             if content.contains("any") {
                 suggestions.push(LintIssue {
                     message: "Avoid using 'any' type, prefer specific types".to_string(),
-                    severity: SuggestionSeverity::Error,
+                    severity: LintSeverity::Error,
                     category: SuggestionCategory::TypeSafety,
                     line: 2,
                     column: 10,
@@ -362,7 +362,7 @@ impl E2ETestEngine {
 
         // Check error count
         if let Some(expected_errors) = expected.error_count {
-            let actual_errors = results.suggestions.iter().filter(|s| matches!(s.severity, SuggestionSeverity::Error)).count();
+            let actual_errors = results.suggestions.iter().filter(|s| matches!(s.severity, LintSeverity::Error)).count();
 
             validation_results.push(ValidationResult {
                 check_name: "error_count".to_string(),

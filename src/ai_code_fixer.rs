@@ -7,7 +7,7 @@
 
 use crate::error::Result;
 use crate::provider_router::{analyze_code_with_ai, fix_code_with_ai};
-use extism_pdk::info;
+use crate::tsdoc;
 use serde::{Deserialize, Serialize};
 
 // ClaudeFixerConfig moved to MoonShineConfig - all settings consolidated
@@ -94,13 +94,16 @@ impl ClaudeFixer {
 
         // Log TSDoc improvements for TypeScript/JavaScript files
         if language == "typescript" || language == "javascript" {
-            info!(
+            moon_info!(
                 "TSDoc Coverage Analysis for {}: Initial {:.1}% -> Final {:.1}% (Δ{:+.1}%)",
-                file_path, initial_tsdoc_coverage, final_tsdoc_coverage, tsdoc_improvement
+                file_path,
+                initial_tsdoc_coverage,
+                final_tsdoc_coverage,
+                tsdoc_improvement
             );
 
             if tsdoc_improvement_significant {
-                info!("Significant TSDoc improvement detected! Added comprehensive documentation.");
+                moon_info!("Significant TSDoc improvement detected! Added comprehensive documentation.");
             }
         }
 
@@ -295,39 +298,13 @@ impl ClaudeFixer {
 /// Calculate TSDoc coverage percentage with proper error handling
 /// <!-- TODO: Consider using a proper parser (e.g., `tree-sitter` bindings if available in Rust WASM context) for more robust TSDoc parsing, especially for complex cases or different language syntaxes. -->
 fn calculate_tsdoc_coverage(content: &str) -> f64 {
-    let function_regex = match regex::Regex::new(r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)") {
-        Ok(regex) => regex,
-        Err(_) => return 0.0, // Graceful fallback if regex compilation fails
-    };
-
-    let method_regex = match regex::Regex::new(r"(?m)^\s*(?:public\s+|private\s+|protected\s+)?(?:async\s+)?(\w+)\s*\(") {
-        Ok(regex) => regex,
-        Err(_) => return 0.0, // Graceful fallback if regex compilation fails
-    };
-
-    let tsdoc_regex = match regex::Regex::new(r"(?m)^\s*/\*\*") {
-        Ok(regex) => regex,
-        Err(_) => return 0.0, // Graceful fallback if regex compilation fails
-    };
-
-    let functions = function_regex.find_iter(content).count();
-    let methods = method_regex.find_iter(content).count();
-    let total = functions + methods;
-
-    if total == 0 {
-        return 100.0;
-    }
-
-    let tsdoc_comments = tsdoc_regex.find_iter(content).count();
-    (tsdoc_comments as f64 / total as f64) * 100.0
+    let analysis = tsdoc::analyze_source(content, None);
+    analysis.coverage()
 }
 
 /// Count TSDoc comments in code content
 fn count_tsdoc_comments(content: &str) -> u32 {
-    match regex::Regex::new(r"(?m)^\s*/\*\*") {
-        Ok(regex) => regex.find_iter(content).count() as u32,
-        Err(_) => 0, // Graceful fallback if regex compilation fails
-    }
+    tsdoc::analyze_source(content, None).documented_symbols as u32
 }
 
 #[cfg(all(test, not(feature = "wasm")))]

@@ -15,11 +15,11 @@ use tokio::time::timeout;
 use crate::analysis::AnalysisResults;
 use crate::config::MoonShineConfig;
 use crate::error::Result;
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 use crate::testing::assertions::{MoonShineAssertions, PerformanceAssertions};
 use crate::testing::builders::{AnalysisResultsBuilder, ConfigBuilder, LintIssueBuilder};
 use crate::testing::fixtures::{TestDataBuilder, TYPESCRIPT_WITH_ISSUES};
 use crate::testing::{PerformanceRequirements, TestEnvironment};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Stress test configuration
 #[derive(Debug, Clone)]
@@ -296,7 +296,7 @@ impl StressTestRunner {
                 .build();
 
             // Simulate error handling - should not panic or crash
-            if error_suggestion.severity == SuggestionSeverity::Error {
+            if error_suggestion.severity == LintSeverity::Error {
                 errors_handled += 1;
             }
         }

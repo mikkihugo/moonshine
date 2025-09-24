@@ -288,18 +288,16 @@ fn generate_training_updates_from_analysis(analysis: &AnalysisResults) -> std::r
 
     // Extract patterns from suggestions
     for suggestion in &analysis.suggestions {
-        if let Some(frequency) = suggestion.pattern_frequency {
-            if frequency > 0.0 {
-                let pattern_data = serde_json::json!({
-                    "frequency": frequency,
-                    "confidence": suggestion.ai_confidence,
-                    "last_seen": chrono::Utc::now().to_rfc3339(),
-                    "rule_type": suggestion.rule,
-                    "severity": suggestion.severity
-                });
-                patterns.insert(suggestion.rule.to_string(), pattern_data);
-            }
-        }
+        // Create pattern data using available RuleResult fields
+        let pattern_data = serde_json::json!({
+            "rule_id": suggestion.rule_id,
+            "message": suggestion.message,
+            "line": suggestion.line,
+            "column": suggestion.column,
+            "last_seen": chrono::Utc::now().to_rfc3339(),
+            "severity": suggestion.severity
+        });
+        patterns.insert(suggestion.rule_id.clone(), pattern_data);
     }
 
     // Return update object for training.json

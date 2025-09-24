@@ -7,7 +7,7 @@
 //!
 //! Key components include:
 //! - `Message`: An enum representing a single conversational message with different roles (system, user, assistant).
-//! - `Chat`: A struct encapsulating a sequence of `Message`s, forming a complete conversation history.
+//! - `ConversationHistory`: A struct encapsulating a sequence of `Message`s, forming a complete conversation history.
 //!
 //! @category communication
 //! @safe team
@@ -150,7 +150,7 @@ impl Message {
 
 /// Represents a conversation history, composed of a sequence of `Message`s.
 ///
-/// The `Chat` struct provides methods for managing the conversation flow,
+/// The `ConversationHistory` struct provides methods for managing the conversation flow,
 /// including adding, removing, and converting messages to and from JSON formats.
 ///
 /// @category data-model
@@ -159,16 +159,16 @@ impl Message {
 /// @complexity low
 /// @since 1.0.0
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Chat {
+pub struct ConversationHistory {
     /// The ordered list of messages in the conversation.
     pub messages: Vec<Message>,
 }
 
-impl Chat {
-    /// Creates a new `Chat` instance with an initial list of messages.
+impl ConversationHistory {
+    /// Creates a new `ConversationHistory` instance with an initial list of messages.
     ///
     /// @param messages A `Vec<Message>` to initialize the chat history.
-    /// @returns A new `Chat` instance.
+    /// @returns A new `ConversationHistory` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -219,16 +219,16 @@ impl Chat {
         self.messages.push(Message::new(role, content));
     }
 
-    /// Appends all messages from another `Chat` instance to the current chat history.
+    /// Appends all messages from another `ConversationHistory` instance to the current chat history.
     ///
-    /// @param chat A reference to the `Chat` instance whose messages are to be appended.
+    /// @param chat A reference to the `ConversationHistory` instance whose messages are to be appended.
     ///
     /// @category mutator
     /// @safe team
     /// @mvp core
     /// @complexity low
     /// @since 1.0.0
-    pub fn push_all(&mut self, chat: &Chat) {
+    pub fn push_all(&mut self, chat: &ConversationHistory) {
         self.messages.extend(chat.messages.clone());
     }
 
@@ -245,12 +245,12 @@ impl Chat {
         self.messages.pop()
     }
 
-    /// Converts a `serde_json::Value` (expected to be a JSON array of messages) into a `Chat` instance.
+    /// Converts a `serde_json::Value` (expected to be a JSON array of messages) into a `ConversationHistory` instance.
     ///
     /// This function is used for deserializing chat histories from JSON formats.
     ///
     /// @param json_dump The `serde_json::Value` representing the JSON array of messages.
-    /// @returns A `Result` containing the parsed `Chat` instance on success, or an `Error` on failure.
+    /// @returns A `Result` containing the parsed `ConversationHistory` instance on success, or an `Error` on failure.
     ///
     /// @category deserialization
     /// @safe team
@@ -270,7 +270,7 @@ impl Chat {
         Ok(Self { messages })
     }
 
-    /// Converts the `Chat` instance into a `serde_json::Value` representation.
+    /// Converts the `ConversationHistory` instance into a `serde_json::Value` representation.
     ///
     /// This is typically used for serialization when storing or transmitting chat histories.
     ///
@@ -384,20 +384,20 @@ mod tests {
 
     #[test]
     fn test_chat_creation_and_basic_operations() {
-        let chat = Chat::new(vec![]);
+        let chat = ConversationHistory::new(vec![]);
         assert!(chat.is_empty());
         assert_eq!(chat.len(), 0);
 
         // Test with initial messages
         let initial_messages = vec![Message::system("You are a helpful assistant"), Message::user("Hello")];
-        let chat_with_messages = Chat::new(initial_messages);
+        let chat_with_messages = ConversationHistory::new(initial_messages);
         assert_eq!(chat_with_messages.len(), 2);
         assert!(!chat_with_messages.is_empty());
     }
 
     #[test]
     fn test_chat_push_operations() {
-        let mut chat = Chat::new(vec![]);
+        let mut chat = ConversationHistory::new(vec![]);
 
         // Test push with different roles
         chat.push("system", "You are a helpful TypeScript assistant.");
@@ -417,9 +417,9 @@ mod tests {
 
     #[test]
     fn test_chat_push_all() {
-        let mut chat1 = Chat::new(vec![Message::system("System prompt"), Message::user("User message")]);
+        let mut chat1 = ConversationHistory::new(vec![Message::system("System prompt"), Message::user("User message")]);
 
-        let chat2 = Chat::new(vec![Message::assistant("Assistant response"), Message::user("Another user message")]);
+        let chat2 = ConversationHistory::new(vec![Message::assistant("Assistant response"), Message::user("Another user message")]);
 
         assert_eq!(chat1.len(), 2);
         chat1.push_all(&chat2);
@@ -434,7 +434,7 @@ mod tests {
 
     #[test]
     fn test_chat_pop() {
-        let mut chat = Chat::new(vec![
+        let mut chat = ConversationHistory::new(vec![
             Message::system("System prompt"),
             Message::user("User message"),
             Message::assistant("Assistant response"),
@@ -468,7 +468,7 @@ mod tests {
 
     #[test]
     fn test_chat_to_json() {
-        let chat = Chat::new(vec![
+        let chat = ConversationHistory::new(vec![
             Message::system("System prompt"),
             Message::user("User input"),
             Message::assistant("Assistant response"),
@@ -497,7 +497,7 @@ mod tests {
           {"role": "invalid", "content": "Invalid role message"}
         ]);
 
-        let chat = Chat::new(vec![]);
+        let chat = ConversationHistory::new(vec![]);
         let result = chat.from_json(json_data);
         assert!(result.is_ok());
 
@@ -519,7 +519,7 @@ mod tests {
 
     #[test]
     fn test_chat_json_roundtrip() {
-        let original_chat = Chat::new(vec![
+        let original_chat = ConversationHistory::new(vec![
             Message::system("System prompt"),
             Message::user("User input"),
             Message::assistant("Assistant response"),
@@ -555,7 +555,7 @@ mod tests {
         let empty_json = json!([
           {"role": "user", "content": ""}
         ]);
-        let chat = Chat::new(vec![]);
+        let chat = ConversationHistory::new(vec![]);
         let result = chat.from_json(empty_json).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result.messages[0].content(), "");

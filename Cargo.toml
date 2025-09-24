@@ -21,7 +21,7 @@ crate-type = ["cdylib", "rlib"]
 # Standalone package - not part of workspace
 
 [features]
-default = ["wasm", "optimized-deps", "oxc_semantic", "oxc_transformer", "embedded_rulebase"]
+default = ["wasm", "optimized-deps", "embedded_rulebase"]
 embedded_rulebase = []
 
 wasm = [
@@ -36,10 +36,37 @@ optimized-deps = []
 minimal = ["wasm"]
 
 # Full analysis features (larger binary)
-full-analysis = ["wasm", "oxc_semantic", "oxc_transformer"]
+full-analysis = ["wasm"]
 
 # Optional strict TypeScript analysis (regex-based)
 strict-ts = []
+
+# Complete OXC toolchain with all available features
+oxc-complete = []
+
+# Neural network features for pattern analysis (WASM-compatible)
+neural-patterns = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
+
+# ONNX runtime for lightweight models (native only - not WASM compatible)
+onnx-runtime = ["dep:ort"]
+
+# StarCoder integration for fast pattern detection (WASM-compatible via candle)
+starcoder = ["neural-patterns"]
+
+# WASM-only features (excludes ONNX)
+wasm-neural = ["neural-patterns"]
+
+# Embedded Rust toolchain analysis
+embedded-rust-toolchain = [
+  "dep:syn",
+  "dep:quote",
+  "dep:proc-macro2",
+  "dep:clippy_lints",
+  "dep:clippy_utils",
+  "dep:prettyplease",
+  "dep:cargo_metadata",
+  "dep:rustc_version"
+]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -49,6 +76,8 @@ anyhow = "1.0"
 futures = "0.3"
 async-trait = "0.1"
 once_cell = "1.20"
+lazy_static = "1.4"
+json5 = "0.4"
 # High-speed WASM-compatible KV store for session storage + JSON backup
 assemblage_kv = "0.1.0"
 # csv = "1.3" # Not needed - Moon tasks handle file parsing
@@ -64,9 +93,10 @@ console_error_panic_hook = { version = "0.1", optional = true }
 lol_alloc = { version = "0.4", optional = true }
 
 # Core WASM extension dependencies
-chrono = { version = "0.4.42" }
+chrono = { version = "0.4.42", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4"] }
 regex = "1.11.2"
+schemars = "0.8"
 globset = "0.4"
 extism-pdk = "1.4.1"
 moon_pdk = { version = "0.3.2", features = ["schematic"] }
@@ -81,26 +111,31 @@ getrandom = { version = "0.3" }
 threadpool = "1.8"
 
 # COPRO + Pattern Detection dependencies (always included)
-indexmap = { version = "2.0" }
+indexmap = { version = "1.9" }
 
-# OXC (JavaScript Oxidation Compiler) - Core toolchain components that actually exist
-oxc_allocator = "0.90"            # Arena-based memory allocation for massive codebases
-oxc_ast = "0.90"                  # AST types and utilities with memory-efficient design
-oxc_ast_visit = "0.90"           # AST visitor pattern for tree traversal
-oxc_cfg = "0.90"                  # Control Flow Graph analysis for complexity metrics
-oxc_codegen = "0.90"              # Fast code generation and formatting (Prettier replacement)
-oxc_diagnostics = "0.90"          # Professional error reporting and diagnostics
-# oxc_formatter = "0.90"          # Alternative to Prettier - NOT YET PUBLISHED
-oxc_isolated_declarations = "0.90" # TypeScript .d.ts generation (20x faster than TSC)
-# oxc_linter = "0.90"               # Not WASM-safe - we'll adapt their rule implementations instead
-oxc_mangler = "0.90"              # Variable name mangling for code obfuscation
-oxc_minifier = "0.90"             # JavaScript minification (production build optimization)
-oxc_parser = "0.90"               # Lightning-fast JS/TS parser (10x faster than SWC)
-oxc_semantic = { version = "0.90", optional = true }  # Advanced semantic analysis (scopes, symbols, types)
-oxc_span = "0.90"                 # Precise source location and span tracking
-oxc_transformer = { version = "0.90", optional = true }  # Powerful AST transformations and refactoring
-oxc_resolver = "11.8"             # Module resolution and dependency analysis (separate versioning)
-oxc_sourcemap = "4.1.2"           # Source map generation for debugging
+# OXC - High-performance JavaScript/TypeScript toolchain (50-100x faster than ESLint)
+# Using consistent 0.90.0 versions to avoid conflicts
+oxc = { version = "0.90.0", features = ["full"] }
+oxc_allocator = "0.90.0"
+oxc_ast = "0.90.0"
+oxc_ast_visit = "0.90.0"
+oxc_parser = "0.90.0"
+oxc_span = "0.90.0"
+oxc_syntax = "0.90.0"
+oxc_semantic = "0.90.0"
+oxc_diagnostics = "0.90.0"
+oxc_codegen = "0.90.0"
+oxc_traverse = "0.90.0"
+
+# OXC Transformation & Optimization
+oxc_transformer = "0.90.0"
+oxc_minifier = "0.90.0"
+oxc_mangler = "0.90.0"
+
+# Note: oxc_formatter is not published separately - formatting capabilities in oxc crate
+# Note: oxc_linter is not published separately - we'll vendor the logic
+
+# Removed Biome dependencies - now using OXC for all parsing/analysis
 
 # Configuration and ignore pattern dependencies
 ignore = "0.4"                   # Fast .gitignore and ignore pattern matching
@@ -146,6 +181,33 @@ paste = "1.0"                 # Token pasting for macro generation (WASM-safe)
 # DSPy signature macros (WASM-compatible implementation)
 # dsrs_macros = "0.1"  # Replaced with WASM-compatible declarative macros
 
+# Neural network dependencies for pattern analysis (optional, WASM-compatible)
+candle-core = { version = "0.8", optional = true, default-features = false }
+candle-nn = { version = "0.8", optional = true, default-features = false }
+candle-transformers = { version = "0.8", optional = true, default-features = false }
+tokenizers = { version = "0.20", optional = true, default-features = false }
+# Note: ONNX Runtime has limited WASM support - for native builds only
+ort = { version = "2.0.0-rc.10", optional = true }
+
+# Embedded Rust toolchain dependencies (compile Clippy, rustfmt, etc. directly in)
+syn = { version = "2.0", features = ["full", "parsing", "printing", "proc-macro"], optional = true }
+quote = { version = "1.0", optional = true }
+proc-macro2 = { version = "1.0", optional = true }
+
+# Clippy lints compiled directly into WASM (using correct available versions)
+clippy_lints = { version = "0.0.212", optional = true }
+clippy_utils = { version = "0.1.92", optional = true }
+
+# Rustfmt stable - alternative approach using prettyplease for formatting
+prettyplease = { version = "0.2", optional = true }
+
+# Cargo metadata for dependency analysis
+cargo_metadata = { version = "0.18", optional = true }
+
+# Additional Rust analysis tools
+rustc_version = { version = "0.4", optional = true }
+serde_derive = { version = "1.0", optional = true }
+
 # Note: Security warnings for paste, libyml, and serde_yml are from transitive
 # dependencies in moon_pdk. These will be addressed in future moon releases.
 
@@ -157,10 +219,18 @@ paste = "1.0"                 # Token pasting for macro generation (WASM-safe)
 rayon = { version = "1.8", optional = true }  # Disable rayon for WASM by default
 tokio = { version = "1.0", features = ["time", "rt", "macros"], default-features = false }  # Minimal tokio for WASM with select macro
 
+# WASM-compatible neural network dependencies (lighter alternatives)
+# Candle works in WASM with default configuration
+# Note: ONNX Runtime is not included in WASM builds - use candle for inference
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Full features for native builds
 rayon = "1.8"  # Full rayon for native
 tokio = { version = "1.0", features = ["time", "rt", "macros", "fs", "process"] }  # Full tokio for native
+
+[build-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [dev-dependencies]
 # Moon WASM runtime testing
@@ -187,7 +257,7 @@ serial_test = "3.0"                                           # Sequential test 
 env_logger = "0.11"                                           # Logging for test debugging
 
 # Code coverage tools
-cargo-tarpaulin = "0.32"                                      # Coverage analysis for Rust
+# cargo-tarpaulin = "0.32"                                      # Coverage analysis for Rust - conflicts with indexmap version
 
 # WASM optimization profiles defined at workspace root
 

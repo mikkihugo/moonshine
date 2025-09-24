@@ -15,7 +15,7 @@
 //! @complexity high
 //! @since 1.0.0
 
-use super::{Chat, LMResponse, Message};
+use super::{ConversationHistory, LMResponse, Message};
 use crate::config::MoonShineConfig;
 use crate::error::Result;
 use crate::provider_router::{get_ai_router, AIContext, AIRequest};
@@ -59,22 +59,22 @@ impl AIProviderLM {
         AIProviderLMBuilder::new()
     }
 
-    /// Makes an asynchronous call to the AI provider, processing a `Chat` and returning a `Message` and `LmUsage`.
+    /// Makes an asynchronous call to the AI provider, processing a `ConversationHistory` and returning a `Message` and `LanguageModelUsageMetrics`.
     ///
     /// This is the primary method for interacting with the AI. It converts DSPy chat messages
     /// into a prompt, infers the AI context, routes the request to the appropriate provider,
     /// and processes the AI's response.
     ///
-    /// @param messages The `Chat` object containing the conversation history and prompt.
+    /// @param messages The `ConversationHistory` object containing the conversation history and prompt.
     /// @param signature A string representing the signature or task for the AI.
-    /// @returns A `Result` containing a tuple of `(Message, LmUsage)` on success, or an `Error` on failure.
+    /// @returns A `Result` containing a tuple of `(Message, LanguageModelUsageMetrics)` on success, or an `Error` on failure.
     ///
     /// @category dspy-method
     /// @safe team
     /// @mvp core
     /// @complexity high
     /// @since 1.0.0
-    pub async fn call(&mut self, messages: Chat, signature: &str) -> Result<(Message, super::usage::LmUsage)> {
+    pub async fn call(&mut self, messages: ConversationHistory, signature: &str) -> Result<(Message, super::usage::LanguageModelUsageMetrics)> {
         let start_time = std::time::Instant::now();
 
         // Convert DSPy chat format to AI provider prompt
@@ -92,7 +92,7 @@ impl AIProviderLM {
         };
 
         // Create usage metrics
-        let usage = super::usage::LmUsage {
+        let usage = super::usage::LanguageModelUsageMetrics {
             prompt_tokens: (prompt.len() / 4) as u32, // Rough token estimate
             completion_tokens: (response.content.len() / 4) as u32,
             total_tokens: 0, // Will be calculated
@@ -126,12 +126,12 @@ impl AIProviderLM {
         self.history.iter().rev().take(n).collect()
     }
 
-    /// Converts a DSPy `Chat` object into a single prompt string for the AI provider.
+    /// Converts a DSPy `ConversationHistory` object into a single prompt string for the AI provider.
     ///
     /// This function formats the conversation history and signature into a coherent
     /// prompt that can be sent to the AI model.
     ///
-    /// @param chat The `Chat` object to convert.
+    /// @param chat The `ConversationHistory` object to convert.
     /// @param signature The task signature string.
     /// @returns A `Result` containing the formatted prompt string.
     ///
@@ -140,7 +140,7 @@ impl AIProviderLM {
     /// @mvp core
     /// @complexity low
     /// @since 1.0.0
-    fn convert_chat_to_prompt(&self, chat: &Chat, signature: &str) -> Result<String> {
+    fn convert_chat_to_prompt(&self, chat: &ConversationHistory, signature: &str) -> Result<String> {
         let mut prompt_parts = Vec::new();
 
         // Add signature as system instruction for DSPy optimization
@@ -178,7 +178,7 @@ impl AIProviderLM {
     /// to determine the most appropriate `AIContext` (e.g., CodeFix, DSPyOptimization)
     /// for intelligent AI provider selection.
     ///
-    /// @param chat The `Chat` object to infer context from.
+    /// @param chat The `ConversationHistory` object to infer context from.
     /// @param signature The task signature string.
     /// @returns The inferred `AIContext`.
     ///
@@ -187,7 +187,7 @@ impl AIProviderLM {
     /// @mvp core
     /// @complexity medium
     /// @since 1.0.0
-    fn infer_ai_context(&self, chat: &Chat, signature: &str) -> AIContext {
+    fn infer_ai_context(&self, chat: &ConversationHistory, signature: &str) -> AIContext {
         // Analyze signature and messages to determine the best context
         let signature_lower = signature.to_lowercase();
         let messages_text = chat.messages.iter()
@@ -452,4 +452,4 @@ impl AIProviderLMBuilder {
     }
 }
 
-// Note: LmUsage is imported from super:: to avoid naming conflicts with existing usage module
+// Note: LanguageModelUsageMetrics is imported from super:: to avoid naming conflicts with existing usage module

@@ -12,7 +12,6 @@
 //! @complexity medium
 //! @since 2.0.0
 
-use crate::dspy::core::signature::{DspyField, DspySignature};
 use serde_json::json;
 
 // Simple signature macro for tests
@@ -28,11 +27,11 @@ macro_rules! signature_simple {
         ]
     ) => {
         {
-            let mut sig = DspySignature {
+            let mut sig = $crate::dspy::core::signature::DspySignature {
                 name: $name.to_string(),
                 inputs: vec![
                     $(
-                        DspyField {
+                        $crate::dspy::core::signature::DspyField {
                             name: $input_name.to_string(),
                             description: $input_desc.to_string(),
                         }
@@ -40,7 +39,7 @@ macro_rules! signature_simple {
                 ],
                 outputs: vec![
                     $(
-                        DspyField {
+                        $crate::dspy::core::signature::DspyField {
                             name: $output_name.to_string(),
                             description: $output_desc.to_string(),
                         }

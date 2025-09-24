@@ -1,6 +1,6 @@
 {
   "name": "Performance Optimized",
-  "description": "Performance-focused rules for gaming, real-time apps, and high-throughput systems",
+  "description": "Performance-focused rules for real-time web apps, high-throughput systems, and performance-critical frontend code",
   "extends": ["@moonshine/base"],
   "rules": {
     "prefer-const": "error",

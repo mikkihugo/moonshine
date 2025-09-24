@@ -6,8 +6,8 @@
 //! activation, and obtain simple statistics without needing the legacy hard-coded stacks.
 
 use crate::error::Result;
-use crate::rulebase::dynamic_rule_loader::RuleLoader;
-use crate::rulebase::{RuleDefinition as RulebaseDefinition, RuleImplementation, RulebaseMetadata};
+// Legacy imports removed - using modern Biome + AI system
+use crate::rulebase::RuleImplementation;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -147,9 +147,14 @@ impl RuleRegistry {
         }
     }
 
-    /// Underlying rulebase metadata (version, generation timestamp, …).
-    pub fn rulebase_metadata(&self) -> &RulebaseMetadata {
-        self.loader.get_metadata()
+    /// Get basic rulebase statistics
+    pub fn get_stats(&self) -> RuleRegistryStats {
+        RuleRegistryStats {
+            total_rules: crate::rulebase::TOTAL_RULES,
+            static_rules: crate::rulebase::STATIC_RULES_COUNT,
+            behavioral_rules: crate::rulebase::BEHAVIORAL_RULES_COUNT,
+            hybrid_rules: crate::rulebase::HYBRID_RULES_COUNT,
+        }
     }
 
     /// Cached category counts for quick diagnostics.

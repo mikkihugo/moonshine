@@ -4,23 +4,11 @@
 //! the moon-shine code analyzer. These are copied verbatim from code_analyzer.rs
 //! to preserve all functionality during refactoring.
 
-use oxc_diagnostics::reporter::{DiagnosticReporter, DiagnosticResult};
-use petgraph::Graph;
+// Removed OXC diagnostic reporter dependency
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Default)]
-pub struct NoopDiagnosticReporter;
-
-impl DiagnosticReporter for NoopDiagnosticReporter {
-    fn finish(&mut self, _result: &DiagnosticResult) -> Option<String> {
-        None
-    }
-
-    fn render_error(&mut self, _error: oxc_diagnostics::Error) -> Option<String> {
-        None
-    }
-}
+// Removed NoopDiagnosticReporter - no longer needed with Biome
 
 /// Comprehensive AST-based auto-fix result with detailed metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -313,12 +301,38 @@ pub enum RefactoringSuggestionType {
     ConvertToAsyncAwait,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DiagnosticSeverity {
     Error,
     Warning,
     Info,
     Hint,
+}
+
+/// Lint diagnostic emitted by the rule execution pipeline.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LintDiagnostic {
+    pub rule_name: String,
+    pub message: String,
+    pub file_path: String,
+    pub line: u32,
+    pub column: u32,
+    pub end_line: u32,
+    pub end_column: u32,
+    pub severity: DiagnosticSeverity,
+    pub fix_available: bool,
+    pub suggested_fix: Option<String>,
+}
+
+/// Structured description of an available autofix for a lint diagnostic.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FixableLintIssue {
+    pub rule_name: String,
+    pub description: String,
+    pub original_text: String,
+    pub fixed_text: String,
+    pub line: u32,
+    pub column: u32,
 }
 
 /// ESLint configuration parsed from project files

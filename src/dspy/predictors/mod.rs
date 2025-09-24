@@ -21,7 +21,7 @@ pub use predict::*;
 use crate::data::{Example, Prediction};
 use crate::dspy::core::signature::{DspyExample, DspyInput, DspyOutput, DspySignature};
 use crate::dspy::LM;
-use crate::token_usage::LmUsage;
+use crate::token_usage::LanguageModelUsageMetrics;
 use anyhow::Result;
 
 // Concrete predictor implementations for testing
@@ -35,7 +35,7 @@ impl ChainOfThoughtPredictor {
         Self { signature }
     }
 
-    pub async fn predict(&self, input: DspyInput) -> Result<DspyOutput> {
+    pub async fn predict(&self, _input: DspyInput) -> Result<DspyOutput> {
         // Mock implementation for testing
         let mut output = DspyOutput::new();
 
@@ -67,7 +67,7 @@ impl FewShotPredictor {
         self.examples.push(example);
     }
 
-    pub async fn predict(&self, input: DspyInput) -> Result<DspyOutput> {
+    pub async fn predict(&self, _input: DspyInput) -> Result<DspyOutput> {
         // Mock implementation using examples for context
         let mut output = DspyOutput::new();
 
@@ -171,7 +171,7 @@ pub struct DummyPredict;
 impl Predictor for DummyPredict {
     /// Implements the `forward` method for `DummyPredict`.
     ///
-    /// It returns a `Prediction` containing the input data and default `LmUsage`.
+    /// It returns a `Prediction` containing the input data and default `LanguageModelUsageMetrics`.
     ///
     /// @param inputs The input `Example`.
     /// @returns An `anyhow::Result` containing a `Prediction`.
@@ -182,12 +182,12 @@ impl Predictor for DummyPredict {
     /// @complexity low
     /// @since 1.0.0
     async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction> {
-        Ok(Prediction::new(inputs.data, LmUsage::default()))
+        Ok(Prediction::new(inputs.data, LanguageModelUsageMetrics::default()))
     }
 
     /// Implements the `forward_with_config` method for `DummyPredict`.
     ///
-    /// It returns a `Prediction` containing the input data and default `LmUsage`,
+    /// It returns a `Prediction` containing the input data and default `LanguageModelUsageMetrics`,
     /// ignoring the provided `lm` configuration.
     ///
     /// @param inputs The input `Example`.
@@ -202,6 +202,6 @@ impl Predictor for DummyPredict {
     async fn forward_with_config(&self, inputs: Example, _lm: &mut LM) -> anyhow::Result<Prediction> {
         // Default implementation - specific predictors should override this
         // Using the lm parameter name with underscore to indicate intentional non-use
-        Ok(Prediction::new(inputs.data, LmUsage::default()))
+        Ok(Prediction::new(inputs.data, LanguageModelUsageMetrics::default()))
     }
 }

@@ -18,7 +18,10 @@ use crate::data::Example;
 use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::{LazyLock, RwLock};
+use std::thread;
 
+static GLOBAL_PREFIX_REGISTRY: LazyLock<RwLock<HashMap<std::thread::ThreadId, String>>> = LazyLock::new(|| RwLock::new(HashMap::new()));
 // DSPy concrete types needed by tests
 #[derive(Debug, Clone)]
 pub struct DspySignature {
@@ -528,8 +531,16 @@ pub trait MetaSignature: Send + Sync {
             format!("{}:", prefix)
         };
 
-        // Log prefix update for debugging
-        // debug!("DSPy Signature: Updated prefix to '{}'", normalized_prefix);
+        GLOBAL_PREFIX_REGISTRY
+            .write()
+            .expect("prefix registry poisoned")
+            .insert(thread::current().id(), normalized_prefix.clone());
+
+        log::debug!(
+            target: "dspy.signature",
+            "DSPy signature prefix updated: {}",
+            normalized_prefix
+        );
 
         // Note: This default implementation doesn't store the prefix permanently
         // Concrete signature implementations should override this method to:

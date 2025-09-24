@@ -1,127 +1,241 @@
-# ✨ Moon Shine - Moon Extension Scaffold
+# ✨ Moon Shine
 
-Moon Shine is an experimental WebAssembly (WASM) extension for [moonrepo](https://moonrepo.dev). The current codebase focuses on wiring up configuration, installation payloads, and logging so that future AI-assisted workflows can plug into Moon's task runner. The README intentionally tracks the behavior that actually ships in this repository.
+Moon Shine is a production-grade AI agent workflow for [moonrepo](https://moonrepo.dev) projects. The
+extension runs as a WebAssembly (WASM) module inside Moon, delegating heavyweight work to native Moon
+tasks while coordinating multi-agent analysis, code generation, and formatting passes. The current
+release focuses on TypeScript and JavaScript, but the architecture is designed to extend across
+languages and provider stacks.
 
-## ✅ What Works Today
+---
 
-- **Moon extension entrypoint** implemented in `src/lib.rs`/`src/extension.rs` that parses a limited set of CLI flags (`--mode`, `--lint-only`, `--reporting-only`, `--force-init`, `--install-prompts`) and forwards positional arguments as file targets.
-- **Installation bootstrap** (`install_moonshine_extension`) that returns a JSON payload containing default prompt/training data and Moon task templates; Moon is expected to write the files on the host.
-- **Configuration loading** through `MoonShineConfig` with a generated JSON schema so `workspace.yml`/`project.yml` can supply settings without the WASM module touching disk.
-- **Workflow scaffolding** in `src/workflow.rs` that logs the requested operation mode (including a stub `parallel-lint` mode) and is home to the current orchestrator logic for future Moon task execution.
-- **Embedded resources** for prompts, pattern configuration, and experimental DSPy-inspired helpers that can be consumed by future workflows.
+## 📖 Overview
 
-## 🚧 Not Implemented Yet
+- **Hybrid AI pipeline** – WASM orchestrates intelligent workflows while Moon tasks run TypeScript,
+  ESLint, Prettier, and Claude CLI tooling.
+- **DAG-based workflow engine** – `src/workflow.rs` models end-to-end analysis as a petgraph DAG with
+  configurable phases, conditional steps, and retries.
+- **Agent federation** – Specialized agents handle static pattern analysis, TypeScript checking,
+  Claude-powered refinement, and optional strict-mode validation. See [`agents.md`](./agents.md).
+- **Session-based coordination** – Each run exchanges JSON payloads via structured session directories
+  under `/tmp/moon-shine/<date>/session-*/`.
+- **Cost-aware AI** – Adaptive heuristics decide when to invoke Claude versus relying on static
+  heuristics to manage latency and spend.
 
-The code does **not** currently execute ESLint, TypeScript, Prettier, Claude, or other native tools. All heavy lifting steps are placeholders that only log intent. Features such as petgraph-based DAG execution, cost-aware AI routing, or JSON responses in `/tmp/moon-shine/...` directories are aspirational and should be treated as TODOs.
+Moon Shine ships with an embedded rulebase (582 static, 192 behavioral, 50 hybrid rules) plus
+AI-enhanced behavioral detectors defined under `src/oxc_adapter/`.
 
-If you need those behaviors, follow the existing TODO comments in the source code or expand the scaffolding modules (`workflow`, `cost_aware_ai_orchestrator`, `moon_pdk_interface`, etc.).
+---
 
-## 🧭 CLI Usage
-
-```
-moon ext moon-shine [flags] [files...]
-```
-
-Supported flags (see `parse_moon_args` in `src/extension.rs`):
-
-| Flag | Description |
-| ---- | ----------- |
-| `--mode <value>` | Selects operation mode. Supported values today: `fix`, `lint-only`, `reporting-only`, `parallel-lint`. The default is `fix` or whatever `MoonShineConfig.operationMode` provides. |
-| `--lint-only` | Shortcut that forces `mode = lint-only`. |
-| `--reporting-only` | Reports issues without running installation logic. |
-| `--force-init` | Forces regeneration of installation payloads even if prompts already exist. |
-| `--install-prompts` | Triggers the installation flow without running a workflow. |
-
-Any argument that does not start with `--` is treated as a file or directory target. In `parallel-lint` mode the extension still emits stub metrics and does not accept extra flags such as `--metrics-file` yet.
-
-## 🛠️ Installation & Build
-
-### Environment Setup
-
-First, set up the development environment:
+## 🚀 Quick Start
 
 ```bash
-# Activate proto toolchain (Rust, Moon, etc.)
-./setup.sh
-
-# Or manually activate proto in your shell:
-eval "$(proto activate --shell bash)"
+./setup.sh                         # Install proto toolchain (Moon, Rust, Node)
+moon run moon-shine:build          # Compile WASM bundle with caching
+moon run moon-shine:test           # Execute unit & integration tests
+moon ext moon-shine src/           # Run the extension on your workspace
 ```
 
-The project uses [proto](https://moonrepo.dev/docs/proto) for tool management. Tools are configured in `.prototools`:
-- Rust 1.89.0
-- Moon 1.40.4
-- Node 20.0.0
+Core CLI flags (parsed in `src/extension.rs`):
 
-### Build Commands
+- `--mode <fix|lint-only|reporting-only|parallel-lint>` – Select the workflow profile. Defaults to
+  `fix` unless overridden in configuration.
+- `--lint-only`, `--reporting-only` – Convenience shorthands for the matching mode.
+- `--force-init`, `--install-prompts` – Refresh provisioning payloads that Moon materializes on disk.
 
-Moon repo tasks defined in `moon.yml` wrap the usual Cargo commands:
+When `--mode parallel-lint` is selected the WASM module emits JSON metrics; all other heavy work
+remains inside Moon tasks.
 
-```bash
-moon run moon-shine:build       # cargo build --target wasm32-wasip1 --release
-moon run moon-shine:test        # cargo test --all --release
-moon run moon-shine:lint        # cargo clippy with strict settings
-moon run moon-shine:type-check  # cargo check --target wasm32-wasip1
-moon run moon-shine:format      # dprint fmt
+---
+
+## 🧠 Architecture
+
+```text
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│ WASM Coordinator│───▶│ Workflow Engine  │───▶│ Moon Task Agents │
+│ (Extism + Moon) │    │ (petgraph DAG)   │    │ (tsc/eslint/etc) │
+└─────────────────┘    └──────────────────┘    └──────────────────┘
+        │                        │                        │
+        ▼                        ▼                        ▼
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│ Static Analysis │    │ Result Aggregator│    │ Claude AI Agent │
+│ Pattern Pass    │    │ Cost Heuristics  │    │ Strict TS Agent │
+└─────────────────┘    └──────────────────┘    └──────────────────┘
 ```
 
-You can still call Cargo directly if needed, but you will lose Moon's caching benefits.
+### Workflow Phases
 
-### Prerequisites
+1. **Foundation** – Session setup, language detection, OXC parsing, and semantic analysis.
+2. **Analysis** – OXC rule execution and behavioral detectors (parallelized where dependencies allow).
+3. **Enhancement** – Claude AI guidance, code generation, formatting, and optional strict TypeScript
+   validation.
+4. **Aggregation** – Collect agent responses, merge diffs, score quality metrics, and clean sessions
+   (configurable).
 
-```bash
-rustup target add wasm32-wasip1
+The workflow engine performs topological scheduling, per-step timeouts, exponential backoff retries,
+and skip logic when prerequisites fail.
+
+---
+
+## ⚠️ Implementation Status
+
+Moon Shine's codebase still contains scaffolding that must be filled in before the documented
+workflow is fully operational. Key areas to complete:
+
+- `src/extension.rs` currently stops after preparing workflow requests and does not invoke Moon tasks
+  or the workflow engine. Wire this entrypoint to the real executors once they exist.
+- `src/workflow.rs` implements the petgraph DAG engine but `src/lib.rs` comments out the module export,
+  so no compiled code reaches it. Either re-export the engine or adjust documentation when the stub is
+  replaced.
+- `src/moon_pdk_interface.rs` returns mock results for host operations such as `execute_command` and
+  `read_file_content`. Replace these placeholders with real Moon PDK calls to safely access the host
+  filesystem and processes.
+- OXC integrations (`src/oxc_adapter/`, `src/engine.rs`) expose rich APIs but are not hooked up to the
+  CLI; connect them to the execution pipeline and thread through `tsconfig.json` strictness when ready.
+- Provider routing and COPRO utilities (`src/provider_router/`, `src/prompt_optimizer.rs`) are present
+  but require actual CLI binaries and configuration plumbing before they can dispatch AI calls to the
+  selected provider.
+- TSDoc analysis references `tsdoc.json` settings but still uses placeholder data paths; wire the real
+  config before enabling the step by default.
+
+Documenting these gaps should help you or future contributors fill in the concrete implementations.
+
+---
+
+## 🤖 Agent Catalog
+
+- **WASM Coordination** (`src/lib.rs::ai_lint_file`) – Entry point for language detection, session
+  orchestration, and host-side Moon PDK execution.
+- **Static Analysis** (`src/linter.rs::static_analysis_with_path`) – Rule-aware analyzer that
+  surfaces contextual suggestions per file path.
+- **AI Provider Router** (Moon PDK `execute_command`) – Dispatches to Claude, Gemini, or other
+  configured providers for holistic fixes, lint harmonization, and documentation improvements.
+- **TypeScript Semantics via OXC** – Uses OXC’s TypeScript parsing and semantic analysis. Future
+  strictness toggles will be derived from project configuration (e.g., `tsconfig.json`) when host-side
+  TypeScript integration is implemented.
+
+See [`agents.md`](./agents.md) for the full integration guide, including JSON contract examples and
+debugging tips.
+
+---
+
+## 🔄 Agent Communication Protocol
+
+Each processed file produces a session directory containing the request, intermediate tool output,
+and final AI results:
+
+```text
+/tmp/moon-shine/<date>/session-<uuid>/
+├── request.json
+├── typescript-response.json
+├── eslint-response.json
+├── prettier-response.json
+├── tsdoc-response.json
+└── claude-response.json
 ```
 
-## 🧩 Configuration
+Requests encapsulate file content, WASM analysis summaries, quality scores, and agent enablement
+toggles. Responses echo the `request_id`, identify the task (`claude-json`, `eslint-native`, …), and
+supply structured results plus timing metadata. Session retention is configurable via
+`MoonShineConfig::keep_debug_sessions`.
 
-`MoonShineConfig` is exposed to Moon via the `create_config_schema` helper. You can add the extension to `.moon/workspace.yml` or a project file and set fields such as:
+---
 
-- `aiModel`, `enableCoproOptimization`, and other AI-related toggles
-- `includePatterns` / `excludePatterns`
-- `moonTaskName` or `moonTaskMapping`
+## ⚙️ Configuration
 
-The current implementation reads these values for logging and future expansion but does not yet change runtime behavior beyond selecting default strings.
+`MoonShineConfig` (deserialized through Moon’s config schema) controls workflow depth, AI budget
+heuristics, and session behavior:
 
-## 🗂️ Installation Payload Structure
-
-Calling the extension with `--install-prompts` (or running it for the first time) produces a payload similar to:
-
-```json
-{
-  "action": "install_moonshine_extension",
-  "moonshine_dir": ".moon/moonshine",
-  "initial_files": {
-    "prompts.json": { ... },
-    "training.json": { ... },
-    "config.json": { ... }
-  },
-  "task_templates": {
-    "shine": { ... },
-    "shine-lint": { ... }
-  }
+```rust
+pub struct MoonShineConfig {
+    pub max_iterations: u32,
+    pub quality_threshold: f64,
+    pub enable_claude_ai: bool,
+    pub enable_parallel_execution: bool,
+    pub timeout_per_step_ms: u64,
+    pub retry_failed_steps: bool,
+    pub keep_debug_sessions: bool,
+    // ... provider and COPRO options elided
 }
 ```
 
-Moon is responsible for materializing these artifacts on disk.
+Runtime AI behaviour is tuned through `AiLinterConfig`, enabling or disabling specific agents and
+defining session retention for debugging. Configuration lives in your Moon `workspace.yml` or
+`project.yml`; Moon validates it using the schema emitted from `create_config_schema()`. Defaults are
+designed for practical operations (e.g., keep debug sessions for 12 hours, clean up stale sessions
+after 48 hours). Strict TypeScript semantics flow from your project’s `tsconfig.json`, while TSDoc
+analysis will respect your TSDoc configuration (`tsdoc.json`) when the host integration is complete.
 
-## 🧪 Development Notes
+---
 
-- Unit tests cover serialization helpers and configuration defaults (`src/extension.rs`, `src/config.rs`).
-- The DSPy-inspired modules under `src/dspy/` provide macros/utilities that are currently only exercised in tests/examples.
-- Many modules (e.g., `tool_replacements`, `workflow`, `sunlinter_integration`) are scaffolding and may contain TODO comments for future implementation.
+## 📏 Code Quality & Naming Conventions
 
-When evolving the project, prefer adding executable code first, then refreshing the README so it continues to mirror the repository state.
+**Moon Shine follows Google TypeScript naming conventions adapted for Rust** to ensure clarity.
+This approach emphasizes descriptive, fully qualified names that make code intent immediately obvious.
 
-## 📄 License
+### **Naming Philosophy**
 
-MIT License – see `LICENSE`.
+- **Self-Documenting Names**: `LanguageModelUsageMetrics` instead of `LmUsage`
+- **Full Descriptive Terms**: `MultiLanguageAnalysisResult` instead of `Result`
+- **Explicit Purpose**: `TypeScriptSemanticAnalyzer` instead of `TSAnalyzer`
+- **Behavioral Clarity**: `RepetitivePatternLearner` instead of `AdaptiveAnalyzer`
 
-## 🙌 Contributing
+### **Key Renamed Components**
 
-1. Keep documentation in sync with behavior; the code is treated as the source of truth.
-2. Add tests when enabling new workflow steps.
-3. Update or add TODOs in code if you adopt ideas from older documentation that are not yet implemented.
-## 🧩 Rulebase
+- `LmUsage` → `LanguageModelUsageMetrics` - Token usage tracking with comprehensive metadata
+- `CodePatternDetector` → Maintains descriptive naming for StarCoder-1B integration
+- `MultiLanguageAnalyzer` → Unified analysis system for TypeScript/JavaScript and Rust
+- `RepetitivePatternLearner` → AI-powered pattern detection for custom rule generation
 
-This build ships with 832 compiled rule definitions (582 static, 200 behavioral, 50 hybrid) derived from `rulebase/output/moonshine-rulebase-complete.json`. They are embedded via the `embedded_rulebase` feature and exposed through `rulebase::iter_builtin_rules()`.
+### **Benefits**
+
+- **Onboarding Speed**: New contributors immediately understand component purposes
+- **IDE Experience**: IntelliSense provides clear context for every symbol
+- **Code Review Quality**: Reviewers can focus on logic rather than deciphering abbreviated names
+- **Documentation Alignment**: Code structure mirrors architectural documentation
+
+This convention applies throughout the codebase - from high-level workflow coordinators to low-level diagnostic structures.
+
+---
+
+## 🧪 Development & Testing
+
+- `moon run moon-shine:build` – WASM build (wraps `cargo build --target wasm32-wasip1`).
+- `moon run moon-shine:test` – Runs crate tests with Moon’s caching.
+- `moon run moon-shine:lint` – Executes strict `cargo clippy` configuration.
+- `moon run moon-shine:type-check` – Performs `cargo check` for the WASM target.
+- `moon ext moon-shine --keep-debug-sessions src/` – Run analysis while retaining session artifacts.
+- `moon ext moon-shine --dry-run src/` – Inspect planned workflow steps without executing external
+  agents.
+
+Prefer Moon tasks over direct `cargo` or `tsc` invocation—Moon provides dependency-aware caching and
+environment consistency.
+
+---
+
+## 🛠️ Debugging & Monitoring
+
+- Inspect session directories under `/tmp/moon-shine/<date>/session-*` for agent I/O.
+- Use `moon query projects --id moon-shine --json` to verify task registration.
+- Run `moon sync moon-shine` to ensure task metadata matches your workspace configuration.
+- Provider routing telemetry and rule execution stats are exported via `TelemetryCollector` in
+  `src/telemetry.rs`.
+
+---
+
+## 📚 Additional Resources
+
+- [`agents.md`](./agents.md) – Deep dive on agent orchestration, workflow DAGs, and protocol examples.
+- `src/oxc_adapter/` – High-performance OXC integration, adaptive pattern analysis, and behavioral AI
+  detectors.
+- `rulebase/` – Embedded rule definitions bundled with the WASM module.
+- `tests/` – Snapshot, property, and integration tests covering workflow scenarios.
+
+---
+
+## 🤝 Contributing
+
+1. Keep documentation synchronized with executable behaviour.
+2. Extend coverage when enabling new workflow phases or AI providers.
+3. Follow the existing JSON protocol when adding Moon tasks or agents.
+
+Moon Shine is distributed under the MIT License. See `LICENSE` for details.

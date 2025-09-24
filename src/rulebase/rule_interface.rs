@@ -38,7 +38,7 @@ pub struct RuleContext {
 }
 
 /// Rule execution result - single lint issue
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RuleResult {
     /// Rule ID that generated this issue
     pub rule_id: String,

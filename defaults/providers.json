@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "providers": {
+    "claude": {
+      "name": "claude",
+      "command": "claude",
+      "default_model": "sonnet",
+      "supports_oauth": true,
+      "capabilities": {
+        "code_analysis": 0.95,
+        "code_generation": 0.85,
+        "complex_reasoning": 0.95,
+        "speed": 0.75,
+        "context_length": 200000,
+        "supports_sessions": true
+      }
+    },
+    "google": {
+      "name": "google",
+      "command": "gemini",
+      "default_model": "gemini-2.5-flash",
+      "supports_oauth": true,
+      "capabilities": {
+        "code_analysis": 0.80,
+        "code_generation": 0.80,
+        "complex_reasoning": 0.85,
+        "speed": 0.90,
+        "context_length": 100000,
+        "supports_sessions": true
+      },
+      "model_variants": {
+        "gemini-2.5-pro": {
+          "code_analysis": 0.90,
+          "code_generation": 0.85,
+          "complex_reasoning": 0.90,
+          "speed": 0.70
+        },
+        "gemini-2.5-flash": {
+          "code_analysis": 0.80,
+          "code_generation": 0.80,
+          "complex_reasoning": 0.85,
+          "speed": 0.90
+        }
+      }
+    },
+    "openai": {
+      "name": "openai",
+      "command": "codex",
+      "default_model": "gpt-5-codex",
+      "supports_oauth": true,
+      "capabilities": {
+        "code_analysis": 0.88,
+        "code_generation": 0.95,
+        "complex_reasoning": 0.85,
+        "speed": 0.85,
+        "context_length": 200000,
+        "supports_sessions": true
+      }
+    }
+  }
+}

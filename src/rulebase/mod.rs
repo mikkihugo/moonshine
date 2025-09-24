@@ -1,36 +1,45 @@
-//! # MoonShine RuleBase - Simple JSON Rule System
+//! # MoonShine RuleBase - Modern OXC + AI System
 //!
-//! Loads all 832 rules from generated JSON using serde.
-//! Simple and efficient without KV complexity.
+//! Unified rule system combining OXC's 570+ static analysis rules
+//! with AI-powered behavioral pattern detection. No legacy JSON loading.
 //!
 //! @category rulebase
 //! @safe program
 //! @mvp core
 //! @complexity medium
-//! @since 3.0.0
+//! @since 4.0.0
 
-pub mod dynamic_rule_loader;
+// pub mod biome_rules; // Removed - replaced with OXC integration
 pub mod execution_engine;
+pub mod presets;
 pub mod rule_interface;
 
-#[cfg(feature = "embedded_rulebase")]
-pub mod generated;
+// Modern rule implementation types
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RuleImplementation {
+    /// OXC static analysis rule
+    OxcStatic { rule_name: String },
+    /// AI behavioral pattern detection
+    AiBehavioral { pattern_type: String },
+    /// Hybrid OXC + AI analysis
+    Hybrid { oxc_rule: String, ai_pattern: String },
+}
 
 // Re-exports
-pub use dynamic_rule_loader::{RuleDefinition, RuleImplementation, RulebaseMetadata};
-pub use execution_engine::{ExecutionPlan, RuleExecutor};
+pub use execution_engine::{ExecutionPlan, RuleExecutionContext, RuleExecutionOutcome, RuleExecutor};
+pub use presets::{available_presets, get_preset, has_preset};
 pub use rule_interface::{Rule, RuleCategory, RuleContext, RuleResult, RuleSeverity};
 
-#[cfg(feature = "embedded_rulebase")]
-pub use generated::{Implementation as GeneratedImplementation, RuleDefinition as GeneratedRuleDefinition};
+// Legacy rule definitions - removed in favor of Biome + AI system
+// pub use generated::{Implementation as GeneratedImplementation, RuleDefinition as GeneratedRuleDefinition};
 
-/// Total rules in our rulebase
-pub const TOTAL_RULES: usize = 832;
-
-#[cfg(feature = "embedded_rulebase")]
-pub fn iter_builtin_rules() -> impl Iterator<Item = &'static GeneratedRuleDefinition> {
-    generated::all_rules()
-}
+/// Modern rulebase constants
+pub const TOTAL_RULES: usize = 190; // Biome rules + AI patterns
+pub const STATIC_RULES_COUNT: usize = 190; // Biome static rules
+pub const BEHAVIORAL_RULES_COUNT: usize = 50; // AI behavioral patterns
+pub const HYBRID_RULES_COUNT: usize = 20; // Hybrid rules
 
 // Rule execution is now coordinated through the central `RuleRegistry` and
 // the workflow engine. This module keeps the shared data structures and JSON

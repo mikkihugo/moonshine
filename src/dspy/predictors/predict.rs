@@ -19,7 +19,7 @@ use indexmap::IndexMap;
 
 use crate::data::{Example, Prediction};
 use crate::dspy::core::{MetaSignature, Optimizable};
-use crate::dspy::{adapter::Adapter, ChatAdapter, GLOBAL_SETTINGS, LM};
+use crate::dspy::{adapter::Adapter, ConversationHistoryAdapter, GLOBAL_SETTINGS, LM};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -94,7 +94,7 @@ impl Predict {
 
         let fallback_lm = LM::new(Uuid::new_v4().to_string(), fallback_config);
 
-        Ok((Arc::new(ChatAdapter::default()), fallback_lm))
+        Ok((Arc::new(ConversationHistoryAdapter::default()), fallback_lm))
     }
 
     /// Execute prediction with Moon PDK compatible retry logic
@@ -212,7 +212,8 @@ impl super::Predictor for Predict {
     /// @since 1.0.0
     async fn forward_with_config(&self, inputs: Example, lm: &mut LM) -> anyhow::Result<Prediction> {
         // Use the same retry logic as the main forward method for consistency
-        self.execute_prediction_with_retry(Arc::new(ChatAdapter::default()), lm, inputs, 3).await
+        self.execute_prediction_with_retry(Arc::new(ConversationHistoryAdapter::default()), lm, inputs, 3)
+            .await
     }
 }
 

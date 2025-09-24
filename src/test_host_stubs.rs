@@ -52,7 +52,7 @@ pub extern "C" fn load_u8(_ptr: u64) -> u8 {
     0
 }
 
-/// Load 64-bit value from memory (stub implementation for native testing) 
+/// Load 64-bit value from memory (stub implementation for native testing)
 /// Returns 0 for all memory locations
 #[cfg(all(test, not(feature = "wasm")))]
 #[no_mangle]

@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 //! # Moon Shine: AI-Powered Code Optimization for Moonrepo
 //!
 //! `moon-shine` is a sophisticated WebAssembly (WASM) extension designed for the `moonrepo` task orchestration system.
@@ -34,7 +36,7 @@
 //! - `@complexity`: Rates the complexity of the component (e.g., `low`, `medium`, `high`, `critical`).
 //! - `@since`: Specifies the version when the component was introduced.
 
-use extism_pdk::*;
+use crate::moon_host::{plugin_fn, FnResult, Json};
 
 #[cfg(all(test, not(feature = "wasm")))]
 mod test_host_stubs;
@@ -49,45 +51,49 @@ use moon_pdk_test_utils::*;
 pub use starbase_sandbox::create_empty_sandbox;
 
 // Core modules
+#[macro_use]
+pub mod moon_log; // Moon PDK logging adapters
+pub mod adaptive_workflow_planner; // Adaptive workflow planning and AI strategy selection
 pub mod ai_assistance; // AI enhancement and suggestion system
 pub mod ai_code_fixer; // AI-powered code fixing
 pub mod analysis;
-pub mod cost_aware_ai_orchestrator; // Cost-aware AI orchestration for intelligent resource usage
-pub mod code_analyzer; // OXC-based code analyzer with comprehensive linting and complexity analysis
-pub mod complexity; // Comprehensive complexity analysis with enhanced Halstead metrics
+// pub mod analysis_pipeline; // Temporarily disabled - needs Biome replacement
 pub mod config;
 pub mod data; // Shared data handling components
 pub mod dspy; // Embedded full DSPy framework <!-- TODO: Verify the completeness and fidelity of this DSPy implementation against the original Python framework. -->
 pub mod error;
 pub mod extension;
 pub mod installation;
-pub mod linter;
-pub mod message_types; // Message and Chat structures
+pub mod oxc_adapter; // Modern OXC + AI behavioral linting system
+                     // pub mod linter; // Disabled - replaced by Biome + AI analysis system
+pub mod message_types; // Message and ConversationHistory structures
+pub mod moon_host; // Centralized re-export of required Extism symbols
 pub mod moon_pdk_interface; // Moon PDK communication interface
-pub mod pattern_config; // Configurable pattern detection rules
+                            // pub mod pattern_config; // Legacy pattern config - replaced by Biome + AI system
 pub mod prompt_optimizer; // DSPy-powered prompt optimization
 pub mod prompts; // Embedded prompt management
 pub mod provider_router; // AI provider routing and selection
-pub mod security; // AST-based security vulnerability detection
+pub mod rule_storage; // WASM-safe ESLint rule storage with assemblage_kv
+pub mod rule_types; // Modern rule types for Biome + AI system
+pub mod rulebase; // JSON-based rulebase and execution scaffolding
+                  // pub mod static_analysis_workflow; // Removed - replaced by Biome + AI analysis
 pub mod storage; // Hybrid assemblage_kv + file persistence
+pub mod telemetry; // Telemetry logging for workflow runs
 pub mod token_usage; // LM token usage tracking
 pub mod types; // Core data structures for moon-shine code analysis
-pub mod workflow; // Multi-phase analysis workflow with feedback loops
-pub mod orchestrator; // Unified hybrid orchestrator replacing sequential and parallel workflows
-pub mod rust_workflow_engine; // Petgraph-based workflow engine for pure Rust orchestration
-pub mod rule_storage; // WASM-safe ESLint rule storage with assemblage_kv
-pub mod wasm_safe_linter; // WASM-compatible ESLint rule implementation
-pub mod tool_replacements; // Complete toolchain replacements (TSC, ESLint, Prettier, TSDoc)
-pub mod rules; // Modular MoonShine rule engine with AI enhancement
-pub mod oxc_rules; // Comprehensive collection of OXC-compatible rules organized by domain
+               // pub mod workflow; // Legacy workflow - replaced by MultiEngineAnalyzer system
+pub mod adaptive_rule_system; // Integrated adaptive rule system combining pattern tracking and rule generation
+pub mod custom_rule_generator; // AI-powered custom rule generation pipeline
+pub mod javascript_typescript_linter; // JavaScript/TypeScript linting using OXC
+pub mod multi_language_analyzer; // Multi-language analysis system (TypeScript/JavaScript + Rust)
+pub mod pattern_frequency_tracker; // Pattern frequency tracking and clustering for custom rule generation
+pub mod rust_toolchain_embedded; // Embedded Rust toolchain (Clippy, rustfmt, etc.)
+pub mod templates;
+pub mod tsconfig; // TypeScript configuration resolution utilities
+pub mod tsdoc; // Lightweight TSDoc analysis helpers // Rule generation templates
 
 #[cfg(test)]
 pub mod testing; // Comprehensive testing infrastructure for London, Chicago, and E2E methodologies
-pub mod hybrid_linter; // Hybrid OXC + AI linter (WASM-safe)
-pub mod unified_rule_registry; // Unified registry for all OXC-compatible WASM rules
-pub mod sunlinter_integration; // SunLinter JavaScript rules integration with behavioral analysis
-pub mod sunlinter_rule_converter; // Systematic conversion framework for 192 SunLinter rules
-pub mod sunlinter_plus_plus; // Superior SunLinter++ engine with enhanced capabilities
 
 // Re-exports for convenience
 pub use analysis::MoonShineResponse;
@@ -95,17 +101,13 @@ pub use config::{MoonShineArgs, MoonShineConfig};
 pub use data::{Example, Prediction}; // Add data types re-export
 pub use dspy::signature_macro::*; // Re-export signature macros at crate level
 
-// Tool replacement re-exports
-pub use rule_storage::{RuleStorage, RuleConfig, RuleSeverity, RuleCategory};
-pub use tool_replacements::{ToolChainReplacements, TypeScriptCompilationResult, ESLintReplacementResult, PrettierReplacementResult};
-pub use wasm_safe_linter::{WasmSafeLinter, WasmSafeLintResult};
+// Legacy exports removed - using modern Biome + AI system
 pub use extension::{ExecuteExtensionInput, ExtensionManifest};
-// MoonShine rule engine exports
-pub use rules::{MoonShineRuleEngine, MoonShineRule, MoonShineRuleCategory, AIEnhancer};
-// Unified rule registry exports
-pub use unified_rule_registry::{UnifiedRuleRegistry, RuleRegistryStats, RuleSettings, WasmRuleDiagnostic, AiSuggestion, WasmRuleCategory, WasmFixStatus, WasmRule, EnhancedWasmRule};
-// Workflow engine exports
-pub use rust_workflow_engine::{RustWorkflowEngine, WorkflowStep, WorkflowResult, StepAction};
+pub use multi_language_analyzer::{LanguageConfig, MultiLanguageAnalyzer, SupportedLanguage};
+pub use oxc_adapter::{AiBehavioralAnalyzer, MultiEngineAnalyzer, MultiEngineConfig, OxcAdapter};
+pub use rule_types::{FixStatus, RuleCategory, RuleMetadata, RuleRegistryStats, RuleSeverity};
+pub use rust_toolchain_embedded::{EmbeddedRustAnalyzer, EmbeddedRustConfig};
+// Legacy workflow exports removed
 
 /// Registers the `moon-shine` extension with the Moon task orchestration system.
 ///
@@ -124,7 +126,7 @@ pub use rust_workflow_engine::{RustWorkflowEngine, WorkflowStep, WorkflowResult,
 #[cfg(not(test))]
 #[plugin_fn]
 pub fn register_extension() -> FnResult<Json<ExtensionManifest>> {
-  Ok(Json(ExtensionManifest {
+    Ok(Json(ExtensionManifest {
         name: "moon-shine".to_string(),
         description: "AI-powered TypeScript/JavaScript linter with COPRO optimization and pattern learning".to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -137,8 +139,6 @@ pub fn register_extension() -> FnResult<Json<ExtensionManifest>> {
 /// Main entry point for Moon extension - follows official PDK specification
 /// Coordinates AI-powered code optimization with Moon task orchestration
 #[plugin_fn]
-pub fn execute_extension(
-  Json(input): Json<ExecuteExtensionInput>,
-) -> FnResult<()> {
-  extension::execute_extension_logic(Json(input))
+pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<()> {
+    extension::execute_extension_logic(Json(input))
 }

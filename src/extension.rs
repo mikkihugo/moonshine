@@ -20,7 +20,7 @@ use crate::installation::{check_moonshine_installed, install_moonshine_extension
 use crate::prompts;
 // use crate::storage::HybridStorage; // Reserved for future integration
 // use crate::parallel_lint_runner::{run_parallel_lint, ParallelLintConfig}; // Module doesn't exist yet
-use extism_pdk::*;
+use crate::moon_host::{FnResult, Json, PluginError, WithReturnCode};
 use moon_pdk::*;
 use serde::{Deserialize, Serialize};
 
@@ -69,20 +69,20 @@ pub struct ExtensionManifest {
     pub config_schema: Option<serde_json::Value>,
 }
 
-/// Helper function to create an `extism_pdk::Error` from a string message.
+/// Helper function to create a plugin error from a string message.
 ///
 /// This is a convenience function to simplify error reporting within the extension.
 ///
 /// @param msg The error message.
-/// @returns An `extism_pdk::Error` instance.
+/// @returns A `PluginError` instance.
 ///
 /// @category utility
 /// @safe team
 /// @mvp core
 /// @complexity low
 /// @since 1.0.0
-fn create_extension_error(msg: &str) -> Error {
-    Error::msg(msg.to_string())
+fn create_extension_error(msg: &str) -> PluginError {
+    PluginError::msg(msg.to_string())
 }
 
 /// Parses command-line arguments specific to the `moon-shine` extension.
@@ -172,16 +172,16 @@ fn parse_moon_args(args: &[String]) -> Result<MoonShineArgs, String> {
 /// @since 1.0.0
 pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnResult<()> {
     // Initialize logging with proper Moon extension format
-    info!("Moon Shine v{} starting", env!("CARGO_PKG_VERSION"));
+    moon_info!("Moon Shine v{} starting", env!("CARGO_PKG_VERSION"));
 
     // Parse arguments manually (Moon PDK handles argument passing)
     let args = parse_moon_args(&input.args).map_err(|e| {
-        error!("Failed to parse arguments: {}", e);
+        moon_error!("Failed to parse arguments: {}", e);
         WithReturnCode::new(create_extension_error("Invalid arguments provided"), 1)
     })?;
     // Load configuration with proper error handling via Moon PDK
     let config = get_extension_config::<MoonShineConfig>().unwrap_or_else(|e| {
-        warn!("Configuration error, using defaults: {}", e);
+        moon_warn!("Configuration error, using defaults: {}", e);
         MoonShineConfig::default()
     });
 
@@ -223,6 +223,7 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
         let target = filtered_args.get(0).cloned().unwrap_or_else(|| "src".to_string());
 
         // WASM doesn't support true parallelism, so we use single-threaded processing
+        let effective_concurrency = concurrency.unwrap_or(1);
         let json = serde_json::json!({
             "status": "success",
             "message": "WASM-based linting uses single-threaded processing for safety and compatibility",
@@ -230,7 +231,8 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
             "metrics": {
                 "files_processed": 0,
                 "issues_found": 0,
-                "mode": "single-threaded"
+                "mode": "single-threaded",
+                "requested_concurrency": effective_concurrency
             }
         });
         println!("{}", serde_json::to_string_pretty(&json).unwrap_or_else(|_| "{}".to_string()));
@@ -244,24 +246,24 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
         return Ok(());
     }
 
-    info!("Operation mode: {}", operation_mode);
-    debug!("Processing files: {:?}", file_arguments);
+    moon_info!("Operation mode: {}", operation_mode);
+    moon_debug!("Processing files: {:?}", file_arguments);
 
     // Skip installation in reporting-only mode for CI environments
     if args.reporting_only {
-        info!("Reporting mode - skipping installation checks for CI compatibility");
+        moon_info!("Reporting mode - skipping installation checks for CI compatibility");
     } else {
         // Check if installation is needed (first run, missing files, or forced)
         let needs_installation = !check_moonshine_installed();
 
         if args.install_prompts || needs_installation || args.force_init {
             if args.force_init {
-                info!("Force initialization - resetting configuration");
+                moon_info!("Force initialization - resetting configuration");
             }
 
             match install_moonshine_extension() {
                 Ok(install_payload) => {
-                    info!(
+                    moon_info!(
                         "Installation payload ready: {} components",
                         install_payload.as_object().map(|obj| obj.len()).unwrap_or(0)
                     );
@@ -269,7 +271,7 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
                     return Ok(());
                 }
                 Err(e) => {
-                    error!("Installation failed: {}", e);
+                    moon_error!("Installation failed: {}", e);
                     return Err(WithReturnCode::new(create_extension_error("Failed to prepare extension installation"), 1));
                 }
             }
@@ -278,21 +280,21 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
 
     // Load embedded prompts with error handling
     let available_rules = get_available_rules(Some(&config));
-    info!("Available rules: {} (including custom overrides)", available_rules.len());
+    moon_info!("Available rules: {} (including custom overrides)", available_rules.len());
 
     if available_rules.is_empty() {
-        error!("No linting rules available - extension malfunction");
+        moon_error!("No linting rules available - extension malfunction");
         return Err(WithReturnCode::new(create_extension_error("No linting rules loaded"), 1));
     }
 
     // Validate prompt system with comprehensive error handling
     let test_prompt = load_prompt_from_storage("typescript_strict", Some(&config));
     if test_prompt.is_empty() {
-        error!("Prompt system malfunction - no test prompt loaded");
+        moon_error!("Prompt system malfunction - no test prompt loaded");
         return Err(WithReturnCode::new(create_extension_error("Prompt system not working"), 1));
     }
 
-    debug!("Prompt system validated - {} chars", test_prompt.len());
+    moon_debug!("Prompt system validated - {} chars", test_prompt.len());
 
     // Initialize optimization configuration with proper Moon caching integration
     let opt_config = get_optimization_config();
@@ -300,14 +302,14 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
         opt_config.get("copro").and_then(|c| c.get("enabled")).and_then(|e| e.as_bool()).unwrap_or(true) && config.enable_copro_optimization.unwrap_or(true);
 
     if copro_enabled {
-        info!(
+        moon_info!(
             "COPRO optimization enabled - breadth: {}, depth: {}, temperature: {:.1}",
             config.copro_breadth.unwrap_or(5),
             config.copro_depth.unwrap_or(3),
             config.copro_temperature.unwrap_or(1.0)
         );
     } else {
-        info!("Using static prompts (COPRO disabled)");
+        moon_info!("Using static prompts (COPRO disabled)");
     }
 
     // Initialize Moon-compatible caching for AI results
@@ -317,32 +319,32 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
         config.ai_model.as_deref().unwrap_or("sonnet"),
         if copro_enabled { "copro" } else { "static" }
     );
-    debug!("Cache key: {}", cache_key);
+    moon_debug!("Cache key: {}", cache_key);
 
     let workflow_config = get_workflow_config();
     if let Some(phases) = workflow_config.get("phases").and_then(|p| p.as_array()) {
-        info!("Workflow phases: {}", phases.len());
+        moon_info!("Workflow phases: {}", phases.len());
         for (index, phase) in phases.iter().enumerate() {
             if let Some(name) = phase.get("name").and_then(|n| n.as_str()) {
-                info!("  Phase {}: {}", index + 1, name);
+                moon_info!("  Phase {}: {}", index + 1, name);
             }
         }
     }
 
     // Validate file arguments with proper error handling
     if file_arguments.is_empty() {
-        warn!("No files specified - defaulting to TypeScript/JavaScript patterns");
+        moon_warn!("No files specified - defaulting to TypeScript/JavaScript patterns");
         // Use sensible defaults rather than failing
         // This will be handled by the file expansion logic below
     }
 
-    info!("Processing {} file pattern(s)", file_arguments.len());
+    moon_info!("Processing {} file pattern(s)", file_arguments.len());
     for (i, pattern) in file_arguments.iter().enumerate() {
-        debug!("  [{}] {}", i + 1, pattern);
+        moon_debug!("  [{}] {}", i + 1, pattern);
     }
 
     // Delegate workflow execution to Moon tasks
-    info!("Initiating multi-phase workflow via Moon tasks");
+    moon_info!("Initiating multi-phase workflow via Moon tasks");
 
     // Create workflow request for Moon task execution
     let _workflow_request = serde_json::json!({
@@ -353,8 +355,8 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
         "operation_mode": operation_mode
     });
 
-    info!("Workflow request prepared for {} files", file_arguments.len());
-    info!("Moon tasks will handle: TSC -> ESLint -> CodeQL -> TSDoc -> Claude -> Validation");
+    moon_info!("Workflow request prepared for {} files", file_arguments.len());
+    moon_info!("Moon tasks will handle: TSC -> ESLint -> CodeQL -> TSDoc -> Claude -> Validation");
 
     // Moon will execute the actual workflow phases
     // WASM extension coordinates but doesn't execute heavy operations

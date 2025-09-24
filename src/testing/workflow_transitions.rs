@@ -14,9 +14,10 @@ use std::time::{Duration, Instant};
 use crate::analysis::AnalysisResults;
 use crate::config::MoonShineConfig;
 use crate::error::Result;
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
+use crate::linter::SuggestionCategory;
 use crate::testing::assertions::PerformanceAssertions;
 use crate::testing::builders::{AnalysisResultsBuilder, LintIssueBuilder};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Workflow phase definition for testing
 #[derive(Debug, Clone)]
@@ -293,7 +294,7 @@ impl WorkflowTransitionTester {
         let restart_triggered = phase.validation
             && suggestions
                 .iter()
-                .any(|s| matches!(s.severity, SuggestionSeverity::Error) && s.message.contains("requires restart"));
+                .any(|s| matches!(s.severity, LintSeverity::Error) && s.message.contains("requires restart"));
 
         // Record feedback loop if this phase creates one
         if restart_triggered {

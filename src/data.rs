@@ -9,7 +9,7 @@
 //! @complexity low
 //! @since 1.0.0
 
-use crate::token_usage::LmUsage;
+use crate::token_usage::LanguageModelUsageMetrics;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -60,12 +60,12 @@ impl Example {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Prediction {
     pub data: HashMap<String, Value>,
-    pub lm_usage: LmUsage,
+    pub lm_usage: LanguageModelUsageMetrics,
 }
 
 impl Prediction {
     /// Creates a new Prediction with the given data and usage metrics.
-    pub fn new(data: HashMap<String, Value>, lm_usage: LmUsage) -> Self {
+    pub fn new(data: HashMap<String, Value>, lm_usage: LanguageModelUsageMetrics) -> Self {
         Self { data, lm_usage }
     }
 
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn test_prediction_creation() {
         let data = HashMap::from([("result".to_string(), json!("predicted output")), ("confidence".to_string(), json!(0.95))]);
-        let usage = LmUsage::default();
+        let usage = LanguageModelUsageMetrics::default();
 
         let prediction = Prediction::new(data.clone(), usage.clone());
 
@@ -172,7 +172,7 @@ mod tests {
     fn test_prediction_get_existing_field() {
         let mut data = HashMap::new();
         data.insert("prediction_result".to_string(), json!("success"));
-        let prediction = Prediction::new(data, LmUsage::default());
+        let prediction = Prediction::new(data, LanguageModelUsageMetrics::default());
 
         let value = prediction.get("prediction_result", None);
         assert_eq!(value, json!("success"));
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_prediction_get_missing_field() {
-        let prediction = Prediction::new(HashMap::new(), LmUsage::default());
+        let prediction = Prediction::new(HashMap::new(), LanguageModelUsageMetrics::default());
 
         let value = prediction.get("missing_field", Some(json!("fallback")));
         assert_eq!(value, json!("fallback"));
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn test_prediction_serialization() {
         let data = HashMap::from([("output".to_string(), json!("generated text")), ("score".to_string(), json!(0.87))]);
-        let usage = LmUsage::new(100, 50);
+        let usage = LanguageModelUsageMetrics::new(100, 50);
         let prediction = Prediction::new(data, usage);
 
         // Test serialization

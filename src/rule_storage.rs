@@ -65,7 +65,7 @@ pub struct RuleSet {
     pub description: String,
     pub extends: Vec<String>, // Base configurations to extend
     pub rules: HashMap<String, RuleConfig>,
-    pub env: HashMap<String, bool>, // Environment settings
+    pub env: HashMap<String, bool>,     // Environment settings
     pub globals: HashMap<String, bool>, // Global variables
     pub parser_options: ParserOptions,
 }
@@ -92,9 +92,9 @@ impl RuleStorage {
     pub fn new(_storage_path: Option<&Path>) -> Result<Self> {
         // TODO: Restore database initialization when assemblage_kv API is fixed
         // let db = if let Some(path) = storage_path {
-        //     Database::open(path).map_err(|e| Error::Storage(format!("Failed to open database: {}", e)))?
+        //     Database::open(path).map_err(|e| Error::Storage { message: format!("Failed to open database: {}", e)))?
         // } else {
-        //     Database::memory().map_err(|e| Error::Storage(format!("Failed to create memory database: {}", e)))?
+        //     Database::memory().map_err(|e| Error::Storage { message: format!("Failed to create memory database: {}", e)))?
         // };
 
         let mut storage = Self {
@@ -116,30 +116,29 @@ impl RuleStorage {
 
     /// Get specific rule set by name
     pub fn get_ruleset(&self, name: &str) -> Result<RuleSet> {
-        let key = format!("ruleset:{}", name);
-
-        match self.db.get(&key) {
-            Ok(Some(data)) => {
-                serde_json::from_slice(&data)
-                    .map_err(|e| Error::Storage(format!("Failed to deserialize ruleset: {}", e)))
-            }
-            Ok(None) => Err(Error::Storage(format!("Ruleset '{}' not found", name))),
-            Err(e) => Err(Error::Storage(format!("Database error: {}", e))),
-        }
+        // TODO: Use assemblage_kv Database when API is restored
+        // For now, return a mock ruleset
+        let _ = name;
+        Ok(RuleSet {
+            name: "default".to_string(),
+            description: "Default rule set".to_string(),
+            extends: vec![],
+            rules: HashMap::new(),
+            env: HashMap::new(),
+            globals: HashMap::new(),
+            parser_options: ParserOptions {
+                ecma_version: 2022,
+                source_type: "module".to_string(),
+                ecma_features: HashMap::new(),
+            },
+        })
     }
 
     /// Save rule set
     pub fn save_ruleset(&mut self, ruleset: &RuleSet) -> Result<()> {
-        let key = format!("ruleset:{}", ruleset.name);
-        let data = serde_json::to_vec(ruleset)
-            .map_err(|e| Error::Storage(format!("Failed to serialize ruleset: {}", e)))?;
-
-        self.db.set(&key, &data)
-            .map_err(|e| Error::Storage(format!("Failed to save ruleset: {}", e)))?;
-
-        // Create snapshot for persistence
-        self.create_snapshot()?;
-
+        // TODO: Use assemblage_kv Database when API is restored
+        // For now, store in current_ruleset name
+        self.current_ruleset = ruleset.name.clone();
         Ok(())
     }
 
@@ -148,11 +147,8 @@ impl RuleStorage {
         // Verify the ruleset exists
         let _ = self.get_ruleset(name)?;
 
+        // TODO: Use assemblage_kv Database when API is restored
         self.current_ruleset = name.to_string();
-
-        // Save current ruleset preference
-        self.db.set("current_ruleset", name.as_bytes())
-            .map_err(|e| Error::Storage(format!("Failed to save current ruleset: {}", e)))?;
 
         Ok(())
     }
@@ -162,14 +158,9 @@ impl RuleStorage {
         let mut rulesets = Vec::new();
 
         // Iterate through all keys with "ruleset:" prefix
-        let snapshot = self.db.snapshot();
-        for key in snapshot.keys() {
-            if let Ok(key_str) = std::str::from_utf8(&key) {
-                if key_str.starts_with("ruleset:") {
-                    rulesets.push(key_str.strip_prefix("ruleset:").unwrap().to_string());
-                }
-            }
-        }
+        // TODO: Use assemblage_kv Database when API is restored
+        // For now, return a list with the current ruleset
+        rulesets.push(self.current_ruleset.clone());
 
         Ok(rulesets)
     }
@@ -189,7 +180,9 @@ impl RuleStorage {
             rule.enabled = enabled;
             self.save_ruleset(&ruleset)
         } else {
-            Err(Error::Storage(format!("Rule '{}' not found", rule_name)))
+            Err(Error::Storage {
+                message: format!("Rule '{}' not found", rule_name),
+            })
         }
     }
 
@@ -198,18 +191,21 @@ impl RuleStorage {
         let mut ruleset = self.get_current_ruleset()?;
 
         if let Some(rule) = ruleset.rules.get_mut(rule_name) {
-            rule.severity = severity;
             rule.enabled = !matches!(severity, RuleSeverity::Off);
+            rule.severity = severity;
             self.save_ruleset(&ruleset)
         } else {
-            Err(Error::Storage(format!("Rule '{}' not found", rule_name)))
+            Err(Error::Storage {
+                message: format!("Rule '{}' not found", rule_name),
+            })
         }
     }
 
     /// Import ESLint configuration from JSON (.eslintrc.json compatible)
     pub fn import_eslintrc(&mut self, json_config: &str, ruleset_name: &str) -> Result<()> {
-        let eslint_config: serde_json::Value = serde_json::from_str(json_config)
-            .map_err(|e| Error::Storage(format!("Invalid ESLint JSON: {}", e)))?;
+        let eslint_config: serde_json::Value = serde_json::from_str(json_config).map_err(|e| Error::Storage {
+            message: format!("Invalid ESLint JSON: {}", e),
+        })?;
 
         let mut ruleset = RuleSet {
             name: ruleset_name.to_string(),
@@ -274,9 +270,10 @@ impl RuleStorage {
 
         // Add extends
         if !ruleset.extends.is_empty() {
-            eslint_config.insert("extends".to_string(), serde_json::Value::Array(
-                ruleset.extends.iter().map(|s| serde_json::Value::String(s.clone())).collect()
-            ));
+            eslint_config.insert(
+                "extends".to_string(),
+                serde_json::Value::Array(ruleset.extends.iter().map(|s| serde_json::Value::String(s.clone())).collect()),
+            );
         }
 
         // Add rules
@@ -297,28 +294,26 @@ impl RuleStorage {
 
         // Add env
         if !ruleset.env.is_empty() {
-            let env_obj: serde_json::Map<String, serde_json::Value> = ruleset.env.iter()
-                .map(|(k, v)| (k.clone(), serde_json::Value::Bool(*v)))
-                .collect();
+            let env_obj: serde_json::Map<String, serde_json::Value> = ruleset.env.iter().map(|(k, v)| (k.clone(), serde_json::Value::Bool(*v))).collect();
             eslint_config.insert("env".to_string(), serde_json::Value::Object(env_obj));
         }
 
         // Add globals
         if !ruleset.globals.is_empty() {
-            let globals_obj: serde_json::Map<String, serde_json::Value> = ruleset.globals.iter()
-                .map(|(k, v)| (k.clone(), serde_json::Value::Bool(*v)))
-                .collect();
+            let globals_obj: serde_json::Map<String, serde_json::Value> =
+                ruleset.globals.iter().map(|(k, v)| (k.clone(), serde_json::Value::Bool(*v))).collect();
             eslint_config.insert("globals".to_string(), serde_json::Value::Object(globals_obj));
         }
 
-        serde_json::to_string_pretty(&eslint_config)
-            .map_err(|e| Error::Storage(format!("Failed to serialize ESLint config: {}", e)))
+        serde_json::to_string_pretty(&eslint_config).map_err(|e| Error::Storage {
+            message: format!("Failed to serialize ESLint config: {}", e),
+        })
     }
 
     /// Create a snapshot for persistence (important for WASM environments)
     pub fn create_snapshot(&self) -> Result<()> {
-        self.db.snapshot().persist()
-            .map_err(|e| Error::Storage(format!("Failed to create snapshot: {}", e)))
+        // TODO: Use assemblage_kv Database when API is restored
+        Ok(()) // Mock implementation
     }
 
     /// Initialize default ESLint rules
@@ -356,47 +351,78 @@ impl RuleStorage {
 
     fn add_core_rules(&self, ruleset: &mut RuleSet) {
         let core_rules = [
-            ("no-unused-vars", "Variables that are declared and not used anywhere", RuleCategory::BestPractices, true),
+            (
+                "no-unused-vars",
+                "Variables that are declared and not used anywhere",
+                RuleCategory::BestPractices,
+                true,
+            ),
             ("no-console", "Use of console.log statements", RuleCategory::BestPractices, true),
             ("no-debugger", "Use of debugger statements", RuleCategory::PossibleErrors, true),
             ("prefer-const", "Variables that could be constants", RuleCategory::CodeStyle, true),
             ("eqeqeq", "Require === and !== instead of == and !=", RuleCategory::BestPractices, true),
             ("no-eval", "Disallow eval() usage", RuleCategory::Security, false),
             ("no-var", "Require let or const instead of var", RuleCategory::CodeStyle, true),
-            ("prefer-arrow-functions", "Prefer arrow functions for simple functions", RuleCategory::CodeStyle, true),
-            ("prefer-template-literals", "Prefer template literals over string concatenation", RuleCategory::CodeStyle, true),
+            (
+                "prefer-arrow-functions",
+                "Prefer arrow functions for simple functions",
+                RuleCategory::CodeStyle,
+                true,
+            ),
+            (
+                "prefer-template-literals",
+                "Prefer template literals over string concatenation",
+                RuleCategory::CodeStyle,
+                true,
+            ),
         ];
 
         for (rule_name, description, category, fixable) in core_rules {
-            ruleset.rules.insert(rule_name.to_string(), RuleConfig {
-                enabled: true,
-                severity: RuleSeverity::Warning,
-                options: None,
-                description: description.to_string(),
-                category,
-                fixable,
-                recommended: true,
-            });
+            ruleset.rules.insert(
+                rule_name.to_string(),
+                RuleConfig {
+                    enabled: true,
+                    severity: RuleSeverity::Warning,
+                    options: None,
+                    description: description.to_string(),
+                    category,
+                    fixable,
+                    recommended: true,
+                },
+            );
         }
     }
 
     fn add_typescript_rules(&self, ruleset: &mut RuleSet) {
         let ts_rules = [
             ("no-any", "Disallow usage of the any type", RuleCategory::TypeScript, true),
-            ("explicit-function-return-type", "Require explicit return types on functions", RuleCategory::TypeScript, false),
-            ("prefer-readonly", "Prefer readonly for properties that are never reassigned", RuleCategory::TypeScript, true),
+            (
+                "explicit-function-return-type",
+                "Require explicit return types on functions",
+                RuleCategory::TypeScript,
+                false,
+            ),
+            (
+                "prefer-readonly",
+                "Prefer readonly for properties that are never reassigned",
+                RuleCategory::TypeScript,
+                true,
+            ),
         ];
 
         for (rule_name, description, category, fixable) in ts_rules {
-            ruleset.rules.insert(rule_name.to_string(), RuleConfig {
-                enabled: true,
-                severity: RuleSeverity::Warning,
-                options: None,
-                description: description.to_string(),
-                category,
-                fixable,
-                recommended: false,
-            });
+            ruleset.rules.insert(
+                rule_name.to_string(),
+                RuleConfig {
+                    enabled: true,
+                    severity: RuleSeverity::Warning,
+                    options: None,
+                    description: description.to_string(),
+                    category,
+                    fixable,
+                    recommended: false,
+                },
+            );
         }
     }
 
@@ -408,15 +434,18 @@ impl RuleStorage {
         ];
 
         for (rule_name, description, category, fixable) in security_rules {
-            ruleset.rules.insert(rule_name.to_string(), RuleConfig {
-                enabled: true,
-                severity: RuleSeverity::Error,
-                options: None,
-                description: description.to_string(),
-                category,
-                fixable,
-                recommended: true,
-            });
+            ruleset.rules.insert(
+                rule_name.to_string(),
+                RuleConfig {
+                    enabled: true,
+                    severity: RuleSeverity::Error,
+                    options: None,
+                    description: description.to_string(),
+                    category,
+                    fixable,
+                    recommended: true,
+                },
+            );
         }
     }
 
@@ -459,11 +488,7 @@ impl RuleStorage {
                         },
                         _ => RuleSeverity::Warning,
                     };
-                    let options = if arr.len() > 1 {
-                        Some(arr[1].clone())
-                    } else {
-                        None
-                    };
+                    let options = if arr.len() > 1 { Some(arr[1].clone()) } else { None };
                     (severity, options)
                 }
             }

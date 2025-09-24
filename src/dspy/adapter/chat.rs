@@ -1,12 +1,12 @@
-//! # Chat Adapter: DSPy Integration for Chat-based AI Models
+//! # ConversationHistory Adapter: DSPy Integration for ConversationHistory-based AI Models
 //!
-//! This module provides the `ChatAdapter`, a concrete implementation of the `Adapter` trait
+//! This module provides the `ConversationHistoryAdapter`, a concrete implementation of the `Adapter` trait
 //! designed for integrating chat-based AI models into the DSPy framework. It handles the
 //! intricate process of formatting DSPy `MetaSignature` and `Example` data into structured
 //! chat messages (system, user, and assistant roles) and parsing the AI's chat responses
 //! back into DSPy `Prediction` objects.
 //!
-//! The `ChatAdapter` ensures that DSPy's prompt engineering and optimization techniques
+//! The `ConversationHistoryAdapter` ensures that DSPy's prompt engineering and optimization techniques
 //! can be effectively applied to conversational AI interfaces, facilitating seamless
 //! communication between the DSPy core and various LLM backends.
 //!
@@ -23,11 +23,11 @@ use std::collections::HashMap;
 use super::Adapter;
 use crate::data::{Example, Prediction};
 use crate::dspy::utils::get_iter_from_value;
-use crate::dspy::{Chat, Message, MetaSignature, LM};
+use crate::dspy::{ConversationHistory, Message, MetaSignature, LM};
 
 /// Implements the `Adapter` trait for chat-based AI models.
 ///
-/// `ChatAdapter` is responsible for converting DSPy signatures and examples
+/// `ConversationHistoryAdapter` is responsible for converting DSPy signatures and examples
 /// into a conversational format suitable for chat models, and for parsing
 /// their responses back into DSPy predictions.
 ///
@@ -37,7 +37,7 @@ use crate::dspy::{Chat, Message, MetaSignature, LM};
 /// @complexity medium
 /// @since 1.0.0
 #[derive(Default, Clone)]
-pub struct ChatAdapter;
+pub struct ConversationHistoryAdapter;
 
 /// Generates a type hint string based on the field's schema and data type.
 ///
@@ -67,7 +67,7 @@ fn get_type_hint(field: &Value) -> String {
     }
 }
 
-impl ChatAdapter {
+impl ConversationHistoryAdapter {
     /// Formats a list of field attributes into a human-readable string.
     ///
     /// This is used to describe the input and output fields to the AI model
@@ -359,15 +359,15 @@ Your output fields are:
     ///
     /// @param signature The `MetaSignature` of the AI model.
     /// @param demos A vector of `Example` instances representing the demonstrations.
-    /// @returns A `Chat` object containing the formatted demonstration messages.
+    /// @returns A `ConversationHistory` object containing the formatted demonstration messages.
     ///
     /// @category formatting
     /// @safe team
     /// @mvp core
     /// @complexity low
     /// @since 1.0.0
-    fn format_demos(&self, signature: &dyn MetaSignature, demos: &Vec<Example>) -> Chat {
-        let mut chat = Chat::new(vec![]);
+    fn format_demos(&self, signature: &dyn MetaSignature, demos: &Vec<Example>) -> ConversationHistory {
+        let mut chat = ConversationHistory::new(vec![]);
 
         for demo in demos {
             let user_message = self.format_user_message(signature, demo);
@@ -381,30 +381,30 @@ Your output fields are:
 }
 
 #[async_trait::async_trait]
-impl Adapter for ChatAdapter {
-    /// Formats the DSPy signature and inputs into a `Chat` object for the AI model.
+impl Adapter for ConversationHistoryAdapter {
+    /// Formats the DSPy signature and inputs into a `ConversationHistory` object for the AI model.
     ///
-    /// This is the main entry point for the `ChatAdapter`'s formatting logic.
+    /// This is the main entry point for the `ConversationHistoryAdapter`'s formatting logic.
     /// It constructs the system message, incorporates demonstration examples (if any),
     /// and formats the current user input into a complete chat history.
     ///
     /// @param signature The `MetaSignature` of the AI model.
     /// @param inputs The `Example` containing the current input data.
-    /// @returns A `Chat` object ready to be sent to the AI model.
+    /// @returns A `ConversationHistory` object ready to be sent to the AI model.
     ///
     /// @category dspy-method
     /// @safe team
     /// @mvp core
     /// @complexity medium
     /// @since 1.0.0
-    fn format(&self, signature: &dyn MetaSignature, inputs: Example) -> Chat {
+    fn format(&self, signature: &dyn MetaSignature, inputs: Example) -> ConversationHistory {
         let system_message = self.format_system_message(signature);
         let user_message = self.format_user_message(signature, &inputs);
 
         let demos = signature.demos();
         let demos = self.format_demos(signature, &demos);
 
-        let mut chat = Chat::new(vec![]);
+        let mut chat = ConversationHistory::new(vec![]);
         chat.push("system", &system_message);
         chat.push_all(&demos);
         chat.push("user", &user_message);

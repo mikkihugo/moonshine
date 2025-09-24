@@ -4,7 +4,6 @@ use anyhow::Result;
 use bon::Builder;
 // Complex manual MetaSignature implementations preserved (DSRs comment removed)
 // WASM-compatible async batch processing
-use extism_pdk::info;
 use futures::future::try_join_all;
 use std::collections::HashMap;
 
@@ -437,7 +436,7 @@ impl Optimizer for COPRO {
 
         // Main optimization loop
         for d in 0..self.depth {
-            info!("Iteration Depth: {}/{}", d + 1, self.depth);
+            moon_info!("Iteration Depth: {}/{}", d + 1, self.depth);
 
             // Evaluate candidates for each predictor
             for (p_i, (predictor_name, _, _)) in predictor_info.iter().enumerate() {
@@ -476,7 +475,7 @@ impl Optimizer for COPRO {
                             }
                         }
 
-                        info!(
+                        moon_info!(
                             "At Depth {}/{}, Evaluating Prompt Candidate #{}/{} for Predictor {} of {}",
                             d + 1,
                             self.depth,
@@ -528,7 +527,7 @@ impl Optimizer for COPRO {
                         }
                     }
 
-                    info!("Updating Predictor {} to best candidate with score {:.3}", predictor_name, best.score);
+                    moon_info!("Updating Predictor {} to best candidate with score {:.3}", predictor_name, best.score);
                 }
 
                 // Track stats
@@ -695,16 +694,16 @@ impl Optimizer for COPRO {
 
         // Final optimization statistics
         if self.track_stats {
-            info!("\n=== Optimization Complete ===");
-            info!("Total calls: {}", stats.total_calls);
+            moon_info!("\n=== Optimization Complete ===");
+            moon_info!("Total calls: {}", stats.total_calls);
 
             if let Some((_, best_candidate)) = best_overall {
-                info!("Best score: {:.3}", best_candidate.score);
-                info!("Best instruction: {}", best_candidate.instruction);
+                moon_info!("Best score: {:.3}", best_candidate.score);
+                moon_info!("Best instruction: {}", best_candidate.instruction);
                 if !best_candidate.prefix.is_empty() {
-                    info!("Best prefix: {}", best_candidate.prefix);
+                    moon_info!("Best prefix: {}", best_candidate.prefix);
                 }
-                info!("Applied global optimization: {}", applied_global);
+                moon_info!("Applied global optimization: {}", applied_global);
             }
         }
 

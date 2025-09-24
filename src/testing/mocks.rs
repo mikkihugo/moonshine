@@ -15,7 +15,8 @@ use std::sync::{Arc, Mutex};
 use crate::analysis::{AnalysisResults, MoonShineResponse};
 use crate::config::MoonShineConfig;
 use crate::error::{Error, Result};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
+use crate::linter::SuggestionCategory;
 
 /// Mock AI provider for isolated testing
 #[derive(Debug, Clone)]
@@ -283,7 +284,7 @@ impl MockWorkflowEngine {
             Ok(AnalysisResults {
                 suggestions: vec![LintIssue {
                     message: "Mock suggestion".to_string(),
-                    severity: SuggestionSeverity::Info,
+                    severity: LintSeverity::Info,
                     category: SuggestionCategory::BestPractices,
                     line: 1,
                     column: 1,

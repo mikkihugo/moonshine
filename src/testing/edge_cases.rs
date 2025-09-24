@@ -14,10 +14,10 @@ use std::time::Duration;
 use crate::analysis::AnalysisResults;
 use crate::config::MoonShineConfig;
 use crate::error::Result;
+use crate::javascript_typescript_linter::{LintIssue, LintSeverity};
 use crate::testing::assertions::{ConfigAssertions, MoonShineAssertions};
 use crate::testing::builders::{AnalysisResultsBuilder, ConfigBuilder, LintIssueBuilder};
 use crate::testing::fixtures::{ExpectedIssue, TestDataBuilder};
-use crate::wasm_safe_linter::{LintIssue, LintSeverity};
 
 /// Edge case test scenarios
 pub struct EdgeCaseTests;
@@ -347,7 +347,7 @@ impl EdgeCaseRunner {
         match &scenario.expected_behavior {
             EdgeCaseExpectation::NoSuggestions => suggestions.is_empty(),
             EdgeCaseExpectation::SuggestionsWithinRange(min, max) => suggestions.len() >= *min && suggestions.len() <= *max,
-            EdgeCaseExpectation::ErrorsExpected => suggestions.iter().any(|s| matches!(s.severity, SuggestionSeverity::Error)),
+            EdgeCaseExpectation::ErrorsExpected => suggestions.iter().any(|s| matches!(s.severity, LintSeverity::Error)),
             EdgeCaseExpectation::GracefulFailure => {
                 // Should not crash - if we got here, it's graceful
                 true

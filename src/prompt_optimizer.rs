@@ -16,7 +16,6 @@ use crate::dspy::{
     MetaSignature,
 };
 use crate::moon_pdk_interface::update_training_json;
-use extism_pdk::{error, info};
 use serde::{Deserialize, Serialize};
 
 // Simple validation without external dependencies
@@ -337,7 +336,11 @@ impl ClaudeCLIAdapter {
 
     /// Generate provider-optimized prompt based on configuration
     pub fn generate_provider_optimized_prompt(&self, base_prompt: &str, context: &CodeFixingContext) -> String {
-        let provider_config = self.provider_config.as_ref().unwrap_or(&self.get_default_provider_config());
+        let mut default_config = None;
+        let provider_config = self.provider_config.as_ref().unwrap_or_else(|| {
+            default_config = Some(self.get_default_provider_config());
+            default_config.as_ref().unwrap()
+        });
 
         match provider_config.format_preferences.prompt_structure {
             PromptStructure::XmlBased => self.format_as_xml(base_prompt, context),
@@ -622,20 +625,22 @@ Return only the improved code in a code block."#,
             working_dir: None,
         };
         // Execute the command via Moon host function
-        info!("Executing Claude CLI for DSPy optimization");
+        moon_info!("Executing Claude CLI for DSPy optimization");
         let start_time = std::time::Instant::now();
         let output = execute_command(command_input)?;
         let execution_time = start_time.elapsed().as_millis() as u64;
 
         if output.exit_code != 0 {
-            error!(
+            moon_error!(
                 "Claude CLI failed with exit code {} in {}ms: {}",
-                output.exit_code, execution_time, output.stderr
+                output.exit_code,
+                execution_time,
+                output.stderr
             );
             return Err(format!("Claude CLI command failed with exit code {}: {}", output.exit_code, output.stderr).into());
         }
 
-        info!("Claude CLI executed successfully in {}ms", execution_time);
+        moon_info!("Claude CLI executed successfully in {}ms", execution_time);
 
         // Parse the output from Claude CLI
         let claude_response_json: serde_json::Value = serde_json::from_str(&output.stdout)?;
