@@ -347,20 +347,69 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
     moon_info!("Initiating multi-phase workflow via Moon tasks");
 
     // Create workflow request for Moon task execution
-    let _workflow_request = serde_json::json!({
-        "action": "execute_workflow",
-        "files": file_arguments,
-        "config": config,
-        "max_iterations": 3,
-        "operation_mode": operation_mode
-    });
+    moon_info!("Executing Moon Shine workflow for {} files", file_arguments.len());
+    
+    // Execute workflow for each file
+    for file_path in &file_arguments {
+        moon_info!("Processing file: {}", file_path);
+        
+        // Read file content
+        let file_content = match crate::moon_pdk_interface::read_file_content(file_path) {
+            Ok(content) => content,
+            Err(e) => {
+                moon_error!("Failed to read file {}: {}", file_path, e);
+                continue;
+            }
+        };
 
-    moon_info!("Workflow request prepared for {} files", file_arguments.len());
-    moon_info!("Moon tasks will handle: TSC -> ESLint -> CodeQL -> TSDoc -> Claude -> Validation");
+        // Create workflow engine with appropriate workflow
+        let workflow_steps = match operation_mode {
+            "static-analysis" => crate::workflow::create_static_analysis_workflow(),
+            "full-analysis" | "fix" => crate::workflow::create_moonshine_oxc_workflow(),
+            "agent-based" => crate::workflow::create_agent_workflow(),
+            "typescript-only" => crate::workflow::create_typescript_workflow(),
+            "eslint-only" => crate::workflow::create_eslint_workflow(),
+            "prettier-only" => crate::workflow::create_prettier_workflow(),
+            "tsdoc-only" => crate::workflow::create_tsdoc_workflow(),
+            "lint-only" => crate::workflow::create_static_analysis_workflow(),
+            "reporting-only" => crate::workflow::create_static_analysis_workflow(),
+            _ => crate::workflow::create_moonshine_oxc_workflow(), // Default to full analysis
+        };
 
-    // Moon will execute the actual workflow phases
-    // WASM extension coordinates but doesn't execute heavy operations
+        let mut engine = match crate::workflow::WorkflowEngine::new(
+            workflow_steps,
+            file_content,
+            file_path.clone(),
+            config.clone(),
+        ) {
+            Ok(engine) => engine,
+            Err(e) => {
+                moon_error!("Failed to create workflow engine for {}: {}", file_path, e);
+                continue;
+            }
+        };
 
+        // Execute workflow
+        match engine.execute().await {
+            Ok(result) => {
+                moon_info!("Workflow completed for {}: success={}, quality={:.2}", 
+                    file_path, result.success, result.quality_score);
+                
+                // Write results if available
+                if let Some(output_code) = result.final_code {
+                    match crate::moon_pdk_interface::write_file_to_host(file_path, &output_code) {
+                        Ok(_) => moon_info!("Updated file: {}", file_path),
+                        Err(e) => moon_error!("Failed to write updated file {}: {}", file_path, e),
+                    }
+                }
+            }
+            Err(e) => {
+                moon_error!("Workflow execution failed for {}: {}", file_path, e);
+            }
+        }
+    }
+
+    moon_info!("Moon Shine workflow execution completed for {} files", file_arguments.len());
     Ok(())
 }
 

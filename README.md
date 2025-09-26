@@ -78,26 +78,29 @@ and skip logic when prerequisites fail.
 
 ## ⚠️ Implementation Status
 
-Moon Shine's codebase still contains scaffolding that must be filled in before the documented
-workflow is fully operational. Key areas to complete:
+Moon Shine's codebase contains comprehensive scaffolding that needs integration work before production deployment. Key areas to complete:
 
-- `src/extension.rs` currently stops after preparing workflow requests and does not invoke Moon tasks
-  or the workflow engine. Wire this entrypoint to the real executors once they exist.
-- `src/workflow.rs` implements the petgraph DAG engine but `src/lib.rs` comments out the module export,
-  so no compiled code reaches it. Either re-export the engine or adjust documentation when the stub is
-  replaced.
-- `src/moon_pdk_interface.rs` returns mock results for host operations such as `execute_command` and
-  `read_file_content`. Replace these placeholders with real Moon PDK calls to safely access the host
-  filesystem and processes.
-- OXC integrations (`src/oxc_adapter/`, `src/engine.rs`) expose rich APIs but are not hooked up to the
-  CLI; connect them to the execution pipeline and thread through `tsconfig.json` strictness when ready.
-- Provider routing and COPRO utilities (`src/provider_router/`, `src/prompt_optimizer.rs`) are present
-  but require actual CLI binaries and configuration plumbing before they can dispatch AI calls to the
-  selected provider.
-- TSDoc analysis references `tsdoc.json` settings but still uses placeholder data paths; wire the real
-  config before enabling the step by default.
+### **Critical Infrastructure**
+- **Moon PDK Integration**: `src/moon_pdk_interface.rs` returns mock results for host operations (`execute_command`, `read_file_content`, `write_file_to_host`). Replace with real Moon PDK bindings.
+- **Workflow Engine Activation**: `src/workflow.rs` implements the petgraph DAG engine but is commented out in `src/lib.rs` exports. Enable and integrate the workflow engine.
+- **Extension Execution Pipeline**: `src/extension.rs` prepares workflow requests but never calls Moon tasks or workflow engine. Wire the entrypoint to real executors.
 
-Documenting these gaps should help you or future contributors fill in the concrete implementations.
+### **Tool Integration Strategy**
+- **OXC Integration**: OXC should be called as external CLI commands via Moon PDK adapters, not embedded as Rust libraries. Create adapters that invoke `oxc` CLI for parsing, linting, and formatting.
+- **Tool Coordination**: All tools (TypeScript, ESLint, Prettier, Claude CLI) should use the adapter pattern via `execute_command()` rather than Moon tasks for lightweight coordination.
+- **Provider Router**: `src/provider_router/` requires actual CLI binaries (`claude`, `gemini`, `codex`) and configuration plumbing before dispatching AI calls.
+
+### **Configuration and Analysis**
+- **TSDoc Integration**: TSDoc analysis references `tsdoc.json` settings but uses placeholder data paths. Wire real config before enabling by default.
+- **Session Management**: Session-based JSON protocol is designed but needs full implementation of directory creation, cleanup, and agent coordination.
+- **AI Behavioral Analysis**: `src/oxc_adapter/ai_behavioral.rs` and neural pattern models are stubbed and need full implementation.
+
+### **System Integration**
+- **Rule Registry**: `src/rule_registry.rs` exists but needs connection to workflow engine and execution pipeline for 582+ static and 192 behavioral rules.
+- **Error Handling**: Need robust error handling for Moon task failures, AI provider timeouts, and graceful degradation.
+- **Testing**: `src/testing/` has comprehensive structure but needs integration tests for Moon task execution, AI provider routing, and end-to-end workflows.
+
+This documentation reflects the current state and provides a clear roadmap for production readiness.
 
 ---
 

@@ -79,7 +79,7 @@ pub fn ai_lint_file(Json(request): Json<AiLintRequest>) -> FnResult<Json<AiLintR
 pub fn static_analysis_with_path(&self, content: &str, language: &str, file_path: &str) -> Vec<AiSuggestion>
 ```
 
-### **3. AI Provider Router** (Moon PDK Integration)
+### **3. AI Provider Router** (Adapter Pattern)
 
 **Role**: Intelligent code fixing and improvement via Claude, Gemini, or other configured providers
 **Capabilities**:
@@ -89,11 +89,11 @@ pub fn static_analysis_with_path(&self, content: &str, language: &str, file_path
 - TSDoc generation and improvement
 - Modern pattern application
 
-**Integration**: Direct Moon PDK `execute_command` calls with JSON communication, routed through
+**Integration**: Uses adapter pattern via `execute_command()` calls with JSON communication, routed through
 `src/provider_router/` to select the appropriate provider at runtime.
 
 ```bash
-# Claude AI processing via Moon task
+# Claude AI processing via adapter
 echo "$USER_PROMPT" | ~/.local/bin/claude --print --output-format json --disallowed-tools "Write,Edit,MultiEdit"
 ```
 

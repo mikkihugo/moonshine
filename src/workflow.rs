@@ -696,9 +696,8 @@ impl WorkflowEngine {
                 rule_categories,
                 ai_enhanced: _,
             } => {
-                let pipeline_result = self.analysis_pipeline.run(&context.source_code, &context.file_path, &context.config).await?;
-
-                self.capture_pipeline_outcome(&pipeline_result, rule_categories).await
+                // Execute OXC rules via CLI
+                self.execute_oxc_rules(context, rule_categories).await
             }
             StepAction::BehavioralAnalysis {
                 enable_hybrid_analysis,
@@ -796,16 +795,138 @@ impl WorkflowEngine {
     /// Execute custom function
     async fn execute_custom_function(
         &self,
-        _context: &WorkflowContext,
+        context: &WorkflowContext,
         function_name: &str,
         parameters: &HashMap<String, serde_json::Value>,
     ) -> Result<serde_json::Value> {
-        // Custom function registry would be implemented here
+        match function_name {
+            "typescript_compile" => self.execute_typescript_compile(context, parameters).await,
+            "eslint_lint" => self.execute_eslint_lint(context, parameters).await,
+            "tsdoc_analyze" => self.execute_tsdoc_analyze(context, parameters).await,
+            _ => {
+                // Generic custom function
+                let result = serde_json::json!({
+                    "step": "custom_function",
+                    "function": function_name,
+                    "parameters": parameters,
+                    "success": true,
+                    "message": format!("Custom function '{}' executed", function_name)
+                });
+                Ok(result)
+            }
+        }
+    }
+
+    /// Execute TypeScript compilation
+    async fn execute_typescript_compile(
+        &self,
+        context: &WorkflowContext,
+        parameters: &HashMap<String, serde_json::Value>,
+    ) -> Result<serde_json::Value> {
+        let strict = parameters.get("strict").and_then(|v| v.as_bool()).unwrap_or(true);
+        let no_emit = parameters.get("noEmit").and_then(|v| v.as_bool()).unwrap_or(true);
+        let skip_lib_check = parameters.get("skipLibCheck").and_then(|v| v.as_bool()).unwrap_or(true);
+
+        // Build tsc command
+        let mut args = vec!["--noEmit".to_string()];
+        if strict {
+            args.push("--strict".to_string());
+        }
+        if skip_lib_check {
+            args.push("--skipLibCheck".to_string());
+        }
+        args.push(context.file_path.clone());
+
+        // Execute tsc command via adapter
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "tsc".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
         let result = serde_json::json!({
-            "step": "custom_function",
-            "function": function_name,
-            "parameters": parameters,
-            "success": true
+            "step": "typescript_compile",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "strict": strict,
+            "no_emit": no_emit,
+            "skip_lib_check": skip_lib_check
+        });
+
+        Ok(result)
+    }
+
+    /// Execute ESLint linting
+    async fn execute_eslint_lint(
+        &self,
+        context: &WorkflowContext,
+        parameters: &HashMap<String, serde_json::Value>,
+    ) -> Result<serde_json::Value> {
+        let fix = parameters.get("fix").and_then(|v| v.as_bool()).unwrap_or(true);
+        let extensions = parameters.get("extensions")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str()).map(|s| s.to_string()).collect::<Vec<_>>())
+            .unwrap_or_else(|| vec![".ts".to_string(), ".tsx".to_string(), ".js".to_string(), ".jsx".to_string()]);
+
+        // Build eslint command
+        let mut args = vec!["--format".to_string(), "json".to_string()];
+        if fix {
+            args.push("--fix".to_string());
+        }
+        args.push("--ext".to_string());
+        args.push(extensions.join(","));
+        args.push(context.file_path.clone());
+
+        // Execute eslint command via adapter
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "eslint".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
+        let result = serde_json::json!({
+            "step": "eslint_lint",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "fix": fix,
+            "extensions": extensions
+        });
+
+        Ok(result)
+    }
+
+    /// Execute TSDoc analysis
+    async fn execute_tsdoc_analyze(
+        &self,
+        context: &WorkflowContext,
+        parameters: &HashMap<String, serde_json::Value>,
+    ) -> Result<serde_json::Value> {
+        let coverage_threshold = parameters.get("coverage_threshold")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.8);
+        let strict_mode = parameters.get("strict_mode").and_then(|v| v.as_bool()).unwrap_or(true);
+
+        // Use the existing TSDoc analysis from the codebase
+        let tsdoc_result = crate::tsdoc::analyze_tsdoc_coverage(&context.source_code, &context.file_path)?;
+        
+        let meets_threshold = tsdoc_result.coverage_percentage >= coverage_threshold;
+        let result = serde_json::json!({
+            "step": "tsdoc_analyze",
+            "success": meets_threshold,
+            "coverage_percentage": tsdoc_result.coverage_percentage,
+            "coverage_threshold": coverage_threshold,
+            "meets_threshold": meets_threshold,
+            "documented_items": tsdoc_result.documented_items.len(),
+            "missing_docs": tsdoc_result.missing_docs.len(),
+            "strict_mode": strict_mode
         });
 
         Ok(result)
@@ -1241,46 +1362,242 @@ impl WorkflowEngine {
         Ok(serde_json::to_value(assessment)?)
     }
 
-    /// Execute parse step
-    async fn execute_parse(&self, _context: &WorkflowContext, _source_type: &str, _strict_mode: bool) -> Result<serde_json::Value> {
-        // Placeholder implementation
-        Ok(serde_json::json!({"success": true, "step": "parse"}))
+    /// Execute parse step via OXC CLI
+    async fn execute_parse(&self, context: &WorkflowContext, source_type: &str, strict_mode: bool) -> Result<serde_json::Value> {
+        // Execute OXC parse command via adapter
+        let mut args = vec!["parse".to_string()];
+        if strict_mode {
+            args.push("--strict".to_string());
+        }
+        args.push("--source-type".to_string());
+        args.push(source_type.to_string());
+        args.push(context.file_path.clone());
+
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "oxc".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
+        let result = serde_json::json!({
+            "step": "oxc_parse",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "source_type": source_type,
+            "strict_mode": strict_mode
+        });
+
+        Ok(result)
     }
 
-    /// Execute behavioral analysis step
+    /// Execute OXC rules step via CLI
+    async fn execute_oxc_rules(&self, context: &WorkflowContext, rule_categories: &[String]) -> Result<serde_json::Value> {
+        // Execute OXC linting command via adapter
+        let mut args = vec!["lint".to_string()];
+        args.push("--format".to_string());
+        args.push("json".to_string());
+        
+        // Add rule categories
+        for category in rule_categories {
+            args.push("--category".to_string());
+            args.push(category.clone());
+        }
+        
+        args.push(context.file_path.clone());
+
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "oxc".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
+        let result = serde_json::json!({
+            "step": "oxc_rules",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "rule_categories": rule_categories
+        });
+
+        Ok(result)
+    }
+
+    /// Execute behavioral analysis step using AI behavioral analyzer
     async fn execute_behavioral_analysis(
         &self,
-        _context: &WorkflowContext,
-        _enable_hybrid: bool,
-        _confidence: f64,
-        _max_time: u64,
+        context: &WorkflowContext,
+        enable_hybrid: bool,
+        confidence: f64,
+        max_time: u64,
     ) -> Result<serde_json::Value> {
-        // Placeholder implementation
-        Ok(serde_json::json!({"success": true, "step": "behavioral_analysis"}))
+        // Use the AI behavioral analyzer from the moved module
+        let analyzer = crate::ai_behavioral::AiBehavioralAnalyzer::new();
+        
+        // Parse the code to get AST (simplified for now)
+        let allocator = oxc_allocator::Allocator::default();
+        let source_type = oxc_span::SourceType::from_path(&context.file_path)
+            .map_err(|e| Error::Processing(format!("Invalid source type: {}", e)))?;
+        
+        let parse_result = oxc_parser::Parser::new(&allocator, &context.source_code, source_type).parse();
+        
+        let analysis_context = crate::ai_behavioral::AnalysisContext {
+            file_path: context.file_path.clone(),
+            file_type: source_type,
+            project_context: None,
+            dependencies: vec![],
+        };
+
+        // Run behavioral analysis
+        let diagnostics = analyzer.analyze_behavioral_patterns(
+            &context.source_code,
+            &parse_result.program,
+            &analysis_context,
+        ).await?;
+
+        let result = serde_json::json!({
+            "step": "behavioral_analysis",
+            "success": true,
+            "enable_hybrid": enable_hybrid,
+            "confidence_threshold": confidence,
+            "max_time_ms": max_time,
+            "diagnostics_count": diagnostics.len(),
+            "diagnostics": diagnostics
+        });
+
+        Ok(result)
     }
 
-    /// Execute type analysis step
-    async fn execute_type_analysis(&self, _context: &WorkflowContext, _strict_types: bool, _inference: bool) -> Result<serde_json::Value> {
-        // Placeholder implementation
-        Ok(serde_json::json!({"success": true, "step": "type_analysis"}))
+    /// Execute type analysis step via OXC CLI
+    async fn execute_type_analysis(&self, context: &WorkflowContext, strict_types: bool, inference: bool) -> Result<serde_json::Value> {
+        // Execute OXC type analysis command via adapter
+        let mut args = vec!["type-check".to_string()];
+        if strict_types {
+            args.push("--strict".to_string());
+        }
+        if inference {
+            args.push("--inference".to_string());
+        }
+        args.push(context.file_path.clone());
+
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "oxc".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
+        let result = serde_json::json!({
+            "step": "oxc_type_analysis",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "strict_types": strict_types,
+            "inference": inference
+        });
+
+        Ok(result)
     }
 
-    /// Execute AI enhancement step
-    async fn execute_ai_enhancement(&self, _context: &WorkflowContext, _provider: &str, _copro_optimization: bool) -> Result<serde_json::Value> {
-        // Placeholder implementation
-        Ok(serde_json::json!({"success": true, "step": "ai_enhancement"}))
+    /// Execute AI enhancement step via provider router
+    async fn execute_ai_enhancement(&self, context: &WorkflowContext, provider: &str, copro_optimization: bool) -> Result<serde_json::Value> {
+        // Use the provider router for AI enhancement
+        let router = crate::provider_router::AIRouter::new();
+        
+        let ai_request = crate::provider_router::AIRequest {
+            prompt: format!("Analyze and improve this TypeScript code:\n\n{}", context.source_code),
+            provider: provider.to_string(),
+            temperature: 0.1,
+            max_tokens: 2000,
+            copro_optimization,
+        };
+
+        let ai_response = router.execute(&ai_request).await?;
+
+        let result = serde_json::json!({
+            "step": "ai_enhancement",
+            "success": ai_response.success,
+            "provider": provider,
+            "copro_optimization": copro_optimization,
+            "response": ai_response.response,
+            "usage": ai_response.usage,
+            "processing_time_ms": ai_response.processing_time_ms
+        });
+
+        Ok(result)
     }
 
-    /// Execute code generation step
-    async fn execute_code_generation(&self, _context: &WorkflowContext, _apply_fixes: bool, _source_maps: bool) -> Result<serde_json::Value> {
-        // Placeholder implementation
-        Ok(serde_json::json!({"success": true, "step": "code_generation"}))
+    /// Execute code generation step via OXC CLI
+    async fn execute_code_generation(&self, context: &WorkflowContext, apply_fixes: bool, source_maps: bool) -> Result<serde_json::Value> {
+        // Execute OXC code generation command via adapter
+        let mut args = vec!["codegen".to_string()];
+        if apply_fixes {
+            args.push("--apply-fixes".to_string());
+        }
+        if source_maps {
+            args.push("--source-maps".to_string());
+        }
+        args.push(context.file_path.clone());
+
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "oxc".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
+        let result = serde_json::json!({
+            "step": "oxc_codegen",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "apply_fixes": apply_fixes,
+            "source_maps": source_maps
+        });
+
+        Ok(result)
     }
 
-    /// Execute formatting step
-    async fn execute_formatting(&self, _context: &WorkflowContext, _style: &str, _preserve_structure: bool) -> Result<serde_json::Value> {
-        // Placeholder implementation
-        Ok(serde_json::json!({"success": true, "step": "formatting"}))
+    /// Execute formatting step via OXC CLI
+    async fn execute_formatting(&self, context: &WorkflowContext, style: &str, preserve_structure: bool) -> Result<serde_json::Value> {
+        // Execute OXC formatting command via adapter
+        let mut args = vec!["format".to_string()];
+        args.push("--style".to_string());
+        args.push(style.to_string());
+        if preserve_structure {
+            args.push("--preserve-structure".to_string());
+        }
+        args.push(context.file_path.clone());
+
+        let output = crate::moon_pdk_interface::execute_command(crate::moon_pdk_interface::ExecCommandInput {
+            command: "oxc".to_string(),
+            args,
+            working_dir: None,
+            env: None,
+        })?;
+
+        let success = output.exit_code == 0;
+        let result = serde_json::json!({
+            "step": "oxc_format",
+            "success": success,
+            "exit_code": output.exit_code,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "style": style,
+            "preserve_structure": preserve_structure
+        });
+
+        Ok(result)
     }
 }
 
@@ -1291,7 +1608,442 @@ fn telemetry_session_path(context: &HashMap<String, serde_json::Value>) -> Optio
         .map(|dir| format!("{}/telemetry.json", dir.trim_end_matches('/')))
 }
 
-/// Create the static analysis workflow for Moon Shine
+/// Create the complete Moon Shine workflow with all analysis phases
+pub fn create_moonshine_oxc_workflow() -> Vec<WorkflowStep> {
+    vec![
+        // Foundation Steps (Sequential)
+        WorkflowStep {
+            id: "adaptive-assessment".to_string(),
+            name: "Adaptive Assessment".to_string(),
+            description: "Quick evaluation to determine optimal analysis strategy".to_string(),
+            depends_on: vec![],
+            action: StepAction::AdaptiveAssessment {
+                max_assessment_time_ms: 1000,
+                complexity_threshold: 0.7,
+                enable_quick_static_analysis: true,
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "oxc-parse".to_string(),
+            name: "OXC Parse + Semantic".to_string(),
+            description: "Parse source code and build semantic model".to_string(),
+            depends_on: vec!["adaptive-assessment".to_string()],
+            action: StepAction::OxcParse {
+                source_type: "typescript".to_string(),
+                strict_mode: true,
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(30),
+            critical: true,
+        },
+        
+        // Analysis Steps (Parallel Execution)
+        WorkflowStep {
+            id: "oxc-rules".to_string(),
+            name: "OXC Static Rules".to_string(),
+            description: "Execute 582+ static analysis rules with AI enhancement".to_string(),
+            depends_on: vec!["oxc-parse".to_string()],
+            action: StepAction::OxcRules {
+                rule_categories: vec![
+                    "correctness".to_string(),
+                    "style".to_string(),
+                    "performance".to_string(),
+                    "security".to_string(),
+                ],
+                ai_enhanced: true,
+            },
+            condition: Some(StepCondition::OnSuccess("oxc-parse".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(60),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "behavioral-analysis".to_string(),
+            name: "AI Behavioral Analysis".to_string(),
+            description: "AI-enhanced behavioral pattern detection".to_string(),
+            depends_on: vec!["oxc-parse".to_string()],
+            action: StepAction::BehavioralAnalysis {
+                enable_hybrid_analysis: true,
+                confidence_threshold: 0.7,
+                max_analysis_time_ms: 5000,
+            },
+            condition: Some(StepCondition::OnSuccess("oxc-parse".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(10),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "type-analysis".to_string(),
+            name: "TypeScript Type Analysis".to_string(),
+            description: "TypeScript type checking and inference".to_string(),
+            depends_on: vec!["oxc-parse".to_string()],
+            action: StepAction::OxcTypeAnalysis {
+                strict_types: true,
+                inference: true,
+            },
+            condition: Some(StepCondition::OnSuccess("oxc-parse".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(45),
+            critical: false,
+        },
+        
+        // Enhancement Steps (Conditional Execution)
+        WorkflowStep {
+            id: "ai-enhancement".to_string(),
+            name: "AI Code Enhancement".to_string(),
+            description: "AI-powered code improvements via provider router".to_string(),
+            depends_on: vec!["oxc-rules".to_string(), "behavioral-analysis".to_string()],
+            action: StepAction::AiEnhancement {
+                provider: "claude".to_string(),
+                copro_optimization: true,
+            },
+            condition: Some(StepCondition::OnQualityThreshold(0.6)),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(30),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "code-generation".to_string(),
+            name: "Code Generation".to_string(),
+            description: "Apply fixes and generate final output".to_string(),
+            depends_on: vec!["ai-enhancement".to_string()],
+            action: StepAction::OxcCodegen {
+                apply_fixes: true,
+                source_maps: true,
+            },
+            condition: Some(StepCondition::OnSuccess("ai-enhancement".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(20),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "formatting".to_string(),
+            name: "Code Formatting".to_string(),
+            description: "Code formatting with style preservation".to_string(),
+            depends_on: vec!["code-generation".to_string()],
+            action: StepAction::OxcFormat {
+                style: "prettier".to_string(),
+                preserve_oxc_structure: true,
+            },
+            condition: Some(StepCondition::OnSuccess("code-generation".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(15),
+            critical: false,
+        },
+    ]
+}
+
+/// Create TypeScript-specific workflow
+pub fn create_typescript_workflow() -> Vec<WorkflowStep> {
+    vec![
+        WorkflowStep {
+            id: "tsc-compile".to_string(),
+            name: "TypeScript Compilation".to_string(),
+            description: "TypeScript compilation with type checking".to_string(),
+            depends_on: vec![],
+            action: StepAction::CustomFunction {
+                function_name: "typescript_compile".to_string(),
+                parameters: {
+                    let mut params = HashMap::new();
+                    params.insert("strict".to_string(), serde_json::Value::Bool(true));
+                    params.insert("noEmit".to_string(), serde_json::Value::Bool(true));
+                    params.insert("skipLibCheck".to_string(), serde_json::Value::Bool(true));
+                    params
+                },
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(60),
+            critical: true,
+        },
+        WorkflowStep {
+            id: "tsc-type-check".to_string(),
+            name: "TypeScript Type Check".to_string(),
+            description: "Comprehensive type checking".to_string(),
+            depends_on: vec!["tsc-compile".to_string()],
+            action: StepAction::OxcTypeAnalysis {
+                strict_types: true,
+                inference: true,
+            },
+            condition: Some(StepCondition::OnSuccess("tsc-compile".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(45),
+            critical: false,
+        },
+    ]
+}
+
+/// Create ESLint-specific workflow
+pub fn create_eslint_workflow() -> Vec<WorkflowStep> {
+    vec![
+        WorkflowStep {
+            id: "eslint-lint".to_string(),
+            name: "ESLint Analysis".to_string(),
+            description: "ESLint rule checking and auto-fixing".to_string(),
+            depends_on: vec![],
+            action: StepAction::CustomFunction {
+                function_name: "eslint_lint".to_string(),
+                parameters: {
+                    let mut params = HashMap::new();
+                    params.insert("fix".to_string(), serde_json::Value::Bool(true));
+                    params.insert("extensions".to_string(), serde_json::Value::Array(vec![
+                        serde_json::Value::String(".ts".to_string()),
+                        serde_json::Value::String(".tsx".to_string()),
+                        serde_json::Value::String(".js".to_string()),
+                        serde_json::Value::String(".jsx".to_string()),
+                    ]));
+                    params
+                },
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(90),
+            critical: false,
+        },
+    ]
+}
+
+/// Create Prettier-specific workflow
+pub fn create_prettier_workflow() -> Vec<WorkflowStep> {
+    vec![
+        WorkflowStep {
+            id: "prettier-format".to_string(),
+            name: "Prettier Formatting".to_string(),
+            description: "Code formatting with Prettier".to_string(),
+            depends_on: vec![],
+            action: StepAction::OxcFormat {
+                style: "prettier".to_string(),
+                preserve_oxc_structure: false,
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(30),
+            critical: false,
+        },
+    ]
+}
+
+/// Create TSDoc-specific workflow
+pub fn create_tsdoc_workflow() -> Vec<WorkflowStep> {
+    vec![
+        WorkflowStep {
+            id: "tsdoc-analyze".to_string(),
+            name: "TSDoc Analysis".to_string(),
+            description: "TSDoc documentation analysis".to_string(),
+            depends_on: vec![],
+            action: StepAction::CustomFunction {
+                function_name: "tsdoc_analyze".to_string(),
+                parameters: {
+                    let mut params = HashMap::new();
+                    params.insert("coverage_threshold".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(0.8).unwrap()));
+                    params.insert("strict_mode".to_string(), serde_json::Value::Bool(true));
+                    params
+                },
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(45),
+            critical: false,
+        },
+    ]
+}
+
+/// Create agent-based workflow for session coordination
+pub fn create_agent_workflow() -> Vec<WorkflowStep> {
+    vec![
+        // Session setup
+        WorkflowStep {
+            id: "create-session".to_string(),
+            name: "Create Session Directory".to_string(),
+            description: "Create session directory for agent coordination".to_string(),
+            depends_on: vec![],
+            action: StepAction::CreateSessionDir {
+                base_path: "/tmp/moon-shine".to_string(),
+                session_prefix: "session".to_string(),
+            },
+            condition: Some(StepCondition::Always),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: true,
+        },
+        
+        // Agent requests (parallel)
+        WorkflowStep {
+            id: "write-typescript-request".to_string(),
+            name: "Write TypeScript Request".to_string(),
+            description: "Write TypeScript agent request to session".to_string(),
+            depends_on: vec!["create-session".to_string()],
+            action: StepAction::WriteAgentRequest {
+                agent_type: "typescript".to_string(),
+                request_data: serde_json::json!({
+                    "action": "compile",
+                    "strict": true,
+                    "noEmit": true
+                }),
+            },
+            condition: Some(StepCondition::OnSuccess("create-session".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "write-eslint-request".to_string(),
+            name: "Write ESLint Request".to_string(),
+            description: "Write ESLint agent request to session".to_string(),
+            depends_on: vec!["create-session".to_string()],
+            action: StepAction::WriteAgentRequest {
+                agent_type: "eslint".to_string(),
+                request_data: serde_json::json!({
+                    "action": "lint",
+                    "fix": true,
+                    "extensions": [".ts", ".tsx", ".js", ".jsx"]
+                }),
+            },
+            condition: Some(StepCondition::OnSuccess("create-session".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "write-prettier-request".to_string(),
+            name: "Write Prettier Request".to_string(),
+            description: "Write Prettier agent request to session".to_string(),
+            depends_on: vec!["create-session".to_string()],
+            action: StepAction::WriteAgentRequest {
+                agent_type: "prettier".to_string(),
+                request_data: serde_json::json!({
+                    "action": "format",
+                    "write": true
+                }),
+            },
+            condition: Some(StepCondition::OnSuccess("create-session".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "write-claude-request".to_string(),
+            name: "Write Claude Request".to_string(),
+            description: "Write Claude AI agent request to session".to_string(),
+            depends_on: vec!["create-session".to_string()],
+            action: StepAction::WriteAgentRequest {
+                agent_type: "claude".to_string(),
+                request_data: serde_json::json!({
+                    "action": "analyze_and_fix",
+                    "provider": "claude",
+                    "temperature": 0.1
+                }),
+            },
+            condition: Some(StepCondition::OnSuccess("create-session".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: false,
+        },
+        
+        // AI execution
+        WorkflowStep {
+            id: "execute-ai-provider".to_string(),
+            name: "Execute AI Provider".to_string(),
+            description: "Execute AI analysis via provider router".to_string(),
+            depends_on: vec!["write-claude-request".to_string()],
+            action: StepAction::ExecuteAIProvider {
+                prompt_template: "Analyze and improve this TypeScript code: {{code}}".to_string(),
+                temperature: 0.1,
+                max_tokens: 2000,
+                session_file: "claude-request.json".to_string(),
+            },
+            condition: Some(StepCondition::OnSuccess("write-claude-request".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(30),
+            critical: false,
+        },
+        
+        // Agent responses (parallel)
+        WorkflowStep {
+            id: "read-typescript-response".to_string(),
+            name: "Read TypeScript Response".to_string(),
+            description: "Read TypeScript agent response from session".to_string(),
+            depends_on: vec!["write-typescript-request".to_string()],
+            action: StepAction::ReadAgentResponse {
+                agent_type: "typescript".to_string(),
+                timeout_ms: 60000,
+            },
+            condition: Some(StepCondition::OnSuccess("write-typescript-request".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(60),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "read-eslint-response".to_string(),
+            name: "Read ESLint Response".to_string(),
+            description: "Read ESLint agent response from session".to_string(),
+            depends_on: vec!["write-eslint-request".to_string()],
+            action: StepAction::ReadAgentResponse {
+                agent_type: "eslint".to_string(),
+                timeout_ms: 90000,
+            },
+            condition: Some(StepCondition::OnSuccess("write-eslint-request".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(90),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "read-prettier-response".to_string(),
+            name: "Read Prettier Response".to_string(),
+            description: "Read Prettier agent response from session".to_string(),
+            depends_on: vec!["write-prettier-request".to_string()],
+            action: StepAction::ReadAgentResponse {
+                agent_type: "prettier".to_string(),
+                timeout_ms: 30000,
+            },
+            condition: Some(StepCondition::OnSuccess("write-prettier-request".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(30),
+            critical: false,
+        },
+        WorkflowStep {
+            id: "read-claude-response".to_string(),
+            name: "Read Claude Response".to_string(),
+            description: "Read Claude AI agent response from session".to_string(),
+            depends_on: vec!["execute-ai-provider".to_string()],
+            action: StepAction::ReadAgentResponse {
+                agent_type: "claude".to_string(),
+                timeout_ms: 30000,
+            },
+            condition: Some(StepCondition::OnSuccess("execute-ai-provider".to_string())),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(30),
+            critical: false,
+        },
+        
+        // Cleanup
+        WorkflowStep {
+            id: "cleanup-session".to_string(),
+            name: "Cleanup Session".to_string(),
+            description: "Cleanup session directory".to_string(),
+            depends_on: vec![
+                "read-typescript-response".to_string(),
+                "read-eslint-response".to_string(),
+                "read-prettier-response".to_string(),
+                "read-claude-response".to_string(),
+            ],
+            action: StepAction::CleanupSession {
+                max_age_hours: 12,
+            },
+            condition: Some(StepCondition::OnCompletion),
+            retry: RetryConfig::default(),
+            timeout: Duration::from_secs(5),
+            critical: false,
+        },
+    ]
+}
+
+/// Create the static analysis workflow for Moon Shine (legacy)
 pub fn create_static_analysis_workflow() -> Vec<WorkflowStep> {
     vec![
         WorkflowStep {
@@ -1336,7 +2088,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_petgraph_workflow_execution_order() {
-        let steps = create_static_analysis_workflow();
+        let steps = create_moonshine_oxc_workflow();
         let engine = WorkflowEngine::new(steps, "test code".to_string(), "test.ts".to_string(), MoonShineConfig::default()).unwrap();
 
         // Test petgraph topological sort

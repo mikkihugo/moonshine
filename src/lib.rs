@@ -81,7 +81,7 @@ pub mod storage; // Hybrid assemblage_kv + file persistence
 pub mod telemetry; // Telemetry logging for workflow runs
 pub mod token_usage; // LM token usage tracking
 pub mod types; // Core data structures for moon-shine code analysis
-               // pub mod workflow; // Legacy workflow - replaced by MultiEngineAnalyzer system
+pub mod workflow; // DAG-based workflow engine for orchestrated analysis pipelines
 pub mod adaptive_rule_system; // Integrated adaptive rule system combining pattern tracking and rule generation
 pub mod custom_rule_generator; // AI-powered custom rule generation pipeline
 pub mod javascript_typescript_linter; // JavaScript/TypeScript linting using OXC

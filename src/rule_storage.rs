@@ -1,16 +1,9 @@
-//! # WASM-Safe ESLint Rule Storage System
+//! # ESLint Rule Storage (WASM-safe)
 //!
-//! This module provides persistent, configurable storage for ESLint rules using
-//! the assemblage_kv crate, which is WASM-compatible and provides high-speed
-//! key-value storage with JSON backup capabilities.
-//!
-//! ## Features
-//! - **Persistent Rule Configuration**: Store rule on/off states
-//! - **Custom Rule Definitions**: Add new rules dynamically
-//! - **Severity Levels**: Configure error/warning/off for each rule
-//! - **Project-Specific Configs**: Different rules per project
-//! - **Hot Reloading**: Update rules without restart
-//! - **JSON Export/Import**: Compatible with .eslintrc.json
+//! Lightweight, in-memory storage for ESLint rule configurations. The implementation
+//! is designed to run inside the WASM extension without relying on external key-value
+//! databases. Rules can be imported from or exported to `.eslintrc.json`, and multiple
+//! named rulesets are supported.
 //!
 //! @category rule-storage
 //! @safe program
@@ -19,8 +12,6 @@
 //! @since 2.1.0
 
 use crate::error::{Error, Result};
-// TODO: Fix assemblage_kv API - Database type not found
-// use assemblage_kv::{Database, Snapshot};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -78,32 +69,21 @@ pub struct ParserOptions {
     pub ecma_features: HashMap<String, bool>,
 }
 
-/// WASM-safe rule storage using assemblage_kv
-/// TODO: Fix assemblage_kv Database API when available
+/// WASM-safe rule storage backed by an in-memory map
 pub struct RuleStorage {
-    // db: Database,  // TODO: Restore when assemblage_kv API is fixed
     current_ruleset: String,
-    rules: HashMap<String, RuleConfig>, // Temporary in-memory storage
+    rulesets: HashMap<String, RuleSet>,
 }
 
 impl RuleStorage {
-    /// Create new rule storage with WASM-compatible KV store
-    /// TODO: Restore Database functionality when assemblage_kv API is fixed
+    /// Create new rule storage. `storage_path` is ignored for now but retained for
+    /// API compatibility in case persistence is added later.
     pub fn new(_storage_path: Option<&Path>) -> Result<Self> {
-        // TODO: Restore database initialization when assemblage_kv API is fixed
-        // let db = if let Some(path) = storage_path {
-        //     Database::open(path).map_err(|e| Error::Storage { message: format!("Failed to open database: {}", e)))?
-        // } else {
-        //     Database::memory().map_err(|e| Error::Storage { message: format!("Failed to create memory database: {}", e)))?
-        // };
-
         let mut storage = Self {
-            // db,  // TODO: Restore when API is fixed
             current_ruleset: "default".to_string(),
-            rules: HashMap::new(), // Temporary in-memory storage
+            rulesets: HashMap::new(),
         };
 
-        // Initialize with default ESLint rules if empty
         storage.initialize_default_rules()?;
 
         Ok(storage)
@@ -116,28 +96,17 @@ impl RuleStorage {
 
     /// Get specific rule set by name
     pub fn get_ruleset(&self, name: &str) -> Result<RuleSet> {
-        // TODO: Use assemblage_kv Database when API is restored
-        // For now, return a mock ruleset
-        let _ = name;
-        Ok(RuleSet {
-            name: "default".to_string(),
-            description: "Default rule set".to_string(),
-            extends: vec![],
-            rules: HashMap::new(),
-            env: HashMap::new(),
-            globals: HashMap::new(),
-            parser_options: ParserOptions {
-                ecma_version: 2022,
-                source_type: "module".to_string(),
-                ecma_features: HashMap::new(),
-            },
-        })
+        self.rulesets
+            .get(name)
+            .cloned()
+            .ok_or_else(|| Error::Storage {
+                message: format!("Rule set '{}' not found", name),
+            })
     }
 
     /// Save rule set
     pub fn save_ruleset(&mut self, ruleset: &RuleSet) -> Result<()> {
-        // TODO: Use assemblage_kv Database when API is restored
-        // For now, store in current_ruleset name
+        self.rulesets.insert(ruleset.name.clone(), ruleset.clone());
         self.current_ruleset = ruleset.name.clone();
         Ok(())
     }
@@ -145,9 +114,12 @@ impl RuleStorage {
     /// Set current active rule set
     pub fn set_current_ruleset(&mut self, name: &str) -> Result<()> {
         // Verify the ruleset exists
-        let _ = self.get_ruleset(name)?;
+        if !self.rulesets.contains_key(name) {
+            return Err(Error::Storage {
+                message: format!("Rule set '{}' not found", name),
+            });
+        }
 
-        // TODO: Use assemblage_kv Database when API is restored
         self.current_ruleset = name.to_string();
 
         Ok(())
@@ -155,50 +127,35 @@ impl RuleStorage {
 
     /// List all available rule sets
     pub fn list_rulesets(&self) -> Result<Vec<String>> {
-        let mut rulesets = Vec::new();
-
-        // Iterate through all keys with "ruleset:" prefix
-        // TODO: Use assemblage_kv Database when API is restored
-        // For now, return a list with the current ruleset
-        rulesets.push(self.current_ruleset.clone());
-
-        Ok(rulesets)
+        Ok(self.rulesets.keys().cloned().collect())
     }
 
     /// Update a specific rule in the current ruleset
     pub fn update_rule(&mut self, rule_name: &str, config: RuleConfig) -> Result<()> {
-        let mut ruleset = self.get_current_ruleset()?;
+        let ruleset = self.get_ruleset_mut(&self.current_ruleset)?;
         ruleset.rules.insert(rule_name.to_string(), config);
-        self.save_ruleset(&ruleset)
+        Ok(())
     }
 
     /// Enable/disable a rule
     pub fn set_rule_enabled(&mut self, rule_name: &str, enabled: bool) -> Result<()> {
-        let mut ruleset = self.get_current_ruleset()?;
-
-        if let Some(rule) = ruleset.rules.get_mut(rule_name) {
-            rule.enabled = enabled;
-            self.save_ruleset(&ruleset)
-        } else {
-            Err(Error::Storage {
-                message: format!("Rule '{}' not found", rule_name),
-            })
-        }
+        let ruleset = self.get_ruleset_mut(&self.current_ruleset)?;
+        let rule = ruleset.rules.get_mut(rule_name).ok_or_else(|| Error::Storage {
+            message: format!("Rule '{}' not found", rule_name),
+        })?;
+        rule.enabled = enabled;
+        Ok(())
     }
 
     /// Set rule severity
     pub fn set_rule_severity(&mut self, rule_name: &str, severity: RuleSeverity) -> Result<()> {
-        let mut ruleset = self.get_current_ruleset()?;
-
-        if let Some(rule) = ruleset.rules.get_mut(rule_name) {
-            rule.enabled = !matches!(severity, RuleSeverity::Off);
-            rule.severity = severity;
-            self.save_ruleset(&ruleset)
-        } else {
-            Err(Error::Storage {
-                message: format!("Rule '{}' not found", rule_name),
-            })
-        }
+        let ruleset = self.get_ruleset_mut(&self.current_ruleset)?;
+        let rule = ruleset.rules.get_mut(rule_name).ok_or_else(|| Error::Storage {
+            message: format!("Rule '{}' not found", rule_name),
+        })?;
+        rule.enabled = !matches!(severity, RuleSeverity::Off);
+        rule.severity = severity;
+        Ok(())
     }
 
     /// Import ESLint configuration from JSON (.eslintrc.json compatible)
@@ -310,16 +267,14 @@ impl RuleStorage {
         })
     }
 
-    /// Create a snapshot for persistence (important for WASM environments)
+    /// Create a snapshot for persistence (placeholder)
     pub fn create_snapshot(&self) -> Result<()> {
-        // TODO: Use assemblage_kv Database when API is restored
-        Ok(()) // Mock implementation
+        Ok(())
     }
 
     /// Initialize default ESLint rules
     fn initialize_default_rules(&mut self) -> Result<()> {
-        // Check if default rules already exist
-        if self.get_ruleset("default").is_ok() {
+        if self.rulesets.contains_key("default") {
             return Ok(());
         }
 
@@ -343,10 +298,16 @@ impl RuleStorage {
         default_ruleset.env.insert("node".to_string(), true);
         default_ruleset.env.insert("browser".to_string(), true);
 
-        self.save_ruleset(&default_ruleset)?;
-        self.set_current_ruleset("default")?;
+        self.rulesets.insert(default_ruleset.name.clone(), default_ruleset);
+        self.current_ruleset = "default".to_string();
 
         Ok(())
+    }
+
+    fn get_ruleset_mut(&mut self, name: &str) -> Result<&mut RuleSet> {
+        self.rulesets.get_mut(name).ok_or_else(|| Error::Storage {
+            message: format!("Rule set '{}' not found", name),
+        })
     }
 
     fn add_core_rules(&self, ruleset: &mut RuleSet) {
