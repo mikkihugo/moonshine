@@ -1,6 +1,10 @@
 # moon.yml
 # Moon task configuration for linting Rust and JS/TS
 
+outputs = { self, nixpkgs, ... }: {
+  packages.x86_64-linux.default = ...;
+};
+
 tasks:
   lint:
     command: |
