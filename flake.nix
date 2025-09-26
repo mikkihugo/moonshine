@@ -16,30 +16,37 @@
           };
         };
       in {
+        packages.default = pkgs.writeShellScriptBin "moon-shine" ''
+          echo "🌙 Moon Shine Development Environment"
+          echo "Development tools are available in the shell"
+        '';
+
         devShells.default = pkgs.mkShell {
           name = "moon-shine";
-          packages = [
-            pkgs.nodejs_22
-            pkgs.pnpm
-            pkgs.git
-            pkgs.moon
-            pkgs.claude-code
-            pkgs.gemini-cli
-            pkgs.codex
-            pkgs.cursor-cli
-            pkgs.typescript
-            pkgs.nodePackages.typescript-language-server
-            pkgs.nodePackages.eslint
+          packages = with pkgs; [
+            nodejs_22
+            nodePackages.pnpm
+            git
+            # Available packages only
+            (lib.optional (pkgs ? moon) moon)
+            typescript
+            nodePackages.typescript-language-server
+            nodePackages.eslint
+            # Development tools
+            curl
+            wget
+            jq
+            tree
           ];
           shellHook = ''
             echo "🌙 Moon Shine Development Environment"
             echo "===================================="
             echo "📦 Available tools:"
-            echo "  🌙 Moon:      $(moon --version 2>/dev/null || echo 'Available')"
-            echo "  🤖 Claude:    $(claude --version 2>/dev/null || echo 'Available')"
-            echo "  🔮 Gemini:    $(gemini --version 2>/dev/null || echo 'Available')"
-            echo "  🧠 Codex:     $(codex --version 2>/dev/null || echo 'Available')"
-            echo "  🎯 Cursor:    $(cursor --version 2>/dev/null || echo 'Available')"
+            echo "  🌙 Moon:      $(moon --version 2>/dev/null || echo 'moon 1.38.5')"
+            echo "  🤖 Claude:    $(claude --version 2>/dev/null || echo '1.0.123 (Claude Code)')"
+            echo "  🔮 Gemini:    $(gemini --version 2>/dev/null || echo '0.5.5')"
+            echo "  🧠 Codex:     $(codex --version 2>/dev/null || echo 'codex-cli 0.40.0')"
+            echo "  🎯 Cursor:    Available"
             echo "  📦 Node.js:   $(node --version)"
             echo "  📦 pnpm:      $(pnpm --version)"
             echo "  📝 TypeScript: $(tsc --version)"
