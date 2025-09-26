@@ -96,12 +96,9 @@ impl RuleStorage {
 
     /// Get specific rule set by name
     pub fn get_ruleset(&self, name: &str) -> Result<RuleSet> {
-        self.rulesets
-            .get(name)
-            .cloned()
-            .ok_or_else(|| Error::Storage {
-                message: format!("Rule set '{}' not found", name),
-            })
+        self.rulesets.get(name).cloned().ok_or_else(|| Error::Storage {
+            message: format!("Rule set '{}' not found", name),
+        })
     }
 
     /// Save rule set

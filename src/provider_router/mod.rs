@@ -51,7 +51,7 @@ impl AIProviderConfig {
     /// Create Claude provider configuration using model from config
     pub fn claude() -> Self {
         let config = crate::config::MoonShineConfig::from_moon_workspace().unwrap_or_default();
-        let model = config.ai_model.unwrap_or_else(|| "sonnet".to_string());
+    let model = config.ai.ai_model.clone().unwrap_or_else(|| "sonnet".to_string());
 
         let uses_oauth = config.claude_uses_oauth.unwrap_or(true);
         let api_key_env = if uses_oauth { None } else { config.claude_api_key_env.clone() };
@@ -76,7 +76,7 @@ impl AIProviderConfig {
     /// Create Google/Gemini provider configuration using model from config
     pub fn google() -> Self {
         let config = crate::config::MoonShineConfig::from_moon_workspace().unwrap_or_default();
-        let model = config.ai_model.unwrap_or_else(|| "gemini-2.5-flash".to_string());
+    let model = config.ai.ai_model.clone().unwrap_or_else(|| "gemini-2.5-flash".to_string());
 
         // Set capabilities based on model
         let (code_analysis, code_generation, complex_reasoning, speed) = match model.as_str() {
@@ -1191,7 +1191,7 @@ fn get_provider_api_key(provider: &str, ai_context: &AIContext) -> Option<String
 
     // 2. Check Moon configuration
     if let Ok(config) = crate::config::MoonShineConfig::from_moon_workspace() {
-        if let Some(_providers) = config.ai_providers {
+    if let Some(_providers) = config.ai.ai_providers.clone() {
             // ai_providers is Vec<String>, not a map with api_key configs
             // TODO: Update config structure to support provider-specific settings
             // For now, skip this configuration source

@@ -24,7 +24,7 @@ impl AiEnhancer {
 
     /// Enhance a diagnostic with AI suggestions
     pub fn enhance_diagnostic(&self, code: &str, message: &str) -> Vec<String> {
-        let model_name = self.settings.lm.config.ai_model.clone().unwrap_or_else(|| "default-model".to_string());
+    let model_name = self.settings.lm.config.ai.ai_model.clone().unwrap_or_else(|| "default-model".to_string());
 
         // basic heuristics: look for unwrap usage
         let mut suggestions = Vec::new();

@@ -24,18 +24,21 @@ Moon Shine uses a **hybrid WASM + Adapter pattern**:
 ## 🔧 Critical Infrastructure Gaps
 
 ### 1. **Moon PDK Integration** ⚠️ CRITICAL
+
 - **File**: `src/moon_pdk_interface.rs`
 - **Issue**: Returns mock results for all host operations
 - **Fix**: Replace mock implementations with real Moon PDK bindings
 - **Impact**: Blocks all external tool execution
 
-### 2. **Workflow Engine Activation** ⚠️ CRITICAL  
+### 2. **Workflow Engine Activation** ⚠️ CRITICAL
+
 - **File**: `src/workflow.rs` (implemented but disabled)
 - **Issue**: Commented out in `src/lib.rs` exports
 - **Fix**: Enable workflow engine module export
 - **Impact**: Blocks DAG-based orchestration
 
 ### 3. **Extension Execution Pipeline** ⚠️ CRITICAL
+
 - **File**: `src/extension.rs`
 - **Issue**: Prepares requests but never executes them
 - **Fix**: Wire entrypoint to workflow engine and Moon PDK
@@ -44,6 +47,7 @@ Moon Shine uses a **hybrid WASM + Adapter pattern**:
 ## 🛠️ Tool Integration Strategy
 
 ### **Adapter Pattern (Recommended)**
+
 All tools should use the adapter pattern via `execute_command()`:
 
 ```rust
@@ -89,6 +93,7 @@ let result = execute_command(ExecCommandInput {
 ```
 
 ### **Why Adapters Over Moon Tasks?**
+
 - **Lightweight**: Tools are called directly, no task overhead
 - **Flexible**: Easy to add new tools without Moon configuration
 - **Fast**: No task caching overhead for simple CLI calls
@@ -97,34 +102,37 @@ let result = execute_command(ExecCommandInput {
 
 ## 📊 Implementation Status
 
-| Component | Status | Priority | Notes |
-|-----------|--------|----------|-------|
-| **Moon PDK Interface** | 🔴 Mock | CRITICAL | Replace with real bindings |
-| **Workflow Engine** | 🟡 Implemented | CRITICAL | Enable in lib.rs exports |
-| **Extension Pipeline** | 🔴 Stubbed | CRITICAL | Wire to executors |
-| **OXC Integration** | 🟡 Adapter exists | HIGH | Fix to use external CLI |
-| **Provider Router** | 🟡 Implemented | HIGH | Needs Claude CLI binary integration |
-| **Session Management** | 🟡 Designed | MEDIUM | Implement directory operations |
-| **AI Behavioral Analysis** | 🔴 Stubbed | MEDIUM | Complete implementation |
-| **Rule Registry** | 🟡 Implemented | MEDIUM | Connect to execution pipeline |
-| **Error Handling** | 🔴 Basic | MEDIUM | Add comprehensive recovery |
-| **Testing Infrastructure** | 🟡 Structure exists | LOW | Add integration tests |
+| Component                  | Status              | Priority | Notes                               |
+| -------------------------- | ------------------- | -------- | ----------------------------------- |
+| **Moon PDK Interface**     | 🔴 Mock             | CRITICAL | Replace with real bindings          |
+| **Workflow Engine**        | 🟡 Implemented      | CRITICAL | Enable in lib.rs exports            |
+| **Extension Pipeline**     | 🔴 Stubbed          | CRITICAL | Wire to executors                   |
+| **OXC Integration**        | 🟡 Adapter exists   | HIGH     | Fix to use external CLI             |
+| **Provider Router**        | 🟡 Implemented      | HIGH     | Needs Claude CLI binary integration |
+| **Session Management**     | 🟡 Designed         | MEDIUM   | Implement directory operations      |
+| **AI Behavioral Analysis** | 🔴 Stubbed          | MEDIUM   | Complete implementation             |
+| **Rule Registry**          | 🟡 Implemented      | MEDIUM   | Connect to execution pipeline       |
+| **Error Handling**         | 🔴 Basic            | MEDIUM   | Add comprehensive recovery          |
+| **Testing Infrastructure** | 🟡 Structure exists | LOW      | Add integration tests               |
 
 ## 🎯 Production Roadmap
 
 ### **Phase 1: Core Infrastructure** (Critical)
+
 1. Replace Moon PDK mocks with real implementations
 2. Enable workflow engine in lib.rs
 3. Wire extension.rs to execution pipeline
 4. Fix OXC adapter to use external CLI
 
 ### **Phase 2: Tool Integration** (High Priority)
+
 1. Integrate provider router with CLI binaries
 2. Implement session management
 3. Complete AI behavioral analysis
 4. Connect rule registry to execution
 
 ### **Phase 3: Quality & Testing** (Medium Priority)
+
 1. Add comprehensive error handling
 2. Implement integration tests
 3. Add configuration validation
@@ -133,12 +141,14 @@ let result = execute_command(ExecCommandInput {
 ## 🔍 Key Files to Modify
 
 ### **Critical Changes**
+
 - `src/moon_pdk_interface.rs` - Replace mocks with real Moon PDK calls
 - `src/lib.rs` - Enable workflow engine module export
 - `src/extension.rs` - Wire to workflow engine execution
 - `src/oxc_adapter/mod.rs` - Fix to use external CLI calls
 
 ### **Integration Changes**
+
 - `src/provider_router/mod.rs` - Add Claude CLI binary integration
 - `src/workflow.rs` - Connect to Moon PDK interface
 - `src/session_management.rs` - Implement directory operations
@@ -157,7 +167,7 @@ Once implemented, Moon Shine will provide:
 ## 🚀 Next Steps
 
 1. **Start with Moon PDK integration** - This unblocks everything else
-2. **Enable workflow engine** - Provides orchestration foundation  
+2. **Enable workflow engine** - Provides orchestration foundation
 3. **Wire extension pipeline** - Connects entrypoint to execution
 4. **Fix OXC adapter** - Enables high-performance linting
 5. **Add Claude CLI integration** - Enables AI-powered code improvements

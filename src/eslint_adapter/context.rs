@@ -7,7 +7,7 @@
 
 use crate::types::{DiagnosticSeverity, LintDiagnostic};
 use oxc_ast::ast::{Expression, Node, Program};
-use oxc_semantic::{Semantic, ScopeTree};
+use oxc_semantic::{ScopeTree, Semantic};
 use oxc_span::{GetSpan, Span};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -182,16 +182,8 @@ pub struct ESLintSourceCode<'a> {
 }
 
 impl<'a> ESLintSourceCode<'a> {
-    pub fn new(
-        source: &'a str,
-        program: &'a Program<'a>,
-        semantic: Option<&'a Semantic<'a>>,
-    ) -> Self {
-        Self {
-            source,
-            program,
-            semantic,
-        }
+    pub fn new(source: &'a str, program: &'a Program<'a>, semantic: Option<&'a Semantic<'a>>) -> Self {
+        Self { source, program, semantic }
     }
 
     /// ESLint's sourceCode.getText() method
@@ -309,9 +301,7 @@ pub struct ESLintToken {
 pub fn is_function_call(call: &oxc_ast::ast::CallExpression, function_name: &str) -> bool {
     match &call.callee {
         Expression::Identifier(ident) => ident.name.as_str() == function_name,
-        Expression::StaticMemberExpression(member) => {
-            member.property.name.as_str() == function_name
-        }
+        Expression::StaticMemberExpression(member) => member.property.name.as_str() == function_name,
         _ => false,
     }
 }
@@ -368,9 +358,7 @@ mod tests {
         let source = "console.log('test');";
         let allocator = Allocator::default();
         let source_type = SourceType::default();
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         let context = ESLintRuleContext::new(
             source,
@@ -391,9 +379,7 @@ mod tests {
         let source = "console.log('test');";
         let allocator = Allocator::default();
         let source_type = SourceType::default();
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         let mut context = ESLintRuleContext::new(
             source,
@@ -405,10 +391,7 @@ mod tests {
             vec![],
         );
 
-        let report = ESLintReport::new(
-            oxc_span::Span::new(0, 7),
-            "Unexpected console statement",
-        );
+        let report = ESLintReport::new(oxc_span::Span::new(0, 7), "Unexpected console statement");
 
         context.report(report);
 
@@ -425,9 +408,7 @@ mod tests {
 
         // Test console.log detection
         let source = "console.log('test');";
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         // Find the call expression in the AST
         if let Some(stmt) = parser_result.program.body.first() {

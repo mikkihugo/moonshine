@@ -49,9 +49,7 @@ pub fn get_static_value(expr: &Expression) -> Option<StaticValue> {
         Expression::NumericLiteral(lit) => Some(StaticValue::Number(lit.value)),
         Expression::BooleanLiteral(lit) => Some(StaticValue::Boolean(lit.value)),
         Expression::NullLiteral(_) => Some(StaticValue::Null),
-        Expression::Identifier(ident) if ident.name.as_str() == "undefined" => {
-            Some(StaticValue::Undefined)
-        }
+        Expression::Identifier(ident) if ident.name.as_str() == "undefined" => Some(StaticValue::Undefined),
         _ => None,
     }
 }
@@ -77,14 +75,8 @@ pub fn is_identifier_name(expr: &Expression, name: &str) -> bool {
 /// Check if a member expression accesses a specific property
 pub fn is_property_access(expr: &Expression, object: &str, property: &str) -> bool {
     match expr {
-        Expression::StaticMemberExpression(member) => {
-            is_identifier_name(&member.object, object)
-                && member.property.name.as_str() == property
-        }
-        Expression::ComputedMemberExpression(member) => {
-            is_identifier_name(&member.object, object)
-                && is_literal_value(&member.expression, property)
-        }
+        Expression::StaticMemberExpression(member) => is_identifier_name(&member.object, object) && member.property.name.as_str() == property,
+        Expression::ComputedMemberExpression(member) => is_identifier_name(&member.object, object) && is_literal_value(&member.expression, property),
         _ => false,
     }
 }
@@ -141,18 +133,12 @@ pub fn is_const_declaration(decl: &VariableDeclaration) -> bool {
 
 /// Check if a binary expression uses strict equality (=== or !==)
 pub fn is_strict_equality(expr: &BinaryExpression) -> bool {
-    matches!(
-        expr.operator,
-        BinaryOperator::StrictEquality | BinaryOperator::StrictInequality
-    )
+    matches!(expr.operator, BinaryOperator::StrictEquality | BinaryOperator::StrictInequality)
 }
 
 /// Check if a binary expression uses loose equality (== or !=)
 pub fn is_loose_equality(expr: &BinaryExpression) -> bool {
-    matches!(
-        expr.operator,
-        BinaryOperator::Equality | BinaryOperator::Inequality
-    )
+    matches!(expr.operator, BinaryOperator::Equality | BinaryOperator::Inequality)
 }
 
 /// Check if a statement is an empty statement
@@ -180,10 +166,7 @@ pub fn get_declared_identifiers(decl: &VariableDeclaration) -> Vec<&str> {
 }
 
 /// Recursively collect identifiers from a binding pattern
-fn collect_identifiers_from_pattern<'a>(
-    pattern: &'a BindingPattern,
-    identifiers: &mut Vec<&'a str>,
-) {
+fn collect_identifiers_from_pattern<'a>(pattern: &'a BindingPattern, identifiers: &mut Vec<&'a str>) {
     match &pattern.kind {
         BindingPatternKind::BindingIdentifier(ident) => {
             identifiers.push(ident.name.as_str());
@@ -217,29 +200,15 @@ fn collect_identifiers_from_pattern<'a>(
 /// Check if an expression contains only literal values
 pub fn is_constant_expression(expr: &Expression) -> bool {
     match expr {
-        Expression::StringLiteral(_)
-        | Expression::NumericLiteral(_)
-        | Expression::BooleanLiteral(_)
-        | Expression::NullLiteral(_) => true,
+        Expression::StringLiteral(_) | Expression::NumericLiteral(_) | Expression::BooleanLiteral(_) | Expression::NullLiteral(_) => true,
         Expression::Identifier(ident) => ident.name.as_str() == "undefined",
-        Expression::ArrayExpression(arr) => {
-            arr.elements.iter().all(|elem| {
-                elem.as_ref()
-                    .map_or(true, |e| is_constant_expression(e))
-            })
-        }
-        Expression::ObjectExpression(obj) => {
-            obj.properties.iter().all(|prop| match prop {
-                ObjectPropertyKind::ObjectProperty(prop) => {
-                    is_constant_expression(&prop.value)
-                }
-                _ => false,
-            })
-        }
+        Expression::ArrayExpression(arr) => arr.elements.iter().all(|elem| elem.as_ref().map_or(true, |e| is_constant_expression(e))),
+        Expression::ObjectExpression(obj) => obj.properties.iter().all(|prop| match prop {
+            ObjectPropertyKind::ObjectProperty(prop) => is_constant_expression(&prop.value),
+            _ => false,
+        }),
         Expression::UnaryExpression(unary) => is_constant_expression(&unary.argument),
-        Expression::BinaryExpression(binary) => {
-            is_constant_expression(&binary.left) && is_constant_expression(&binary.right)
-        }
+        Expression::BinaryExpression(binary) => is_constant_expression(&binary.left) && is_constant_expression(&binary.right),
         _ => false,
     }
 }
@@ -292,13 +261,7 @@ pub fn parameter_count(func: &Function) -> usize {
 }
 
 /// Common patterns for checking dangerous global functions
-pub static DANGEROUS_GLOBALS: &[&str] = &[
-    "eval",
-    "Function",
-    "execScript",
-    "setTimeout",
-    "setInterval",
-];
+pub static DANGEROUS_GLOBALS: &[&str] = &["eval", "Function", "execScript", "setTimeout", "setInterval"];
 
 /// Common patterns for checking console methods
 pub static CONSOLE_METHODS: &[&str] = &[
@@ -363,9 +326,7 @@ mod tests {
         let source_type = SourceType::default();
 
         let source = "let x = 'test'; let y = 42; let z = true;";
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         // Test would need to traverse AST to find literals and test them
         // This is a placeholder showing the test structure
@@ -378,9 +339,7 @@ mod tests {
         let source_type = SourceType::default();
 
         let source = "let str = 'hello';";
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         // Would need to find the string literal and test get_static_value
         assert!(true); // Placeholder

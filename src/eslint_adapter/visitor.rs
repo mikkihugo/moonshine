@@ -4,7 +4,7 @@
 //! to OXC's visitor system. ESLint rules define visitors for specific AST
 //! node types, and this module bridges that to our execution engine.
 
-use super::context::{ESLintRuleContext, ESLintReport};
+use super::context::{ESLintReport, ESLintRuleContext};
 use oxc_ast::ast::*;
 use oxc_ast_visit::{walk, Visit};
 use oxc_span::GetSpan;
@@ -199,10 +199,7 @@ pub struct NoConsoleRule;
 impl<'a> ESLintVisitor<'a> for NoConsoleRule {
     fn visit_call_expression(&mut self, node: &CallExpression<'a>, context: &mut ESLintRuleContext<'a>) {
         if super::context::is_console_call(node) {
-            let report = ESLintReport::new(
-                node.span(),
-                "Unexpected console statement"
-            );
+            let report = ESLintReport::new(node.span(), "Unexpected console statement");
             context.report(report);
         }
     }
@@ -214,10 +211,7 @@ pub struct NoDebuggerRule;
 impl<'a> ESLintVisitor<'a> for NoDebuggerRule {
     fn visit_identifier(&mut self, node: &Identifier<'a>, context: &mut ESLintRuleContext<'a>) {
         if node.name.as_str() == "debugger" {
-            let report = ESLintReport::new(
-                node.span(),
-                "Unexpected 'debugger' statement"
-            );
+            let report = ESLintReport::new(node.span(), "Unexpected 'debugger' statement");
             context.report(report);
         }
     }
@@ -231,12 +225,13 @@ impl<'a> ESLintVisitor<'a> for NoEvalRule {
         if super::context::is_eval_call(node) {
             let report = ESLintReport::new(
                 node.span(),
-                format!("Unexpected use of '{}' is not allowed",
+                format!(
+                    "Unexpected use of '{}' is not allowed",
                     match &node.callee {
                         Expression::Identifier(ident) => ident.name.as_str(),
-                        _ => "eval-like function"
+                        _ => "eval-like function",
                     }
-                )
+                ),
             );
             context.report(report);
         }
@@ -250,10 +245,7 @@ impl<'a> ESLintVisitor<'a> for NoAlertRule {
     fn visit_call_expression(&mut self, node: &CallExpression<'a>, context: &mut ESLintRuleContext<'a>) {
         if let Expression::Identifier(ident) = &node.callee {
             if matches!(ident.name.as_str(), "alert" | "confirm" | "prompt") {
-                let report = ESLintReport::new(
-                    node.span(),
-                    format!("Unexpected {} call", ident.name.as_str())
-                );
+                let report = ESLintReport::new(node.span(), format!("Unexpected {} call", ident.name.as_str()));
                 context.report(report);
             }
         }
@@ -267,20 +259,14 @@ impl<'a> ESLintVisitor<'a> for NoEmptyRule {
     fn visit_if_statement(&mut self, node: &IfStatement<'a>, context: &mut ESLintRuleContext<'a>) {
         if let Statement::BlockStatement(block) = &node.consequent {
             if block.body.is_empty() {
-                let report = ESLintReport::new(
-                    block.span(),
-                    "Empty block statement"
-                );
+                let report = ESLintReport::new(block.span(), "Empty block statement");
                 context.report(report);
             }
         }
 
         if let Some(Statement::BlockStatement(block)) = &node.alternate {
             if block.body.is_empty() {
-                let report = ESLintReport::new(
-                    block.span(),
-                    "Empty block statement"
-                );
+                let report = ESLintReport::new(block.span(), "Empty block statement");
                 context.report(report);
             }
         }
@@ -312,9 +298,7 @@ mod tests {
         let source = "console.log('test'); let x = 5;";
         let allocator = Allocator::default();
         let source_type = SourceType::default();
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         let context = ESLintRuleContext::new(
             source,
@@ -340,9 +324,7 @@ mod tests {
         let source = "eval('dangerous code'); let y = 10;";
         let allocator = Allocator::default();
         let source_type = SourceType::default();
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
         let context = ESLintRuleContext::new(
             source,

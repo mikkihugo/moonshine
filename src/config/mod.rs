@@ -1,21 +1,100 @@
 //! Moon-shine configuration plumbing.
 //!
-//! All defaults live in the `defaults` module so it’s easy to audit the baseline values. The top
+//! All defaults live in the `defaults` module so it's easy to audit the baseline values. The top
 //! level `MoonShineConfig` struct groups settings into logical sub-structures (AI, linting,
 //! adaptive rule system) that map directly to the YAML structure consumers provide in `moon.yml`.
-
-mod defaults;
 
 use crate::error::{Error, Result};
 use crate::moon_pdk_interface::get_moon_config_safe;
 use moon_pdk::get_extension_config;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
+// Removed unused imports: HashMap, PathBuf
 
 pub use adaptive::{AdaptiveConfig, PatternTrackingConfig, RuleGenerationConfig, StarcoderConfig};
 pub use ai::AiConfig;
 pub use linting::LintingConfig;
+
+/// Create a JSON schema for the Moon Shine configuration
+pub fn create_config_schema() -> String {
+    r#"{
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Moon Shine Configuration",
+        "description": "Configuration schema for Moon Shine AI-powered code analysis",
+        "properties": {
+            "ai": {
+                "type": "object",
+                "description": "AI configuration settings",
+                "properties": {
+                    "model": {
+                        "type": "string",
+                        "description": "AI model to use for analysis",
+                        "default": "claude-3-5-sonnet"
+                    },
+                    "enable_ai_suggestions": {
+                        "type": "boolean",
+                        "description": "Enable AI-powered suggestions",
+                        "default": true
+                    },
+                    "quality_threshold": {
+                        "type": "number",
+                        "description": "Quality threshold for AI suggestions",
+                        "minimum": 0.0,
+                        "maximum": 1.0,
+                        "default": 0.8
+                    }
+                }
+            },
+            "linting": {
+                "type": "object",
+                "description": "Linting configuration",
+                "properties": {
+                    "enable_oxc": {
+                        "type": "boolean",
+                        "description": "Enable OXC linting",
+                        "default": true
+                    },
+                    "enable_eslint": {
+                        "type": "boolean",
+                        "description": "Enable ESLint",
+                        "default": true
+                    },
+                    "enable_prettier": {
+                        "type": "boolean",
+                        "description": "Enable Prettier formatting",
+                        "default": true
+                    }
+                }
+            }
+        }
+    }"#
+    .to_string()
+}
+
+/// CLI arguments structure for Moon PDK integration
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MoonShineArgs {
+    /// Operation mode: fix, lint-only, or comprehensive
+    pub mode: Option<String>,
+
+    /// Only report issues without fixing
+    pub lint_only: bool,
+
+    /// CI-friendly reporting mode (no interactive fixes)
+    pub reporting_only: bool,
+
+    /// Force initialization of configuration files
+    pub force_init: bool,
+
+    /// Install default prompts and configuration
+    pub install_prompts: bool,
+
+    /// Files to process (supports glob patterns)
+    pub files: Vec<String>,
+}
+
+// Type alias for backward compatibility
+pub type AdaptiveRuleSystemConfig = AdaptiveConfig;
 
 mod ai {
     use super::defaults;
@@ -190,6 +269,18 @@ pub struct MoonShineConfig {
     pub linting: LintingConfig,
     #[serde(default)]
     pub adaptive: AdaptiveConfig,
+    #[serde(default)]
+    pub enable_relationship_analysis: Option<bool>,
+    #[serde(default)]
+    pub ai_model: Option<String>,
+    #[serde(default)]
+    pub enable_ai_tsdoc: Option<bool>,
+    #[serde(default)]
+    pub tsdoc_coverage_target: Option<f64>,
+    #[serde(default)]
+    pub operation_mode: Option<String>,
+    #[serde(default)]
+    pub custom_prompts: Option<std::collections::HashMap<String, String>>,
 }
 
 impl Default for MoonShineConfig {
@@ -198,6 +289,12 @@ impl Default for MoonShineConfig {
             ai: AiConfig::default(),
             linting: LintingConfig::default(),
             adaptive: AdaptiveConfig::default(),
+            enable_relationship_analysis: Some(false),
+            ai_model: Some("sonnet".to_string()),
+            enable_ai_tsdoc: Some(true),
+            tsdoc_coverage_target: Some(90.0),
+            operation_mode: Some("fix".to_string()),
+            custom_prompts: None,
         }
     }
 }
@@ -215,9 +312,7 @@ impl MoonShineConfig {
             return Err(Error::config("ai.temperature must be between 0.0 and 2.0"));
         }
 
-        if self.adaptive.rule_generation.quality_threshold < 0.0
-            || self.adaptive.rule_generation.quality_threshold > 1.0
-        {
+        if self.adaptive.rule_generation.quality_threshold < 0.0 || self.adaptive.rule_generation.quality_threshold > 1.0 {
             return Err(Error::config("adaptive.ruleGeneration.qualityThreshold must be between 0.0 and 1.0"));
         }
 
@@ -230,6 +325,18 @@ impl MoonShineConfig {
             .or_else(|_| get_moon_config_safe("extension.moonshine.data_directory"))
             .unwrap_or(None)
             .unwrap_or_else(|| ".moon/moonshine".to_string())
+    }
+
+    /// Get debug session retention hours
+    pub fn debug_session_retention_hours(&self) -> u32 {
+        // Default to 12 hours for debug sessions
+        12
+    }
+
+    /// Get cleanup threshold for sessions older than specified hours
+    pub fn cleanup_sessions_older_than_hours(&self) -> u32 {
+        // Default to 48 hours cleanup threshold
+        48
     }
 
     pub fn keep_debug_sessions(&self) -> bool {

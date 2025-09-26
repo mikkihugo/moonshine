@@ -83,14 +83,17 @@ impl ESLintRuleMapper {
         ];
 
         for (rule_id, category, severity, description, autofix, cost) in native_rule_specs {
-            native_rules.insert(rule_id.to_string(), NativeRuleMapping {
-                internal_id: format!("eslint_{}", rule_id.replace('-', "_")),
-                category: category.to_string(),
-                default_severity: severity.to_string(),
-                description: description.to_string(),
-                supports_autofix: autofix,
-                performance_cost: cost,
-            });
+            native_rules.insert(
+                rule_id.to_string(),
+                NativeRuleMapping {
+                    internal_id: format!("eslint_{}", rule_id.replace('-', "_")),
+                    category: category.to_string(),
+                    default_severity: severity.to_string(),
+                    description: description.to_string(),
+                    supports_autofix: autofix,
+                    performance_cost: cost,
+                },
+            );
         }
 
         // Complex ESLint rules that need external execution
@@ -106,13 +109,16 @@ impl ESLintRuleMapper {
         ];
 
         for (rule_id, category, severity, reason) in external_rule_specs {
-            external_rules.insert(rule_id.to_string(), ExternalRuleMapping {
-                eslint_plugin: None,
-                category: category.to_string(),
-                default_severity: severity.to_string(),
-                description: format!("ESLint rule: {}", rule_id),
-                reason_for_external: reason.to_string(),
-            });
+            external_rules.insert(
+                rule_id.to_string(),
+                ExternalRuleMapping {
+                    eslint_plugin: None,
+                    category: category.to_string(),
+                    default_severity: severity.to_string(),
+                    description: format!("ESLint rule: {}", rule_id),
+                    reason_for_external: reason.to_string(),
+                },
+            );
         }
 
         ESLintRuleMappingConfig {
@@ -244,9 +250,7 @@ impl ESLintRuleMapper {
             native_rules: self.config.native_rules.len(),
             external_rules: self.config.external_rules.len(),
             disabled_rules: self.config.disabled_rules.len(),
-            rules_with_autofix: self.config.native_rules.values()
-                .filter(|r| r.supports_autofix)
-                .count(),
+            rules_with_autofix: self.config.native_rules.values().filter(|r| r.supports_autofix).count(),
         }
     }
 }
@@ -291,12 +295,7 @@ impl ESLintPresets {
     /// Get strict ESLint rules for production code
     pub fn strict() -> Vec<&'static str> {
         let mut rules = Self::recommended();
-        rules.extend(vec![
-            "no-implied-eval",
-            "no-new-func",
-            "no-script-url",
-            "no-empty-function",
-        ]);
+        rules.extend(vec!["no-implied-eval", "no-new-func", "no-script-url", "no-empty-function"]);
         rules
     }
 

@@ -316,7 +316,7 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
     let cache_key = format!(
         "moonshine-{}-{}-{}",
         operation_mode,
-        config.ai_model.as_deref().unwrap_or("sonnet"),
+    config.ai.ai_model.as_deref().unwrap_or("sonnet"),
         if copro_enabled { "copro" } else { "static" }
     );
     moon_debug!("Cache key: {}", cache_key);
@@ -348,11 +348,11 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
 
     // Create workflow request for Moon task execution
     moon_info!("Executing Moon Shine workflow for {} files", file_arguments.len());
-    
+
     // Execute workflow for each file
     for file_path in &file_arguments {
         moon_info!("Processing file: {}", file_path);
-        
+
         // Read file content
         let file_content = match crate::moon_pdk_interface::read_file_content(file_path) {
             Ok(content) => content,
@@ -362,26 +362,9 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
             }
         };
 
-        // Create workflow engine with appropriate workflow
-        let workflow_steps = match operation_mode {
-            "static-analysis" => crate::workflow::create_static_analysis_workflow(),
-            "full-analysis" | "fix" => crate::workflow::create_moonshine_oxc_workflow(),
-            "agent-based" => crate::workflow::create_agent_workflow(),
-            "typescript-only" => crate::workflow::create_typescript_workflow(),
-            "eslint-only" => crate::workflow::create_eslint_workflow(),
-            "prettier-only" => crate::workflow::create_prettier_workflow(),
-            "tsdoc-only" => crate::workflow::create_tsdoc_workflow(),
-            "lint-only" => crate::workflow::create_static_analysis_workflow(),
-            "reporting-only" => crate::workflow::create_static_analysis_workflow(),
-            _ => crate::workflow::create_moonshine_oxc_workflow(), // Default to full analysis
-        };
+        let workflow_definition = crate::workflow::WorkflowDefinition::from_mode(&operation_mode);
 
-        let mut engine = match crate::workflow::WorkflowEngine::new(
-            workflow_steps,
-            file_content,
-            file_path.clone(),
-            config.clone(),
-        ) {
+        let mut engine = match crate::workflow::WorkflowEngine::new(workflow_definition, file_content, file_path.clone(), config.clone()) {
             Ok(engine) => engine,
             Err(e) => {
                 moon_error!("Failed to create workflow engine for {}: {}", file_path, e);
@@ -389,14 +372,17 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
             }
         };
 
-        // Execute workflow
-        match engine.execute().await {
-            Ok(result) => {
-                moon_info!("Workflow completed for {}: success={}, quality={:.2}", 
-                    file_path, result.success, result.quality_score);
-                
+        match engine.execute() {
+            Ok(workflow_result) => {
+                moon_info!(
+                    "Workflow completed for {}: success={}, quality={:.2}",
+                    file_path,
+                    workflow_result.success,
+                    workflow_result.quality_score
+                );
+
                 // Write results if available
-                if let Some(output_code) = result.final_code {
+                if let Some(output_code) = workflow_result.final_code {
                     match crate::moon_pdk_interface::write_file_to_host(file_path, &output_code) {
                         Ok(_) => moon_info!("Updated file: {}", file_path),
                         Err(e) => moon_error!("Failed to write updated file {}: {}", file_path, e),

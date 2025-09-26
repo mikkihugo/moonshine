@@ -81,21 +81,25 @@ and skip logic when prerequisites fail.
 Moon Shine's codebase contains comprehensive scaffolding that needs integration work before production deployment. Key areas to complete:
 
 ### **Critical Infrastructure**
+
 - **Moon PDK Integration**: `src/moon_pdk_interface.rs` returns mock results for host operations (`execute_command`, `read_file_content`, `write_file_to_host`). Replace with real Moon PDK bindings.
 - **Workflow Engine Activation**: `src/workflow.rs` implements the petgraph DAG engine but is commented out in `src/lib.rs` exports. Enable and integrate the workflow engine.
 - **Extension Execution Pipeline**: `src/extension.rs` prepares workflow requests but never calls Moon tasks or workflow engine. Wire the entrypoint to real executors.
 
 ### **Tool Integration Strategy**
+
 - **OXC Integration**: OXC should be called as external CLI commands via Moon PDK adapters, not embedded as Rust libraries. Create adapters that invoke `oxc` CLI for parsing, linting, and formatting.
 - **Tool Coordination**: All tools (TypeScript, ESLint, Prettier, Claude CLI) should use the adapter pattern via `execute_command()` rather than Moon tasks for lightweight coordination.
 - **Provider Router**: `src/provider_router/` requires actual CLI binaries (`claude`, `gemini`, `codex`) and configuration plumbing before dispatching AI calls.
 
 ### **Configuration and Analysis**
+
 - **TSDoc Integration**: TSDoc analysis references `tsdoc.json` settings but uses placeholder data paths. Wire real config before enabling by default.
 - **Session Management**: Session-based JSON protocol is designed but needs full implementation of directory creation, cleanup, and agent coordination.
 - **AI Behavioral Analysis**: `src/oxc_adapter/ai_behavioral.rs` and neural pattern models are stubbed and need full implementation.
 
 ### **System Integration**
+
 - **Rule Registry**: `src/rule_registry.rs` exists but needs connection to workflow engine and execution pipeline for 582+ static and 192 behavioral rules.
 - **Error Handling**: Need robust error handling for Moon task failures, AI provider timeouts, and graceful degradation.
 - **Testing**: `src/testing/` has comprehensive structure but needs integration tests for Moon task execution, AI provider routing, and end-to-end workflows.

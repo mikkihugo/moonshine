@@ -9,9 +9,21 @@ use crate::analysis::MoonTaskRequest;
 use crate::config::MoonShineConfig;
 use serde::{Deserialize, Serialize};
 
-// Use proper Moon PDK interfaces instead of direct Extism host functions
+// Use Moon PDK for WASM host communication
+use extism_pdk::host_fn;
 #[cfg(feature = "wasm")]
 use moon_pdk::*;
+
+// Define host functions for file system and command execution
+#[cfg(feature = "wasm")]
+#[host_fn]
+extern "ExtismHost" {
+    fn host_execute_command(input: String) -> String;
+    fn host_read_file(path: String) -> String;
+    fn host_write_file(path: String, content: String) -> String;
+    fn host_file_exists(path: String) -> String;
+    fn host_list_files(path: String) -> String;
+}
 
 /// Command execution input for Moon host
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,12 +46,20 @@ pub struct ExecCommandOutput {
 pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
-        // TODO: Implement proper Moon PDK command execution
-        Ok(ExecCommandOutput {
-            exit_code: 0,
-            stdout: format!("Mock output for: {} {:?}", input.command, input.args),
-            stderr: String::new(),
-        })
+        // Use Moon PDK to execute commands
+        use moon_pdk::*;
+
+        // Convert environment variables to the format expected by Moon PDK
+        let mut env_vars = std::collections::HashMap::new();
+        for (key, value) in &input.env {
+            env_vars.insert(key.clone(), value.clone());
+        }
+
+        // Execute the command via Moon PDK
+        let command_json = serde_json::to_string(&input)?;
+        let result = unsafe { host_execute_command(command_json)? };
+        let output: ExecCommandOutput = serde_json::from_str(&result)?;
+        Ok(output)
     }
     #[cfg(not(feature = "wasm"))]
     {
@@ -71,9 +91,11 @@ pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box
 pub fn read_file_content(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
-        // Use proper Moon PDK file reading when available
-        // For now, fallback approach until proper PDK integration
-        Ok(format!("// File content from {}\n// Moon PDK integration needed", path))
+        // Use Moon PDK to read file content
+        use moon_pdk::*;
+
+        let result = unsafe { host_read_file(path.to_string())? };
+        Ok(result)
     }
     #[cfg(not(feature = "wasm"))]
     {
@@ -85,9 +107,9 @@ pub fn read_file_content(path: &str) -> Result<String, Box<dyn std::error::Error
 pub fn check_file_exists(path: &str) -> Result<bool, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
-        // TODO: Implement proper Moon PDK file existence check
-        let _ = path;
-        Ok(true) // Mock: assume file exists for compilation
+        let result = unsafe { host_file_exists(path.to_string())? };
+        let exists: bool = serde_json::from_str(&result)?;
+        Ok(exists)
     }
     #[cfg(not(feature = "wasm"))]
     {
@@ -99,9 +121,9 @@ pub fn check_file_exists(path: &str) -> Result<bool, Box<dyn std::error::Error>>
 pub fn list_directory_contents(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
-        // TODO: Implement proper Moon PDK directory listing
-        let _ = path;
-        Ok(vec!["file1.ts".to_string(), "file2.js".to_string()]) // Mock files for compilation
+        let result = unsafe { host_list_files(path.to_string())? };
+        let files: Vec<String> = serde_json::from_str(&result)?;
+        Ok(files)
     }
     #[cfg(not(feature = "wasm"))]
     {
@@ -414,9 +436,9 @@ pub fn get_moon_config(key: &str) -> Option<String> {
             Ok(config) => {
                 // Map configuration keys to config fields
                 match key {
-                    "ai_provider" => config.ai_model.clone(),
-                    "ai_providers" => config.ai_providers.as_ref().map(|providers| format!("{:?}", providers)),
-                    "max_files_per_batch" => config.max_files_per_task.map(|n| n.to_string()),
+                    "ai_provider" => config.ai.ai_model.clone(),
+                    "ai_providers" => config.ai.ai_providers.as_ref().map(|providers| format!("{:?}", providers)),
+                    "max_files_per_batch" => config.ai.max_files_per_task.map(|n| n.to_string()),
                     "enable_incremental_analysis" => Some("true".to_string()), // Default to enabled
                     "claude_model" => config.ai_model.clone(),
                     "temperature" => config.temperature.map(|t| t.to_string()),
@@ -488,9 +510,13 @@ pub fn write_file_atomic(path: &str, content: &str) -> Result<(), Box<dyn std::e
 pub fn write_file_to_host(path: &str, content: &str) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
-        // TODO: Implement proper Moon PDK file writing
-        let _ = (path, content);
-        Ok(()) // Mock success for compilation
+        let result = unsafe { host_write_file(path.to_string(), content.to_string())? };
+        // Check if write was successful
+        if result.is_empty() || result == "success" {
+            Ok(())
+        } else {
+            Err(format!("Write failed: {}", result).into())
+        }
     }
     #[cfg(not(feature = "wasm"))]
     {

@@ -217,7 +217,7 @@ pub struct AstDiagnostic {
   pub line: u32,
   pub column: u32,
   pub rule_name: Option<String>,
-  pub fix_suggestion: Option<String>,
+  pub suggested_fix: Option<String>,
 }
 
 /// Semantic analysis errors detected by OXC
@@ -2486,7 +2486,7 @@ impl crate::ai_code_fixer::ClaudeFixer {
           severity: DiagnosticSeverity::Error,
           rule_name: None,
           span,
-          fix_suggestion: None,
+          suggested_fix: None,
         }
       })
       .collect()

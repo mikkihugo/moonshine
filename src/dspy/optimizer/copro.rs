@@ -269,7 +269,7 @@ impl COPRO {
             let current_init_temperature = self.init_temperature;
 
             let mut lm_for_future = base_lm_for_cloning.clone();
-            lm_for_future.config.temperature = Some(current_init_temperature);
+            lm_for_future.config.ai.temperature = current_init_temperature;
 
             let future = async move {
                 let prediction = get_basic_generator()
@@ -380,7 +380,7 @@ impl Optimizer for COPRO {
 
                         async move {
                             let prediction = if let Some(mut prompt_model) = prompt_model {
-                                prompt_model.config.temperature = Some(init_temperature);
+                                prompt_model.config.ai.temperature = init_temperature;
                                 get_basic_generator()
                                     .forward_with_config(
                                         crate::example! {
@@ -391,7 +391,7 @@ impl Optimizer for COPRO {
                                     .await
                             } else {
                                 let mut lm = get_lm().clone();
-                                lm.config.temperature = Some(init_temperature);
+                                lm.config.ai.temperature = init_temperature;
                                 get_basic_generator()
                                     .forward_with_config(
                                         crate::example! {
@@ -591,7 +591,7 @@ impl Optimizer for COPRO {
 
                 // Generate new candidates (WASM: sequential processing)
                 let mut lm_for_prediction = base_lm_for_refinement.clone();
-                lm_for_prediction.config.temperature = Some(self.init_temperature);
+                lm_for_prediction.config.ai.temperature = self.init_temperature;
 
                 let prediction = get_refinement_generator()
                     .forward_with_config(

@@ -57,7 +57,6 @@ pub mod adaptive_workflow_planner; // Adaptive workflow planning and AI strategy
 pub mod ai_assistance; // AI enhancement and suggestion system
 pub mod ai_code_fixer; // AI-powered code fixing
 pub mod analysis;
-// pub mod analysis_pipeline; // Temporarily disabled - needs Biome replacement
 pub mod config;
 pub mod data; // Shared data handling components
 pub mod dspy; // Embedded full DSPy framework <!-- TODO: Verify the completeness and fidelity of this DSPy implementation against the original Python framework. -->
@@ -73,15 +72,20 @@ pub mod moon_pdk_interface; // Moon PDK communication interface
 pub mod prompt_optimizer; // DSPy-powered prompt optimization
 pub mod prompts; // Embedded prompt management
 pub mod provider_router; // AI provider routing and selection
+pub mod rule_registry; // Rule registry and metadata management
 pub mod rule_storage; // WASM-safe ESLint rule storage with assemblage_kv
 pub mod rule_types; // Modern rule types for Biome + AI system
 pub mod rulebase; // JSON-based rulebase and execution scaffolding
-                  // pub mod static_analysis_workflow; // Removed - replaced by Biome + AI analysis
 pub mod storage; // Hybrid assemblage_kv + file persistence
+pub mod smart_rule_strategy; // Smart rule strategy with 200 core rules
+pub mod ai_behavioral_strategy; // AI behavioral analysis engine
+pub mod complete_ai_architecture; // Complete 3-layer AI architecture
+pub mod four_layer_ai_architecture; // Complete 4-layer AI architecture with StarCoder
 pub mod telemetry; // Telemetry logging for workflow runs
 pub mod token_usage; // LM token usage tracking
 pub mod types; // Core data structures for moon-shine code analysis
 pub mod workflow; // DAG-based workflow engine for orchestrated analysis pipelines
+pub mod linter; // Re-enabled for static analysis
 pub mod adaptive_rule_system; // Integrated adaptive rule system combining pattern tracking and rule generation
 pub mod custom_rule_generator; // AI-powered custom rule generation pipeline
 pub mod javascript_typescript_linter; // JavaScript/TypeScript linting using OXC
@@ -92,8 +96,6 @@ pub mod templates;
 pub mod tsconfig; // TypeScript configuration resolution utilities
 pub mod tsdoc; // Lightweight TSDoc analysis helpers // Rule generation templates
 
-#[cfg(test)]
-pub mod testing; // Comprehensive testing infrastructure for London, Chicago, and E2E methodologies
 
 // Re-exports for convenience
 pub use analysis::MoonShineResponse;

@@ -42,7 +42,84 @@ use oxc_parser::{Parser, ParserReturn};
 use oxc_semantic::SemanticBuilder;
 use oxc_span::SourceType;
 use serde::{Deserialize, Serialize};
+
+/// Configuration for OXC analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OxcAnalysisConfig {
+    pub enable_semantic_analysis: bool,
+    pub enable_type_checking: bool,
+    pub strict_mode: bool,
+    pub file_types: Vec<String>,
+}
+
+impl Default for OxcAnalysisConfig {
+    fn default() -> Self {
+        Self {
+            enable_semantic_analysis: true,
+            enable_type_checking: true,
+            strict_mode: false,
+            file_types: vec!["typescript".to_string(), "javascript".to_string()],
+        }
+    }
+}
 use std::collections::HashMap;
+
+/// Parse TypeScript/JavaScript code using OXC
+pub fn parse_code<'a>(source: &'a str, file_path: &str) -> Result<ParserReturn<'a>, Box<dyn std::error::Error>> {
+    let allocator = Allocator::default();
+    let source_type = SourceType::from_path(file_path).map_err(|e| format!("Invalid source type for {}: {}", file_path, e))?;
+
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    Ok(ret)
+}
+
+/// Perform semantic analysis on parsed code
+pub fn analyze_semantics<'a>(
+    allocator: &'a Allocator,
+    ret: &'a ParserReturn<'a>,
+    source: &'a str,
+    source_type: SourceType,
+) -> Result<SemanticBuilder<'a>, Box<dyn std::error::Error>> {
+    let program = allocator.alloc(ret.program());
+    let semantic = SemanticBuilder::new(source, source_type).with_trivias(&ret.trivias()).build(program);
+    Ok(semantic)
+}
+
+/// Convert OXC diagnostics to our diagnostic format
+pub fn convert_diagnostics(oxc_diagnostics: &[OxcDiagnostic]) -> Vec<LintDiagnostic> {
+    oxc_diagnostics
+        .iter()
+        .map(|diag| LintDiagnostic {
+            rule_name: diag.kind.name().to_string(),
+            message: diag.message().to_string(),
+            file_path: diag.file_path().unwrap_or("").to_string(),
+            line: diag.start.line,
+            column: diag.start.column,
+            end_line: diag.end.line,
+            end_column: diag.end.column,
+            severity: match diag.severity() {
+                oxc_diagnostics::Severity::Error => DiagnosticSeverity::Error,
+                oxc_diagnostics::Severity::Warning => DiagnosticSeverity::Warning,
+                oxc_diagnostics::Severity::Info => DiagnosticSeverity::Info,
+                oxc_diagnostics::Severity::Hint => DiagnosticSeverity::Hint,
+            },
+            fix_available: false,
+            suggested_fix: None,
+        })
+        .collect()
+}
+
+/// Analyze AST nodes for patterns
+pub fn analyze_ast_patterns<'a>(program: &'a oxc_ast::ast::Program<'a>) -> Vec<AstKind<'a>> {
+    let mut patterns = Vec::new();
+
+    // Walk through AST nodes and collect patterns
+    for stmt in &program.body {
+        patterns.push(stmt.kind());
+    }
+
+    patterns
+}
 
 pub use adaptive_pattern_analyzer::{PatternAnalysisResult, PatternLearningConfig, RepetitivePatternLearner};
 pub use ai_behavioral::{AiBehavioralAnalyzer, BehavioralPattern, BehavioralPatternType};
@@ -52,6 +129,125 @@ pub use oxc_formatter::{OxcFormatter, OxcFormatterConfig, OxcFormatterResult};
 pub use oxc_linter::{OxcAnalysisResult, OxcConfig, OxcLinter};
 pub use oxc_transformer::{OxcTransformationResult, OxcTransformer, OxcTransformerConfig};
 pub use starcoder_integration::{AiMistakeAnalysis, CodePatternDetector, CodePatternType, LanguageModelConfig};
+
+/// StarCoder LLM integration for code generation and pattern learning
+pub mod starcoder_llm {
+    use super::*;
+
+    /// StarCoder LLM for code generation and pattern analysis
+    pub struct StarCoderLLM {
+        model_name: String,
+        max_tokens: u32,
+        temperature: f32,
+    }
+
+    impl StarCoderLLM {
+        pub fn new() -> Self {
+            Self {
+                model_name: "bigcode/starcoder".to_string(),
+                max_tokens: 2048,
+                temperature: 0.1,
+            }
+        }
+
+        /// Generate code suggestions using StarCoder
+        pub async fn generate_code_suggestions(
+            &self,
+            source_code: &str,
+            file_path: &str,
+            context: &str,
+        ) -> Result<Vec<CodeSuggestion>, Box<dyn std::error::Error>> {
+            // TODO: Integrate with actual StarCoder model
+            // For now, return mock suggestions
+            Ok(vec![CodeSuggestion {
+                suggestion_type: "function_generation".to_string(),
+                original_code: source_code.to_string(),
+                generated_code: "// Generated helper function".to_string(),
+                explanation: "StarCoder suggests generating helper functions".to_string(),
+                confidence: 0.85,
+                quality_improvement: 0.3,
+                line_range: (1, 10),
+            }])
+        }
+
+        /// Learn patterns from codebase using StarCoder
+        pub async fn learn_patterns(&self, codebase_samples: &[String], pattern_type: &str) -> Result<Vec<LearnedPattern>, Box<dyn std::error::Error>> {
+            // TODO: Integrate with actual StarCoder model
+            Ok(vec![LearnedPattern {
+                pattern_id: "starcoder-pattern-1".to_string(),
+                pattern_type: pattern_type.to_string(),
+                code_examples: codebase_samples.to_vec(),
+                frequency: 5,
+                quality_score: 0.8,
+                generated_rule: None,
+                ai_explanation: "StarCoder learned this pattern from codebase".to_string(),
+            }])
+        }
+
+        /// Synthesize new patterns using StarCoder
+        pub async fn synthesize_patterns(
+            &self,
+            existing_patterns: &[String],
+            requirements: &str,
+        ) -> Result<Vec<SynthesizedPattern>, Box<dyn std::error::Error>> {
+            // TODO: Integrate with actual StarCoder model
+            Ok(vec![SynthesizedPattern {
+                pattern_id: "synthesized-pattern-1".to_string(),
+                pattern_name: "Synthesized Pattern".to_string(),
+                description: "StarCoder synthesized this pattern".to_string(),
+                code_template: "// Synthesized code template".to_string(),
+                confidence: 0.75,
+                based_on: existing_patterns.to_vec(),
+            }])
+        }
+    }
+
+    /// Code suggestion from StarCoder
+    #[derive(Debug, Clone)]
+    pub struct CodeSuggestion {
+        pub suggestion_type: String,
+        pub original_code: String,
+        pub generated_code: String,
+        pub explanation: String,
+        pub confidence: f32,
+        pub quality_improvement: f32,
+        pub line_range: (u32, u32),
+    }
+
+    /// Learned pattern from StarCoder
+    #[derive(Debug, Clone)]
+    pub struct LearnedPattern {
+        pub pattern_id: String,
+        pub pattern_type: String,
+        pub code_examples: Vec<String>,
+        pub frequency: u32,
+        pub quality_score: f32,
+        pub generated_rule: Option<GeneratedRule>,
+        pub ai_explanation: String,
+    }
+
+    /// Generated rule from StarCoder
+    #[derive(Debug, Clone)]
+    pub struct GeneratedRule {
+    pub rule_name: String,
+    pub description: String,
+    pub pattern_condition: String,
+    pub suggested_fix: String,
+    pub confidence: f32,
+    pub examples: Vec<String>,
+    }
+
+    /// Synthesized pattern from StarCoder
+    #[derive(Debug, Clone)]
+    pub struct SynthesizedPattern {
+        pub pattern_id: String,
+        pub pattern_name: String,
+        pub description: String,
+        pub code_template: String,
+        pub confidence: f32,
+        pub based_on: Vec<String>,
+    }
+}
 
 /// Modern linting adapter using OXC + AI behavioral analysis
 pub struct OxcAdapter {

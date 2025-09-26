@@ -49,13 +49,7 @@ impl ESLintExecutionEngine {
 
             match rule_info.strategy {
                 ESLintRuleStrategy::Native => {
-                    let rule_diagnostics = self.execute_native_rule(
-                        rule_info,
-                        program,
-                        semantic,
-                        source_code,
-                        file_path,
-                    );
+                    let rule_diagnostics = self.execute_native_rule(rule_info, program, semantic, source_code, file_path);
 
                     diagnostics.extend(rule_diagnostics);
                     execution_stats.native_rules_executed += 1;
@@ -334,20 +328,11 @@ mod tests {
         let source = "console.log('test'); debugger; eval('code');";
         let allocator = Allocator::default();
         let source_type = SourceType::default();
-        let parser_result = Parser::new(&allocator, source, source_type)
-            .with_options(ParseOptions::default())
-            .parse();
+        let parser_result = Parser::new(&allocator, source, source_type).with_options(ParseOptions::default()).parse();
 
-        let semantic_return = SemanticBuilder::new()
-            .build(&parser_result.program);
+        let semantic_return = SemanticBuilder::new().build(&parser_result.program);
 
-        let result = engine.execute_rules(
-            &config,
-            &parser_result.program,
-            Some(&semantic_return.semantic),
-            source,
-            "test.js",
-        );
+        let result = engine.execute_rules(&config, &parser_result.program, Some(&semantic_return.semantic), source, "test.js");
 
         assert!(result.diagnostics.len() > 0);
         assert!(result.stats.native_rules_executed > 0);

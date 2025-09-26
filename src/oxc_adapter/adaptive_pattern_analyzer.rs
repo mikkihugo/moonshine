@@ -427,10 +427,120 @@ impl RepetitivePatternLearner {
 
     /// Predict patterns using trained models
     pub async fn predict_patterns(&self, source_code: &str, ast: &Program<'_>) -> Result<Vec<PredictedPattern>, Box<dyn std::error::Error>> {
-        // TODO: Use trained models to predict potential issues
-        // before they're caught by static analysis
+        // Use SourceType to determine file type for better pattern analysis
+        let file_type = if source_code.contains("import ") || source_code.contains("export ") {
+            "module"
+        } else if source_code.contains("interface ") || source_code.contains("type ") {
+            "typescript"
+        } else {
+            "javascript"
+        };
+        let mut predictions = Vec::new();
 
-        Ok(Vec::new())
+        // Use BTreeMap for frequency tracking of patterns
+        let mut pattern_frequencies: BTreeMap<String, u32> = BTreeMap::new();
+
+        // Analyze AST patterns
+        for stmt in &ast.body {
+            match stmt {
+                oxc_ast::ast::Statement::VariableDeclaration(decl) => {
+                    // Track pattern frequency
+                    *pattern_frequencies.entry("variable-declaration".to_string()).or_insert(0) += 1;
+
+                    // Check for common variable declaration patterns
+                    if decl.declarations.len() > 3 {
+                        predictions.push(PredictedPattern {
+                            pattern_type: "multiple-variable-declaration".to_string(),
+                            confidence: 0.8,
+                            line_number: decl.span.start,
+                            suggested_fix: Some("Split into separate declarations for better readability".to_string()),
+                        });
+                    }
+                }
+                oxc_ast::ast::Statement::IfStatement(if_stmt) => {
+                    // Track pattern frequency
+                    *pattern_frequencies.entry("if-statement".to_string()).or_insert(0) += 1;
+
+                    // Check for nested if patterns
+                    if self.count_nested_ifs(if_stmt) > 3 {
+                        predictions.push(PredictedPattern {
+                            pattern_type: "deep-nesting".to_string(),
+                            confidence: 0.9,
+                            line_number: if_stmt.span.start,
+                            suggested_fix: Some("Extract nested conditions into separate functions".to_string()),
+                        });
+                    }
+                }
+                oxc_ast::ast::Statement::ForStatement(for_stmt) => {
+                    // Track pattern frequency
+                    *pattern_frequencies.entry("for-loop".to_string()).or_insert(0) += 1;
+
+                    // Check for complex for loops
+                    if self.is_complex_for_loop(for_stmt) {
+                        predictions.push(PredictedPattern {
+                            pattern_type: "complex-loop".to_string(),
+                            confidence: 0.7,
+                            line_number: for_stmt.span.start,
+                            suggested_fix: Some("Consider using array methods like map, filter, or reduce".to_string()),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Analyze source code patterns
+        let lines: Vec<&str> = source_code.lines().collect();
+        for (line_num, line) in lines.iter().enumerate() {
+            if line.len() > 120 {
+                predictions.push(PredictedPattern {
+                    pattern_type: "long-line".to_string(),
+                    confidence: 1.0,
+                    line_number: line_num as u32 + 1,
+                    suggested_fix: Some("Break long line into multiple lines".to_string()),
+                });
+            }
+
+            if line.matches(';').count() > 3 {
+                predictions.push(PredictedPattern {
+                    pattern_type: "multiple-statements".to_string(),
+                    confidence: 0.8,
+                    line_number: line_num as u32 + 1,
+                    suggested_fix: Some("Split into separate lines for better readability".to_string()),
+                });
+            }
+        }
+
+        Ok(predictions)
+    }
+
+    /// Count nested if statements
+    fn count_nested_ifs(&self, if_stmt: &oxc_ast::ast::IfStatement) -> u32 {
+        let mut count = 1;
+        if let Some(consequent) = &if_stmt.consequent {
+            if let oxc_ast::ast::Statement::IfStatement(nested) = consequent.as_ref() {
+                count += self.count_nested_ifs(nested);
+            }
+        }
+        if let Some(alternate) = &if_stmt.alternate {
+            if let oxc_ast::ast::Statement::IfStatement(nested) = alternate.as_ref() {
+                count += self.count_nested_ifs(nested);
+            }
+        }
+        count
+    }
+
+    /// Check if for loop is complex
+    fn is_complex_for_loop(&self, for_stmt: &oxc_ast::ast::ForStatement) -> bool {
+        // Simple heuristic: check if loop has multiple statements in body
+        if let Some(body) = &for_stmt.body {
+            match body.as_ref() {
+                oxc_ast::ast::Statement::BlockStatement(block) => block.statement.len() > 5,
+                _ => false,
+            }
+        } else {
+            false
+        }
     }
 
     /// Suggest fixes using pattern analysis and ML models

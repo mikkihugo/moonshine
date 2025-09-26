@@ -54,7 +54,7 @@ async fn test_store_configuration() {
     assert!(retrieved.is_some());
 
     let retrieved_config = retrieved.unwrap();
-    assert_eq!(retrieved_config.ai_model, config.ai_model);
+    assert_eq!(retrieved_config.ai.ai_model, config.ai.ai_model);
     assert_eq!(retrieved_config.max_files, config.max_files);
 }
 
