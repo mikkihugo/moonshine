@@ -1,531 +1,352 @@
-# 🤖 Moon Shine - AI Agent Integration Guide
+# Claude Code Configuration - SPARC Development Environment
 
-## 📖 Overview
+## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
 
-Moon Shine implements a sophisticated AI agent integration system that coordinates between
-WASM-based analysis and Moon task execution to provide intelligent code improvements. This
-document details how AI agents are integrated and orchestrated within the Moon Shine ecosystem.
+**ABSOLUTE RULES**:
+1. ALL operations MUST be concurrent/parallel in a single message
+2. **NEVER save working files, text/mds and tests to the root folder**
+3. ALWAYS organize files in appropriate subdirectories
+4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
 
-## 🏗️ Agent Architecture
+### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
 
-### **Hybrid AI Processing Model**
+**MANDATORY PATTERNS:**
+- **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
+- **Task tool (Claude Code)**: ALWAYS spawn ALL agents in ONE message with full instructions
+- **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
+- **Bash commands**: ALWAYS batch ALL terminal operations in ONE message
+- **Memory operations**: ALWAYS batch ALL memory store/retrieve in ONE message
 
-```text
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   WASM Agent    │───▶│  Session Manager │───▶│  Moon Task      │
-│   Coordinator   │    │  JSON Protocol   │    │  Agents         │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-        │                        │                       │
-        ▼                        ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ Static Analysis │    │ Request/Response │    │ Claude AI Agent │
-│ Pattern Matching│    │ File Coordination│    │ Native Tools    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+### 🎯 CRITICAL: Claude Code Task Tool for Agent Execution
+
+**Claude Code's Task tool is the PRIMARY way to spawn agents:**
+```javascript
+// ✅ CORRECT: Use Claude Code's Task tool for parallel agent execution
+[Single Message]:
+  Task("Research agent", "Analyze requirements and patterns...", "researcher")
+  Task("Coder agent", "Implement core features...", "coder")
+  Task("Tester agent", "Create comprehensive tests...", "tester")
+  Task("Reviewer agent", "Review code quality...", "reviewer")
+  Task("Architect agent", "Design system architecture...", "system-architect")
 ```
 
-## 📏 Descriptive Naming Conventions
+**MCP tools are ONLY for coordination setup:**
+- `mcp__claude-flow__swarm_init` - Initialize coordination topology
+- `mcp__claude-flow__agent_spawn` - Define agent types for coordination
+- `mcp__claude-flow__task_orchestrate` - Orchestrate high-level workflows
 
-**All agent components follow Google TypeScript naming conventions adapted for Rust**, ensuring immediate clarity about purpose and functionality:
+### 📁 File Organization Rules
 
-### **Agent-Specific Naming Examples**
+**NEVER save to root folder. Use these directories:**
+- `/src` - Source code files
+- `/tests` - Test files
+- `/docs` - Documentation and markdown files
+- `/config` - Configuration files
+- `/scripts` - Utility scripts
+- `/examples` - Example code
 
-- `LanguageModelUsageMetrics` - Comprehensive AI token usage tracking with provider metadata
-- `CodePatternDetector` - StarCoder-1B integration for pattern analysis
-- `RepetitivePatternLearner` - Adaptive pattern detection for custom rule generation
-- `MultiLanguageAnalyzer` - Unified analysis coordinator for TypeScript/JavaScript and Rust
-- `OxcAdapterResult` - Result structure from OXC high-performance analysis
-- `AiBehavioralAnalyzer` - Behavioral pattern detection with AI enhancement
+## Project Overview
 
-### **Benefits for Agent Development**
+This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with Claude-Flow orchestration for systematic Test-Driven Development.
 
-- **Component Discovery**: Developers can immediately identify relevant agent modules
-- **Debugging Clarity**: Stack traces and logs provide meaningful context
-- **Integration Simplicity**: Clear interfaces between WASM coordination and Moon task agents
-- **Maintenance Efficiency**: Self-documenting code reduces cognitive overhead
+## SPARC Commands
 
-This approach ensures that agent orchestration logic is as readable as the architectural diagrams.
+### Core Commands
+- `npx claude-flow sparc modes` - List available modes
+- `npx claude-flow sparc run <mode> "<task>"` - Execute specific mode
+- `npx claude-flow sparc tdd "<feature>"` - Run complete TDD workflow
+- `npx claude-flow sparc info <mode>` - Get mode details
 
-## 🧠 AI Agent Types
+### Batchtools Commands
+- `npx claude-flow sparc batch <modes> "<task>"` - Parallel execution
+- `npx claude-flow sparc pipeline "<task>"` - Full pipeline processing
+- `npx claude-flow sparc concurrent <mode> "<tasks-file>"` - Multi-task processing
 
-### **1. WASM Coordination Agent** (`lib.rs:464`)
+### Build Commands
+- `npm run build` - Build project
+- `npm run test` - Run tests
+- `npm run lint` - Linting
+- `npm run typecheck` - Type checking
 
-**Role**: Primary orchestrator and basic static analysis
-**Capabilities**:
+## SPARC Workflow Phases
 
-- Language detection and file pattern matching
-- Basic TypeScript/JavaScript static analysis
-- Session management and cleanup coordination
-- Moon task pipeline orchestration
+1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
+2. **Pseudocode** - Algorithm design (`sparc run spec-pseudocode`)
+3. **Architecture** - System design (`sparc run architect`)
+4. **Refinement** - TDD implementation (`sparc tdd`)
+5. **Completion** - Integration (`sparc run integration`)
 
-**Code Location**: `src/lib.rs:ai_lint_file()`
+## Code Style & Best Practices
 
-```rust
-#[plugin_fn]
-pub fn ai_lint_file(Json(request): Json<AiLintRequest>) -> FnResult<Json<AiLintResponse>>
-```
+- **Modular Design**: Files under 500 lines
+- **Environment Safety**: Never hardcode secrets
+- **Test-First**: Write tests before implementation
+- **Clean Architecture**: Separate concerns
+- **Documentation**: Keep updated
 
-### **2. Static Analysis Agent** (`linter.rs:282`)
+## 🚀 Available Agents (54 Total)
 
-**Role**: Enhanced file-path-aware static analysis
-**Capabilities**:
+### Core Development
+`coder`, `reviewer`, `tester`, `planner`, `researcher`
 
-- Context-aware code pattern detection
-- File-path-specific suggestions
-- Multi-language syntax analysis
+### Swarm Coordination
+`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`, `collective-intelligence-coordinator`, `swarm-memory-manager`
 
-**Code Location**: `src/linter.rs:static_analysis_with_path()`
+### Consensus & Distributed
+`byzantine-coordinator`, `raft-manager`, `gossip-coordinator`, `consensus-builder`, `crdt-synchronizer`, `quorum-manager`, `security-manager`
 
-```rust
-pub fn static_analysis_with_path(&self, content: &str, language: &str, file_path: &str) -> Vec<AiSuggestion>
-```
+### Performance & Optimization
+`perf-analyzer`, `performance-benchmarker`, `task-orchestrator`, `memory-coordinator`, `smart-agent`
 
-### **3. AI Provider Router** (Adapter Pattern)
+### GitHub & Repository
+`github-modes`, `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`, `workflow-automation`, `project-board-sync`, `repo-architect`, `multi-repo-swarm`
 
-**Role**: Intelligent code fixing and improvement via Claude, Gemini, or other configured providers
-**Capabilities**:
+### SPARC Methodology
+`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`, `refinement`
 
-- Natural language code analysis
-- Comprehensive TypeScript/ESLint/Prettier fixes
-- TSDoc generation and improvement
-- Modern pattern application
+### Specialized Development
+`backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`, `api-docs`, `system-architect`, `code-analyzer`, `base-template-generator`
 
-**Integration**: Uses adapter pattern via `execute_command()` calls with JSON communication, routed through
-`src/provider_router/` to select the appropriate provider at runtime.
+### Testing & Validation
+`tdd-london-swarm`, `production-validator`
+
+### Migration & Planning
+`migration-planner`, `swarm-init`
+
+## 🎯 Claude Code vs MCP Tools
+
+### Claude Code Handles ALL EXECUTION:
+- **Task tool**: Spawn and run agents concurrently for actual work
+- File operations (Read, Write, Edit, MultiEdit, Glob, Grep)
+- Code generation and programming
+- Bash commands and system operations
+- Implementation work
+- Project navigation and analysis
+- TodoWrite and task management
+- Git operations
+- Package management
+- Testing and debugging
+
+### MCP Tools ONLY COORDINATE:
+- Swarm initialization (topology setup)
+- Agent type definitions (coordination patterns)
+- Task orchestration (high-level planning)
+- Memory management
+- Neural features
+- Performance tracking
+- GitHub integration
+
+**KEY**: MCP coordinates the strategy, Claude Code's Task tool executes with real agents.
+
+## 🚀 Quick Setup
 
 ```bash
-# Claude AI processing via adapter
-echo "$USER_PROMPT" | ~/.local/bin/claude --print --output-format json --disallowed-tools "Write,Edit,MultiEdit"
+# Add MCP servers (Claude Flow required, others optional)
+claude mcp add claude-flow npx claude-flow@alpha mcp start
+claude mcp add ruv-swarm npx ruv-swarm mcp start  # Optional: Enhanced coordination
+claude mcp add flow-nexus npx flow-nexus@latest mcp start  # Optional: Cloud features
 ```
 
-### **4. TypeScript Strictness (OXC semantics)**
+## MCP Tool Categories
 
-**Role**: Leverage OXC’s TypeScript parser and semantic analyzer for strict diagnostics. Future
-integration should mirror project `tsconfig.json` settings so strictness levels come from your source
-configuration rather than a separate flag.
+### Coordination
+`swarm_init`, `agent_spawn`, `task_orchestrate`
 
-**Optional**: Flags like `enable_strict_typescript` are placeholders that will forward preferences to
-host tooling once TypeScript compiler integration lands.
+### Monitoring
+`swarm_status`, `agent_list`, `agent_metrics`, `task_status`, `task_results`
 
-```rust
-#[cfg(feature = "strict-ts")]
-let strict_checker = StrictTypeScriptChecker::new(strict_config);
+### Memory & Neural
+`memory_usage`, `neural_status`, `neural_train`, `neural_patterns`
+
+### GitHub Integration
+`github_swarm`, `repo_analyze`, `pr_enhance`, `issue_triage`, `code_review`
+
+### System
+`benchmark_run`, `features_detect`, `swarm_monitor`
+
+### Flow-Nexus MCP Tools (Optional Advanced Features)
+Flow-Nexus extends MCP capabilities with 70+ cloud-based orchestration tools:
+
+**Key MCP Tool Categories:**
+- **Swarm & Agents**: `swarm_init`, `swarm_scale`, `agent_spawn`, `task_orchestrate`
+- **Sandboxes**: `sandbox_create`, `sandbox_execute`, `sandbox_upload` (cloud execution)
+- **Templates**: `template_list`, `template_deploy` (pre-built project templates)
+- **Neural AI**: `neural_train`, `neural_patterns`, `seraphina_chat` (AI assistant)
+- **GitHub**: `github_repo_analyze`, `github_pr_manage` (repository management)
+- **Real-time**: `execution_stream_subscribe`, `realtime_subscribe` (live monitoring)
+- **Storage**: `storage_upload`, `storage_list` (cloud file management)
+
+**Authentication Required:**
+- Register: `mcp__flow-nexus__user_register` or `npx flow-nexus@latest register`
+- Login: `mcp__flow-nexus__user_login` or `npx flow-nexus@latest login`
+- Access 70+ specialized MCP tools for advanced orchestration
+
+## 🚀 Agent Execution Flow with Claude Code
+
+### The Correct Pattern:
+
+1. **Optional**: Use MCP tools to set up coordination topology
+2. **REQUIRED**: Use Claude Code's Task tool to spawn agents that do actual work
+3. **REQUIRED**: Each agent runs hooks for coordination
+4. **REQUIRED**: Batch all operations in single messages
+
+### Example Full-Stack Development:
+
+```javascript
+// Single message with all agent spawning via Claude Code's Task tool
+[Parallel Agent Execution]:
+  Task("Backend Developer", "Build REST API with Express. Use hooks for coordination.", "backend-dev")
+  Task("Frontend Developer", "Create React UI. Coordinate with backend via memory.", "coder")
+  Task("Database Architect", "Design PostgreSQL schema. Store schema in memory.", "code-analyzer")
+  Task("Test Engineer", "Write Jest tests. Check memory for API contracts.", "tester")
+  Task("DevOps Engineer", "Setup Docker and CI/CD. Document in memory.", "cicd-engineer")
+  Task("Security Auditor", "Review authentication. Report findings via hooks.", "reviewer")
+  
+  // All todos batched together
+  TodoWrite { todos: [...8-10 todos...] }
+  
+  // All file operations together
+  Write "backend/server.js"
+  Write "frontend/App.jsx"
+  Write "database/schema.sql"
 ```
 
-## 🏗️ Workflow Engine
+## 📋 Agent Coordination Protocol
 
-Moon Shine now features a **Workflow Engine** that serves as the central coordination system for all
-AI agents and workflow phases. This engine replaces the legacy parallel lint runner and provides a
-sophisticated execution model using petgraph-based DAG execution.
+### Every Agent Spawned via Task Tool MUST:
 
-### **Engine Architecture**
-
-The workflow engine models analysis pipelines as directed acyclic graphs (DAGs) where:
-
-- Each node is a [`WorkflowStep`] with specific actions (OXC parsing, AI enhancement, etc.)
-- Edges represent dependencies between steps
-- Execution follows topological order with parallelization where possible
-
-```text
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   WASM Agent    │───▶│  Workflow        │───▶│  Moon Task      │
-│   Coordinator   │    │  Engine          │    │  Agents         │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                        │                       │
-         ▼                        ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ Step Execution  │    │ Result           │    │ Agent           │
-│ Engine          │    │ Aggregation      │    │ Coordination    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-### **Step Execution Model**
-
-The engine supports comprehensive analysis pipelines:
-
-#### **Foundation Steps** (Sequential Execution)
-
-- **OXC Parsing & Analysis**: AST parsing, semantic analysis, type checking
-- **Language Detection**: File type identification and validation
-- **Session Management**: Directory creation and coordination setup
-
-#### **Analysis Steps** (Parallel Execution)
-
-- **OXC Rules**: 582+ linting rules with AI enhancement
-- **Behavioral Behavioral**: 192 behavioral patterns with hybrid analysis
-- **Type Analysis**: TypeScript type checking and inference
-
-#### **Enhancement Steps** (Conditional Execution)
-
-- **AI Enhancement**: Claude AI-powered code improvements and suggestions
-- **Code Generation**: Apply fixes and generate final output
-- **Formatting**: Code formatting with style preservation
-
-### **Key Features**
-
-#### **DAG-based Execution**
-
-```rust
-// Automatic dependency resolution and parallel execution
-let steps = create_moonshine_oxc_workflow();
-let mut engine = WorkflowEngine::new(
-    steps,
-    "function foo() { return 42; }".to_string(),
-    "src/main.ts".to_string(),
-    MoonShineConfig::default(),
-)?;
-
-let result = engine.execute().await?;
-```
-
-#### **Cost-Aware AI**
-
-- **Intelligent AI Usage**: Quick assessment to determine optimal AI strategy
-- **Dynamic Workflow Modification**: Adjusts pipeline based on code complexity
-- **Budget Optimization**: Skip AI when static analysis is sufficient
-
-#### **Async Coordination**
-
-- **Tokio Integration**: Full async/await support with cancellation
-- **Timeout Handling**: Configurable timeouts for each step
-- **Retry Logic**: Exponential backoff for resilient operation
-
-### **Configuration**
-
-```rust
-pub struct MoonShineConfig {
-    pub max_iterations: u32,                    // Maximum workflow iterations
-    pub quality_threshold: f64,                 // Convergence quality threshold
-    pub enable_claude_ai: bool,                 // Enable AI enhancement
-    pub enable_parallel_execution: bool,        // Enable concurrent steps
-    pub timeout_per_step_ms: u64,              // Per-step timeout
-    pub retry_failed_steps: bool,              // Retry failed steps
-    pub keep_debug_sessions: bool,             // Preserve session data
-}
-```
-
-### **Usage Examples**
-
-#### **Basic Workflow Execution**
-
-```rust
-use moon_shine::workflow_engine::{WorkflowEngine, create_moonshine_oxc_workflow};
-use moon_shine::config::MoonShineConfig;
-
-let steps = create_moonshine_oxc_workflow();
-let mut engine = WorkflowEngine::new(
-    steps,
-    "function foo() { return 42; }".to_string(),
-    "src/main.ts".to_string(),
-    MoonShineConfig::default(),
-)?;
-
-let result = engine.execute().await?;
-println!("Workflow completed: {}", result.success);
-```
-
-#### **Intelligent Workflow**
-
-```rust
-let mut engine = WorkflowEngine::create_intelligent_workflow(
-    source_code,
-    file_path,
-    config,
-)?;
-
-// Execute with adaptive AI assessment
-let result = engine.execute().await?;
-
-// Optionally modify workflow based on assessment
-engine.modify_workflow_based_on_assessment().await?;
-```
-
-#### **Debug and Monitoring**
-
+**1️⃣ BEFORE Work:**
 ```bash
-# Execute with debug session preservation
-moon ext moon-shine --keep-debug-sessions src/
-
-# Check workflow steps
-moon ext moon-shine --dry-run src/
+npx claude-flow@alpha hooks pre-task --description "[task]"
+npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]"
 ```
 
-### **Migration from Legacy Systems**
-
-The workflow engine replaces both the legacy `workflow.rs` and `parallel_lint_runner.rs` systems:
-
-**Legacy Parallel Runner:**
-
+**2️⃣ DURING Work:**
 ```bash
-moon run moon-shine -- --mode parallel-lint src/
+npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "swarm/[agent]/[step]"
+npx claude-flow@alpha hooks notify --message "[what was done]"
 ```
 
-**New Workflow Engine:**
-
+**3️⃣ AFTER Work:**
 ```bash
-moon ext moon-shine src/
+npx claude-flow@alpha hooks post-task --task-id "[task]"
+npx claude-flow@alpha hooks session-end --export-metrics true
 ```
 
-**Benefits:**
+## 🎯 Concurrent Execution Examples
 
-- ✅ **Unified Architecture**: Single entry point for all workflow types
-- ✅ **Better Performance**: DAG-based execution with intelligent parallelization
-- ✅ **Enhanced Error Handling**: Robust recovery and retry mechanisms
-- ✅ **Comprehensive Monitoring**: Detailed metrics and debugging support
-- ✅ **Future-Proof**: Extensible design for new steps and agents
+### ✅ CORRECT WORKFLOW: MCP Coordinates, Claude Code Executes
 
-### **Performance Characteristics**
+```javascript
+// Step 1: MCP tools set up coordination (optional, for complex tasks)
+[Single Message - Coordination Setup]:
+  mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
+  mcp__claude-flow__agent_spawn { type: "researcher" }
+  mcp__claude-flow__agent_spawn { type: "coder" }
+  mcp__claude-flow__agent_spawn { type: "tester" }
 
-| Step Type       | Execution Time | Concurrency | Use Case                        |
-| --------------- | -------------- | ----------- | ------------------------------- |
-| **Foundation**  | 50-500ms       | Sequential  | OXC parsing, type analysis      |
-| **Analysis**    | 100-800ms      | Parallel    | Rules, behavioral patterns      |
-| **Enhancement** | 2-10s          | Conditional | AI enhancement, code generation |
-
-### **Error Handling & Recovery**
-
-- **Step-Level Isolation**: Individual step failures don't break the pipeline
-- **Configurable Retries**: Automatic retry with exponential backoff
-- **Graceful Degradation**: Continues execution with non-critical step failures
-- **Comprehensive Logging**: Detailed error context and debugging information
-
-## 🔄 Agent Communication Protocol
-
-### **Session-Based JSON Protocol**
-
-Each file processing creates a session directory with structured communication:
-
-```text
-/tmp/moon-shine/20241219/session-143052-a1b2c3d4/
-├── request.json           # WASM → Moon tasks
-├── typescript-response.json  # TypeScript agent → WASM
-├── eslint-response.json      # ESLint agent → WASM
-├── prettier-response.json    # Prettier agent → WASM
-├── tsdoc-response.json       # TSDoc agent → WASM
-└── claude-response.json      # Claude AI agent → WASM
+// Step 2: Claude Code Task tool spawns ACTUAL agents that do the work
+[Single Message - Parallel Agent Execution]:
+  // Claude Code's Task tool spawns real agents concurrently
+  Task("Research agent", "Analyze API requirements and best practices. Check memory for prior decisions.", "researcher")
+  Task("Coder agent", "Implement REST endpoints with authentication. Coordinate via hooks.", "coder")
+  Task("Database agent", "Design and implement database schema. Store decisions in memory.", "code-analyzer")
+  Task("Tester agent", "Create comprehensive test suite with 90% coverage.", "tester")
+  Task("Reviewer agent", "Review code quality and security. Document findings.", "reviewer")
+  
+  // Batch ALL todos in ONE call
+  TodoWrite { todos: [
+    {id: "1", content: "Research API patterns", status: "in_progress", priority: "high"},
+    {id: "2", content: "Design database schema", status: "in_progress", priority: "high"},
+    {id: "3", content: "Implement authentication", status: "pending", priority: "high"},
+    {id: "4", content: "Build REST endpoints", status: "pending", priority: "high"},
+    {id: "5", content: "Write unit tests", status: "pending", priority: "medium"},
+    {id: "6", content: "Integration tests", status: "pending", priority: "medium"},
+    {id: "7", content: "API documentation", status: "pending", priority: "low"},
+    {id: "8", content: "Performance optimization", status: "pending", priority: "low"}
+  ]}
+  
+  // Parallel file operations
+  Bash "mkdir -p app/{src,tests,docs,config}"
+  Write "app/package.json"
+  Write "app/src/server.js"
+  Write "app/tests/server.test.js"
+  Write "app/docs/API.md"
 ```
 
-### **Agent Request Structure**
-
-```json
-{
-  "file_path": "src/component.tsx",
-  "language": "typescript",
-  "content": "...",
-  "wasm_analysis": {
-    "suggestions": [...],
-    "tsdoc_coverage": 75.0,
-    "quality_score": 85.2,
-    "parse_errors": []
-  },
-  "task_config": {
-    "enable_strict_typescript": true,
-    "enable_eslint": true,
-    "enable_prettier": true,
-    "enable_tsdoc": true,
-    "tsdoc_config": "tsdoc.json",
-    "enable_claude_ai": true
-  },
-  "session_dir": "/tmp/moon-shine/20241219/session-143052-a1b2c3d4",
-  "request_id": "uuid",
-  "timestamp": "2024-12-19T14:30:52Z"
-}
+### ❌ WRONG (Multiple Messages):
+```javascript
+Message 1: mcp__claude-flow__swarm_init
+Message 2: Task("agent 1")
+Message 3: TodoWrite { todos: [single todo] }
+Message 4: Write "file.js"
+// This breaks parallel coordination!
 ```
 
-### **Agent Response Structure**
+## Performance Benefits
 
-```json
-{
-    "request_id": "uuid",
-    "task_name": "claude-json",
-    "success": true,
-    "error": null,
-    "results": {
-        "claude": {
-            "success": true,
-            "fixed_content": "...",
-            "improvements": [
-                "TypeScript fixes",
-                "ESLint resolution",
-                "TSDoc added"
-            ],
-            "issues_resolved": 5,
-            "claude_processing_time_ms": 2500
-        }
-    },
-    "processing_time_ms": 2500,
-    "completed_at": "2024-12-19T14:30:55Z"
-}
-```
+- **84.8% SWE-Bench solve rate**
+- **32.3% token reduction**
+- **2.8-4.4x speed improvement**
+- **27+ neural models**
 
-## 🎯 Agent Orchestration Flow
+## Hooks Integration
 
-### **Multi-Stage Processing Pipeline**
+### Pre-Operation
+- Auto-assign agents by file type
+- Validate commands for safety
+- Prepare resources automatically
+- Optimize topology by complexity
+- Cache searches
 
-1. **WASM Coordination Phase**
-    - File analysis and language detection
-    - Basic static analysis and pattern matching
-    - Session directory creation
-    - Moon task coordination setup
+### Post-Operation
+- Auto-format code
+- Train neural patterns
+- Update memory
+- Analyze performance
+- Track token usage
 
-2. **Native Tool Agents Phase** (Sequential)
-    - TypeScript compilation analysis
-    - ESLint rule checking and auto-fixing
-    - Prettier formatting
-    - TSDoc coverage analysis
+### Session Management
+- Generate summaries
+- Persist state
+- Track metrics
+- Restore context
+- Export workflows
 
-3. **AI Enhancement Phase**
-    - Claude AI comprehensive analysis
-    - Intelligent code improvements
-    - Modern pattern suggestions
-    - Quality score calculation
+## Advanced Features (v2.0.0)
 
-4. **Response Aggregation Phase**
-    - Session response collection
-    - Final result compilation
-    - Session cleanup (if configured)
+- 🚀 Automatic Topology Selection
+- ⚡ Parallel Execution (2.8-4.4x speed)
+- 🧠 Neural Training
+- 📊 Bottleneck Analysis
+- 🤖 Smart Auto-Spawning
+- 🛡️ Self-Healing Workflows
+- 💾 Cross-Session Memory
+- 🔗 GitHub Integration
 
-## 🔧 Agent Configuration
+## Integration Tips
 
-### **AI Agent Settings**
+1. Start with basic swarm init
+2. Scale agents gradually
+3. Use memory for context
+4. Monitor progress regularly
+5. Train patterns from success
+6. Enable hooks automation
+7. Use GitHub tools first
 
-```rust
-pub struct AiLinterConfig {
-    pub ai_model: String,                           // "claude-3-5-sonnet"
-    pub enable_ai_suggestions: bool,                // Enable Claude AI
-    pub quality_threshold: f64,                     // 0.8
-    pub enable_tsdoc: bool,                         // TSDoc analysis (toggle via config files)
-    pub keep_sessions_for_debug: bool,             // Debug mode (default 12 hours retention)
-    pub cleanup_sessions_older_than_hours: u32,    // 48
-}
-```
+## Support
 
-Plan to align `enable_tsdoc` with your repository’s `tsdoc.json` (or equivalent TSDoc config); the
-Moon host should read that file to drive formatting and documentation linting settings.
-
-### **Command Line Agent Control**
-
-```bash
-# Enable all agents (default)
-moon ext moon-shine src/
-
-# Debug agent sessions
-moon ext moon-shine --keep-debug-sessions src/
-
-# Disable specific agents via config
-moon ext moon-shine --config '{"enable_claude_ai": false}' src/
-
-# Use Moon commands for development workflow
-moon run moon-shine:build     # Compile WASM (uses Moon's intelligent caching)
-moon run moon-shine:test      # Run tests (cached, faster subsequent runs)
-moon run moon-shine:lint      # Lint code (parallel execution via Moon)
-moon run moon-shine:type-check # Type checking (dependency-aware caching)
-
-# DON'T use direct commands (no caching benefits):
-# cargo build --target wasm32-wasip1 --release  ❌
-# cargo test                                     ❌
-# Use Moon instead for intelligent caching! ✅
-```
-
-## 🛠️ Agent Development
-
-### **Adding New Agents**
-
-1. **WASM Agent** (Rust)
-    - Add to `src/lib.rs` for coordination logic
-    - Implement `perform_wasm_analysis()` extensions
-
-2. **Moon Task Agent** (Shell)
-    - Add task definition to `moon.yml`
-    - Follow JSON protocol structure
-    - Use `$MOON_SESSION_DIR` for file coordination
-
-3. **Integration Points**
-    - Update `MoonTaskResults` structure
-    - Add response aggregation logic
-    - Configure in `AiLinterConfig`
-
-### **Agent Performance Optimization**
-
-- **Parallel Execution**: Moon tasks run sequentially but can be parallelized
-- **Caching Integration**: Leverage Moon's caching for agent results
-- **Session Management**: Efficient cleanup and debugging support
-- **Error Isolation**: Individual agent failures don't break the pipeline
-
-## 🔍 Agent Debugging
-
-### **Session Analysis**
-
-```bash
-# List all agent sessions
-ls -la /tmp/moon-shine/$(date +%Y%m%d)/
-
-# Examine agent request
-cat /tmp/moon-shine/20241219/session-*/request.json
-
-# Check agent responses
-cat /tmp/moon-shine/20241219/session-*/claude-response.json
-cat /tmp/moon-shine/20241219/session-*/typescript-response.json
-
-# Development workflow using Moon (recommended for agents)
-moon run moon-shine:build     # Build with caching
-moon run moon-shine:test      # Test with dependency caching
-moon query projects --id moon-shine --json  # Query project state
-moon sync moon-shine          # Sync project state
-
-# For debugging WASM extension specifically
-moon ext moon-shine --help    # Extension help
-moon ext moon-shine src/      # Run extension on sources
-```
-
-### **Agent Monitoring**
-
-- **Processing Times**: Each agent reports execution time
-- **Success Rates**: Agent success/failure tracking
-- **Quality Metrics**: Code quality improvements per agent
-- **Session Correlation**: Complete pipeline visibility
-- **Retention Defaults**: Debug sessions persist for 12 hours; automated cleanup purges artifacts
-  older than 48 hours unless overridden via configuration.
-
-## 🧱 Stubbed Components to Implement
-
-Several integration points described above are still placeholders. Track these when wiring the
-end-to-end system:
-
-- `src/extension.rs` prepares JSON requests but never calls Moon tasks; add execution glue when the
-  task-side scripts exist.
-- `src/moon_pdk_interface.rs` fakes host I/O. Replace the mocked `execute_command`, `read_file_content`,
-  and related helpers with real Moon PDK bindings.
-- `src/workflow.rs` contains the DAG engine, yet `src/lib.rs` disables the module export. Re-enable it
-  or adjust the architecture once the workflow is production-ready.
-- Agent task shells (TypeScript, ESLint, Prettier, Claude) are referenced in the session protocol
-  examples, but the Moon tasks themselves must be created in `moon.yml`.
-- Provider routing (`src/provider_router/`) and COPRO tuning rely on external CLI binaries; integrate
-  those once credentials and runtime guarantees are available.
-
-Use this checklist to ensure the runtime catches up with the documented orchestration.
-
-## 🚀 Agent Performance Metrics
-
-### **Typical Agent Performance**
-
-| Agent            | Processing Time | Capabilities                   |
-| ---------------- | --------------- | ------------------------------ |
-| WASM Coordinator | <50ms           | Static analysis, orchestration |
-| TypeScript Agent | 100-500ms       | Compilation checking           |
-| ESLint Agent     | 200-800ms       | Rule checking, auto-fixing     |
-| Prettier Agent   | 50-200ms        | Code formatting                |
-| TSDoc Agent      | 100-300ms       | Documentation analysis         |
-| Claude AI Agent  | 2-10s           | Intelligent improvements       |
-
-### **Quality Improvements**
-
-- **Code Quality Score**: 65-95% typical range
-- **TSDoc Coverage**: 0-100% measurement and improvement
-- **Issue Resolution**: 3-15 issues per file average
-- **Modern Patterns**: Automatic TypeScript modernization
+- Documentation: https://github.com/ruvnet/claude-flow
+- Issues: https://github.com/ruvnet/claude-flow/issues
+- Flow-Nexus Platform: https://flow-nexus.ruv.io (registration required for cloud features)
 
 ---
 
-## Moon Shine Agent System
+Remember: **Claude Flow coordinates, Claude Code creates!**
 
-Production-Ready AI Integration for Code Excellence
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+Never save working files, text/mds and tests to the root folder.
