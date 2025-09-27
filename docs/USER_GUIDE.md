@@ -390,10 +390,13 @@ moon run @moonrepo/moon-shine analyze src/ --profile-memory
 
 ### VS Code Extension
 
-Install the Moon Shine VS Code extension for real-time AI linting:
+Moon Shine integrates with AI CLI tools for enhanced analysis:
 
 ```bash
-code --install-extension moonrepo.moon-shine-vscode
+# Install required AI CLI tools
+npm install -g @anthropic-ai/claude-code
+npm install -g @google/gemini-cli  
+npm install -g @openai/codex-cli
 ```
 
 ### Pre-commit Hooks

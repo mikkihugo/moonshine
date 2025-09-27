@@ -29,6 +29,7 @@ use crate::dspy::adapter::Adapter;
 /// @mvp core
 /// @complexity low
 /// @since 1.0.0
+#[derive(Clone)]
 pub struct Settings {
     /// The Language Model (LM) instance used by DSPy.
     pub lm: LM,

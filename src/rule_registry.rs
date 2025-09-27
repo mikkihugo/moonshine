@@ -9,7 +9,6 @@ use crate::error::Result;
 // Legacy imports removed - using modern Biome + AI system
 use crate::rule_types::{RuleCategory, RuleMetadata, RuleSeverity};
 use crate::rulebase::RuleImplementation;
-use crate::smart_rule_strategy::{get_core_rules, CoreStaticRule};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -39,7 +38,7 @@ impl RuleRegistry {
             ai_enhanced_count: 0,
             autofix_capable_count: 0,
         };
-        let total_rules = registry.loader.get_metadata().total_rules;
+        let _total_rules = registry.loader.get_metadata().total_rules;
         registry.rebuild_caches();
         // If total_rules is needed after move, use the cloned value
         Ok(registry)
@@ -250,10 +249,8 @@ impl RuleLoader {
                 rules.insert(rule_def.id.clone(), rule_metadata);
             }
 
-            Ok(Self {
-                rules,
-                total_rules: rules.len(),
-            })
+            let rules_len = rules.len();
+            Ok(Self { rules, total_rules: rules_len })
         }
 
         #[cfg(not(feature = "embedded_rulebase"))]

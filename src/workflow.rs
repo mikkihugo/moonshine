@@ -295,7 +295,7 @@ fn run_eslint(config: &MoonShineConfig, file_path: &str) -> Result<Option<String
 
 fn run_formatter(config: &MoonShineConfig, file_path: &str) -> Result<Option<String>> {
     let command = config.format_cli().unwrap_or_else(|| "pnpm".to_string());
-    let mut args = if command == "pnpm" {
+    let args = if command == "pnpm" {
         vec!["exec".to_string(), "prettier".to_string(), "--write".to_string(), file_path.to_string()]
     } else {
         vec![file_path.to_string()]

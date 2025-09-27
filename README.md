@@ -11,15 +11,13 @@ languages and provider stacks.
 ## 📖 Overview
 
 - **Hybrid AI pipeline** – WASM orchestrates intelligent workflows while Moon tasks run TypeScript,
-  ESLint, Prettier, and Claude CLI tooling.
-- **DAG-based workflow engine** – `src/workflow.rs` models end-to-end analysis as a petgraph DAG with
-  configurable phases, conditional steps, and retries.
-- **Agent federation** – Specialized agents handle static pattern analysis, TypeScript checking,
-  Claude-powered refinement, and optional strict-mode validation. See [`agents.md`](./agents.md).
+  ESLint, Prettier, and AI CLI tooling (Claude, Gemini, Codex).
+- **Sequential workflow engine** – `src/workflow.rs` models end-to-end analysis as a configurable step chain with
+  conditional execution and retries.
+- **Multi-engine analysis** – Combines static analysis (OXC), AI enhancement (Claude/Gemini/Codex), and behavioral pattern detection.
 - **Session-based coordination** – Each run exchanges JSON payloads via structured session directories
   under `/tmp/moon-shine/<date>/session-*/`.
-- **Cost-aware AI** – Adaptive heuristics decide when to invoke Claude versus relying on static
-  heuristics to manage latency and spend.
+- **Smart AI routing** – Intelligent provider selection based on task requirements and capabilities.
 
 Moon Shine ships with an embedded rulebase (582 static, 192 behavioral, 50 hybrid rules) plus
 AI-enhanced behavioral detectors defined under `src/oxc_adapter/`.
@@ -100,7 +98,7 @@ Moon Shine's codebase contains comprehensive scaffolding that needs integration 
 
 ### **System Integration**
 
-- **Rule Registry**: `src/rule_registry.rs` exists but needs connection to workflow engine and execution pipeline for 582+ static and 192 behavioral rules.
+- **Rule Registry**: `src/rule_registry.rs` exists but needs connection to workflow engine and execution pipeline for 582+ static and 200 behavioral rules.
 - **Error Handling**: Need robust error handling for Moon task failures, AI provider timeouts, and graceful degradation.
 - **Testing**: `src/testing/` has comprehensive structure but needs integration tests for Moon task execution, AI provider routing, and end-to-end workflows.
 

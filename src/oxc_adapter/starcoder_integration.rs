@@ -429,7 +429,7 @@ impl ModelDownloader {
             ("model.safetensors", "https://huggingface.co/bigcode/starcoder/resolve/main/model.safetensors"),
         ];
 
-        for (filename, url) in &files {
+        for (filename, _url) in &files {
             let target_path = target_dir.join(filename);
             if !target_path.exists() {
                 log::info!("Downloading {}", filename);

@@ -30,7 +30,7 @@ pub struct BehavioralPattern {
 }
 
 /// Types of behavioral patterns
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum BehavioralPatternType {
     /// Complex cognitive patterns (nested conditions, deep inheritance)
     CognitiveComplexity,

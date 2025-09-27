@@ -1,11 +1,9 @@
-use crate::error::{Error, Result};
 use crate::tsconfig::{resolve_tsconfig, resolve_tsdoc_config};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 static FUNCTION_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\((?P<params>[^)]*)\)").expect("valid function regex")

@@ -69,29 +69,18 @@ pub mod message_types; // Message and ConversationHistory structures
 pub mod moon_host; // Centralized re-export of required Extism symbols
 pub mod moon_pdk_interface; // Moon PDK communication interface
                             // pub mod pattern_config; // Legacy pattern config - replaced by Biome + AI system
-pub mod prompt_optimizer; // DSPy-powered prompt optimization
 pub mod prompts; // Embedded prompt management
 pub mod provider_router; // AI provider routing and selection
 pub mod rule_registry; // Rule registry and metadata management
-pub mod rule_storage; // WASM-safe ESLint rule storage with assemblage_kv
 pub mod rule_types; // Modern rule types for Biome + AI system
 pub mod rulebase; // JSON-based rulebase and execution scaffolding
 pub mod storage; // Hybrid assemblage_kv + file persistence
-pub mod smart_rule_strategy; // Smart rule strategy with 200 core rules
-pub mod ai_behavioral_strategy; // AI behavioral analysis engine
-pub mod complete_ai_architecture; // Complete 3-layer AI architecture
-pub mod four_layer_ai_architecture; // Complete 4-layer AI architecture with StarCoder
 pub mod telemetry; // Telemetry logging for workflow runs
 pub mod token_usage; // LM token usage tracking
 pub mod types; // Core data structures for moon-shine code analysis
-pub mod workflow; // DAG-based workflow engine for orchestrated analysis pipelines
-pub mod linter; // Re-enabled for static analysis
-pub mod adaptive_rule_system; // Integrated adaptive rule system combining pattern tracking and rule generation
-pub mod custom_rule_generator; // AI-powered custom rule generation pipeline
-pub mod javascript_typescript_linter; // JavaScript/TypeScript linting using OXC
+pub mod workflow; // Sequential workflow engine for orchestrated analysis pipelines
 pub mod multi_language_analyzer; // Multi-language analysis system (TypeScript/JavaScript + Rust)
-pub mod pattern_frequency_tracker; // Pattern frequency tracking and clustering for custom rule generation
-pub mod rust_toolchain_embedded; // Embedded Rust toolchain (Clippy, rustfmt, etc.)
+pub mod javascript_typescript_linter; // JavaScript/TypeScript linting using OXC
 pub mod templates;
 pub mod tsconfig; // TypeScript configuration resolution utilities
 pub mod tsdoc; // Lightweight TSDoc analysis helpers // Rule generation templates
@@ -101,14 +90,11 @@ pub mod tsdoc; // Lightweight TSDoc analysis helpers // Rule generation template
 pub use analysis::MoonShineResponse;
 pub use config::{MoonShineArgs, MoonShineConfig};
 pub use data::{Example, Prediction}; // Add data types re-export
-pub use dspy::signature_macro::*; // Re-export signature macros at crate level
-
 // Legacy exports removed - using modern Biome + AI system
 pub use extension::{ExecuteExtensionInput, ExtensionManifest};
-pub use multi_language_analyzer::{LanguageConfig, MultiLanguageAnalyzer, SupportedLanguage};
 pub use oxc_adapter::{AiBehavioralAnalyzer, MultiEngineAnalyzer, MultiEngineConfig, OxcAdapter};
+pub use multi_language_analyzer::{LanguageConfig, MultiLanguageAnalyzer, SupportedLanguage};
 pub use rule_types::{FixStatus, RuleCategory, RuleMetadata, RuleRegistryStats, RuleSeverity};
-pub use rust_toolchain_embedded::{EmbeddedRustAnalyzer, EmbeddedRustConfig};
 // Legacy workflow exports removed
 
 /// Registers the `moon-shine` extension with the Moon task orchestration system.

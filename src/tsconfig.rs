@@ -1,8 +1,6 @@
-use crate::error::{Error, Result};
-use serde_json::{Map, Value};
-use std::collections::HashSet;
-use std::fs;
-use std::path::{Path, PathBuf};
+use crate::error::Result;
+use serde_json::Value;
+use std::path::Path;
 
 /// Resolve the effective TypeScript configuration (tsconfig.json/tsconfig.jsonc)
 /// by following the standard `extends` chain and merging compiler options.

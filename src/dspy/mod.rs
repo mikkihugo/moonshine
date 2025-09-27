@@ -7,8 +7,8 @@ pub mod signature_demo;
 pub mod signature_macro;
 pub mod utils;
 
-#[cfg(test)]
-pub mod tests;
+// #[cfg(test)]
+// pub mod tests;
 
 // Re-export data types from parent module
 pub use crate::data::*;

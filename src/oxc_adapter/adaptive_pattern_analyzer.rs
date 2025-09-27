@@ -6,7 +6,6 @@
 use crate::types::LintDiagnostic;
 use chrono::{DateTime, Utc};
 use oxc_ast::ast::Program;
-use oxc_span::SourceType;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -428,7 +427,7 @@ impl RepetitivePatternLearner {
     /// Predict patterns using trained models
     pub async fn predict_patterns(&self, source_code: &str, ast: &Program<'_>) -> Result<Vec<PredictedPattern>, Box<dyn std::error::Error>> {
         // Use SourceType to determine file type for better pattern analysis
-        let file_type = if source_code.contains("import ") || source_code.contains("export ") {
+        let _file_type = if source_code.contains("import ") || source_code.contains("export ") {
             "module"
         } else if source_code.contains("interface ") || source_code.contains("type ") {
             "typescript"
@@ -538,7 +537,7 @@ impl RepetitivePatternLearner {
     }
 
     /// Suggest fixes using pattern analysis and ML models
-    pub async fn suggest_fixes(&self, diagnostic: &LintDiagnostic, code_context: &CodeContext) -> Result<Vec<FixSuggestion>, Box<dyn std::error::Error>> {
+    pub async fn suggest_fixes(&self, diagnostic: &LintDiagnostic, _code_context: &CodeContext) -> Result<Vec<FixSuggestion>, Box<dyn std::error::Error>> {
         let pattern_id = self.generate_pattern_id(diagnostic);
 
         if let Some(frequency) = self.pattern_frequencies.get(&pattern_id) {
@@ -645,8 +644,8 @@ mod tests {
             severity: crate::types::DiagnosticSeverity::Warning,
             line: 1,
             column: 1,
-            end_line: Some(1),
-            end_column: Some(10),
+            end_line: 1,
+            end_column: 10,
             file_path: "test.js".to_string(),
             suggested_fix: None,
         };
