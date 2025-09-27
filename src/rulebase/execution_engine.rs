@@ -1,6 +1,6 @@
 use crate::oxc_adapter::ai_behavioral::AnalysisContext;
 use crate::oxc_adapter::{AiBehavioralAnalyzer, MultiEngineAnalyzer, MultiEngineConfig, OxcAdapter};
-use crate::rule_types::{FixStatus, RuleMetadata, RuleSeverity};
+use crate::rule_types::RuleMetadata;
 use crate::rulebase::RuleImplementation;
 use crate::types::{DiagnosticSeverity, LintDiagnostic};
 use futures::executor::block_on;
@@ -96,10 +96,7 @@ impl RuleExecutor {
                             executed_rules += 1;
                         }
                         Err(error) => {
-                            log::warn!(
-                                "AI behavioral rule '{}' failed for {}: {}",
-                                pattern_type, ctx.file_path, error
-                            );
+                            log::warn!("AI behavioral rule '{}' failed for {}: {}", pattern_type, ctx.file_path, error);
                         }
                     }
                 }
@@ -111,10 +108,7 @@ impl RuleExecutor {
                             executed_rules += 1;
                         }
                         Err(error) => {
-                            log::warn!(
-                                "Hybrid rule '{}' failed for {}: {}",
-                                ai_pattern, ctx.file_path, error
-                            );
+                            log::warn!("Hybrid rule '{}' failed for {}: {}", ai_pattern, ctx.file_path, error);
                         }
                     }
                 }
@@ -262,7 +256,7 @@ impl RuleExecutor {
 
     /// Check for unused variables
     fn check_unused_variables(&self, program: &Program) -> Vec<LintDiagnostic> {
-        let mut diagnostics = Vec::new();
+        let diagnostics = Vec::new();
         // Implementation would traverse AST and find unused variables
         // This is a simplified version
         diagnostics
@@ -270,23 +264,23 @@ impl RuleExecutor {
 
     /// Check for console usage
     fn check_console_usage(&self, program: &Program) -> Vec<LintDiagnostic> {
-        let mut diagnostics = Vec::new();
+        let diagnostics = Vec::new();
         // Implementation would traverse AST and find console.* calls
         // This is a simplified version
         diagnostics
     }
 
     /// Check for prefer const
-    fn check_prefer_const(&self, program: &Program) -> Vec<LintDiagnostic> {
-        let mut diagnostics = Vec::new();
+    fn check_prefer_const(&self, _program: &Program) -> Vec<LintDiagnostic> {
+        let diagnostics = Vec::new();
         // Implementation would traverse AST and find let declarations that could be const
         // This is a simplified version
         diagnostics
     }
 
     /// Execute generic rule
-    fn execute_generic_rule(&self, rule_name: &str, program: &Program) -> Vec<LintDiagnostic> {
-        let mut diagnostics = Vec::new();
+    fn execute_generic_rule(&self, _rule_name: &str, _program: &Program) -> Vec<LintDiagnostic> {
+        let diagnostics = Vec::new();
         // Generic rule execution logic
         diagnostics
     }

@@ -17,6 +17,7 @@
 
 use crate::config::{MoonShineArgs, MoonShineConfig};
 use crate::installation::{check_moonshine_installed, install_moonshine_extension, load_prompt_from_storage};
+use crate::multi_language_analyzer::{LanguageConfig as MultiLanguageConfig, MultiLanguageAnalyzer, SupportedLanguage};
 use crate::prompts;
 // use crate::storage::HybridStorage; // Reserved for future integration
 // use crate::parallel_lint_runner::{run_parallel_lint, ParallelLintConfig}; // Module doesn't exist yet
@@ -349,6 +350,12 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
     // Create workflow request for Moon task execution
     moon_info!("Executing Moon Shine workflow for {} files", file_arguments.len());
 
+    // Prepare multi-language analyzer for language detection (currently used for JS/TS routing)
+    let multi_language_analyzer = MultiLanguageAnalyzer::new(MultiLanguageConfig {
+        workspace_root: std::env::current_dir().ok(),
+        ..Default::default()
+    });
+
     // Execute workflow for each file
     for file_path in &file_arguments {
         moon_info!("Processing file: {}", file_path);
@@ -361,6 +368,15 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
                 continue;
             }
         };
+
+        let detected_language = multi_language_analyzer.detect_language(file_path, &file_content);
+        if detected_language == SupportedLanguage::Unknown {
+            moon_warn!(
+                "Skipping file {} - unsupported language (only TypeScript/JavaScript are handled)",
+                file_path
+            );
+            continue;
+        }
 
         let workflow_definition = crate::workflow::WorkflowDefinition::from_mode(&operation_mode);
 

@@ -27,7 +27,6 @@ pub mod adaptive_pattern_analyzer; // AI coder mistake pattern detection
 pub mod ai_behavioral;
 pub mod moon_integration; // Moon PDK integration approach
 pub mod multi_engine_analyzer;
-pub mod neural_pattern_models; // Neural network model integration
 pub mod oxc_formatter; // OXC formatter integration (beta)
 pub mod oxc_linter; // OXC linter integration
 pub mod oxc_transformer; // OXC transformer integration
@@ -65,11 +64,9 @@ impl Default for OxcAnalysisConfig {
 use std::collections::HashMap;
 
 /// Parse TypeScript/JavaScript code using OXC
-pub fn parse_code<'a>(source: &'a str, file_path: &str) -> Result<ParserReturn<'a>, Box<dyn std::error::Error>> {
-    let allocator = Allocator::default();
+pub fn parse_code<'a>(allocator: &'a Allocator, source: &'a str, file_path: &str) -> Result<ParserReturn<'a>, Box<dyn std::error::Error>> {
     let source_type = SourceType::from_path(file_path).map_err(|e| format!("Invalid source type for {}: {}", file_path, e))?;
-
-    let ret = Parser::new(&allocator, source, source_type).parse();
+    let ret = Parser::new(allocator, source, source_type).parse();
     Ok(ret)
 }
 
@@ -78,13 +75,13 @@ pub fn analyze_semantics<'a>(
     allocator: &'a Allocator,
     ret: &'a ParserReturn<'a>,
     source: &'a str,
-    source_type: SourceType,
+    _source_type: SourceType,
 ) -> Result<SemanticBuilderReturn<'a>, Box<dyn std::error::Error>> {
     // Instead of moving out of ret.program, clone it if possible, or refactor to avoid move
     // If Program does not implement Clone, consider returning a reference or redesigning the API
     // For now, just use a reference to ret.program
     let program_ref = &ret.program;
-    let program = allocator.alloc(program_ref.clone());
+    let program = allocator.alloc(program_ref);
     let semantic = SemanticBuilder::new().build(program);
     Ok(semantic)
 }
@@ -114,7 +111,7 @@ pub fn convert_diagnostics(oxc_diagnostics: &[OxcDiagnostic]) -> Vec<LintDiagnos
 
 /// Analyze AST nodes for patterns
 pub fn analyze_ast_patterns<'a>(program: &'a oxc_ast::ast::Program<'a>) -> Vec<AstKind<'a>> {
-    let mut patterns = Vec::new();
+    let patterns = Vec::new();
 
     // Walk through AST nodes and collect patterns
     for stmt in &program.body {
@@ -135,7 +132,7 @@ pub use starcoder_integration::{AiMistakeAnalysis, CodePatternDetector, CodePatt
 
 /// StarCoder LLM integration for code generation and pattern learning
 pub mod starcoder_llm {
-    use super::*;
+    
 
     /// StarCoder LLM for code generation and pattern analysis
     pub struct StarCoderLLM {
@@ -191,7 +188,7 @@ pub mod starcoder_llm {
         pub async fn synthesize_patterns(
             &self,
             existing_patterns: &[String],
-            requirements: &str,
+            _requirements: &str,
         ) -> Result<Vec<SynthesizedPattern>, Box<dyn std::error::Error>> {
             // TODO: Integrate with actual StarCoder model
             Ok(vec![SynthesizedPattern {

@@ -6,9 +6,9 @@
 //! - Context requirements and performance characteristics
 //!
 //! Supports multiple AI CLI providers:
-//! - Claude CLI (excellent for code reasoning and complex analysis)
-//! - Google CLI/Gemini (strong for creative tasks and broad knowledge)
-//! - OpenAI Codex CLI (specialized for code generation and completion)
+//! - Claude CLI (claude-real) - excellent for code reasoning and complex analysis
+//! - Google CLI/Gemini (gemini) - strong for creative tasks and broad knowledge  
+//! - OpenAI Codex CLI (codex) - specialized for code generation and completion
 //! - Future providers (extensible architecture)
 
 pub mod compiled; // Zero-runtime-cost compiled provider capabilities
@@ -455,8 +455,8 @@ impl AIRouter {
                     }
                 }
 
-                // Add prompt
-                args.extend_from_slice(&["--prompt".to_string(), request.prompt.clone()]);
+                // Add prompt as positional argument
+                args.push(request.prompt.clone());
             }
 
             "google" => {
@@ -482,7 +482,8 @@ impl AIRouter {
                     }
                     AIContext::CodeGeneration { .. } => {
                         // Use non-interactive mode for code generation
-                        args.extend_from_slice(&["-p".to_string()]);
+                        args.extend_from_slice(&["-p".to_string(), request.prompt.clone()]);
+                        return Ok(args); // Early return to avoid duplicate prompt
                     }
                     _ => {
                         // General usage - no special flags needed
@@ -500,7 +501,7 @@ impl AIRouter {
                 args.insert(0, "exec".to_string());
 
                 // Add JSON output for structured parsing
-                args.extend_from_slice(&["--json".to_string()]);
+                args.extend_from_slice(&["--experimental-json".to_string()]);
 
                 // Always use read-only sandbox (like Claude Code)
                 args.extend_from_slice(&["--sandbox".to_string(), "read-only".to_string()]);
@@ -1169,7 +1170,7 @@ mod tests {
 }
 
 /// Production: Get API key for specified provider with fallback hierarchy
-fn get_provider_api_key(provider: &str, ai_context: &AIContext) -> Option<String> {
+fn get_provider_api_key(provider: &str, _ai_context: &AIContext) -> Option<String> {
     // 1. Check provider-specific environment variables
     let env_var = match provider {
         "anthropic" => "ANTHROPIC_API_KEY",

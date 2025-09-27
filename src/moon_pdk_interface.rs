@@ -48,7 +48,7 @@ pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box
     #[cfg(feature = "wasm")]
     {
         // Use Moon PDK to execute commands
-        use moon_pdk::*;
+        
 
         // Convert environment variables to the format expected by Moon PDK
         let mut env_vars = std::collections::HashMap::new();
@@ -90,7 +90,12 @@ pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
         let exit_code = output.status.code().unwrap_or(-1);
 
-        Ok(ExecCommandOutput { command, exit_code, stdout, stderr })
+        Ok(ExecCommandOutput {
+            command,
+            exit_code,
+            stdout,
+            stderr,
+        })
     }
 }
 
@@ -99,7 +104,7 @@ pub fn read_file_content(path: &str) -> Result<String, Box<dyn std::error::Error
     #[cfg(feature = "wasm")]
     {
         // Use Moon PDK to read file content
-        use moon_pdk::*;
+        
 
         let result = unsafe { host_read_file(path.to_string())? };
         Ok(result)
