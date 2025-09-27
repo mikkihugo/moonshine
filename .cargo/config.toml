@@ -1,0 +1,25 @@
+[build]
+rustflags = ["-C", "target-cpu=native"]
+
+[target.'cfg(target_arch = "wasm32")']
+rustflags = [
+  "-C", "link-arg=--max-memory=4294967296", # 4GB max memory for WASM
+  "-C", "link-arg=--initial-memory=16777216", # 16MB initial memory
+  "-C", "opt-level=s", # Optimize for size in WASM
+]
+
+# Test configuration
+[env]
+RUST_TEST_THREADS = "4"
+RUST_BACKTRACE = "1"
+RUST_LOG = "debug"
+
+# Performance test settings
+CRITERION_HOME = "target/criterion"
+
+# Cargo test configuration
+[target.'cfg(test)']
+rustflags = [
+  "-C", "debug-assertions=on",
+  "-C", "overflow-checks=on",
+]

@@ -225,9 +225,12 @@ pub struct AnalysisContext {
     pub business_domain: String,
 }
 
-/// AI model interface
-pub trait AiModel {
-    async fn analyze(&self, prompt: &str) -> Result<AiBehavioralResponse, Box<dyn std::error::Error>>;
+/// AI model interface - using BoxFuture for dyn compatibility
+pub trait AiModel: Send + Sync {
+    fn analyze(
+        &self,
+        prompt: &str,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<AiBehavioralResponse, Box<dyn std::error::Error>>> + Send + '_>>;
 }
 
 /// AI response for behavioral analysis

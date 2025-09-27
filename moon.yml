@@ -1,17 +1,64 @@
-# moon.yml
-# Moon task configuration for linting Rust and JS/TS
+# moon.yml - Moon Shine Extension Configuration
+$schema: 'https://moonrepo.dev/schemas/project.json'
 
-outputs = { self, nixpkgs, ... }: {
-  packages.x86_64-linux.default = ...;
-};
+type: 'library'
+language: 'rust'
+platform: 'rust'
 
+# Build tasks
 tasks:
+  # Setup Rust toolchain for WASM
+  setup-toolchain:
+    command: 'rustup target add wasm32-unknown-unknown && cargo install wasm-opt || true'
+    options:
+      cache: false
+
+  # Build WASM extension for Moon
+  build-wasm:
+    command: 'cargo build --target wasm32-unknown-unknown --release'
+    inputs:
+      - 'src/**/*'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+    outputs:
+      - 'target/wasm32-unknown-unknown/release/moon_shine.wasm'
+    options:
+      cache: true
+
+  # Development build
+  dev-build:
+    command: 'cargo build --target wasm32-unknown-unknown'
+    inputs:
+      - 'src/**/*'
+      - 'Cargo.toml'
+    outputs:
+      - 'target/wasm32-unknown-unknown/debug/moon_shine.wasm'
+    options:
+      cache: true
+
+  # Test the extension
+  test:
+    command: 'cargo test --lib'
+    inputs:
+      - 'src/**/*'
+      - 'tests/**/*'
+      - 'Cargo.toml'
+    options:
+      cache: true
+
+  # Lint code
   lint:
     command: |
-      cargo clippy --all-targets --all-features -- -D warnings
-      npx eslint .
+      cargo clippy --target wasm32-unknown-unknown --all-features -- -D warnings
+      cargo fmt --check
+    inputs:
+      - 'src/**/*'
+      - 'Cargo.toml'
     options:
-      runDepsInParallel: true
-nix store verify --repair
-nix flake update
-nix develop
+      cache: true
+
+  # Clean build artifacts
+  clean:
+    command: 'cargo clean'
+    options:
+      cache: false

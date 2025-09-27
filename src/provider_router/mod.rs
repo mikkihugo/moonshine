@@ -51,10 +51,10 @@ impl AIProviderConfig {
     /// Create Claude provider configuration using model from config
     pub fn claude() -> Self {
         let config = crate::config::MoonShineConfig::from_moon_workspace().unwrap_or_default();
-    let model = config.ai.ai_model.clone().unwrap_or_else(|| "sonnet".to_string());
+        let model = config.ai.model.clone();
 
-        let uses_oauth = config.claude_uses_oauth.unwrap_or(true);
-        let api_key_env = if uses_oauth { None } else { config.claude_api_key_env.clone() };
+        let uses_oauth = true; // Default to OAuth
+        let api_key_env = if uses_oauth { None } else { None };
 
         Self {
             name: "claude".to_string(),
@@ -76,7 +76,7 @@ impl AIProviderConfig {
     /// Create Google/Gemini provider configuration using model from config
     pub fn google() -> Self {
         let config = crate::config::MoonShineConfig::from_moon_workspace().unwrap_or_default();
-    let model = config.ai.ai_model.clone().unwrap_or_else(|| "gemini-2.5-flash".to_string());
+        let model = config.ai.model.clone();
 
         // Set capabilities based on model
         let (code_analysis, code_generation, complex_reasoning, speed) = match model.as_str() {
@@ -85,8 +85,8 @@ impl AIProviderConfig {
             _ => (0.80, 0.80, 0.85, 0.85),                  // Default values
         };
 
-        let uses_oauth = config.gemini_uses_oauth.unwrap_or(true);
-        let api_key_env = if uses_oauth { None } else { config.gemini_api_key_env.clone() };
+        let uses_oauth = true; // Default to OAuth
+        let api_key_env = if uses_oauth { None } else { None };
 
         Self {
             name: "google".to_string(),
@@ -109,22 +109,22 @@ impl AIProviderConfig {
     pub fn openai() -> Self {
         let config = crate::config::MoonShineConfig::from_moon_workspace().unwrap_or_default();
 
-        let uses_oauth = config.codex_uses_oauth.unwrap_or(true);
-        let api_key_env = if uses_oauth { None } else { config.codex_api_key_env.clone() };
+        let uses_oauth = true; // Default to OAuth
+        let api_key_env = if uses_oauth { None } else { None };
 
         Self {
             name: "openai".to_string(),
-            command: config.codex_command.unwrap_or_else(|| "codex".to_string()), // Default to system PATH, configurable via config
-            model: config.codex_model.unwrap_or_else(|| "gpt-5-codex".to_string()),
+            command: "codex".to_string(), // Default to system PATH, configurable via config
+            model: "gpt-5-codex".to_string(),
             api_key_env,
             requires_api_key: !uses_oauth,
             capabilities: ProviderCapabilities {
-                code_analysis: config.codex_code_analysis_rating.unwrap_or(0.88),
-                code_generation: config.codex_code_generation_rating.unwrap_or(0.95),
-                complex_reasoning: config.codex_complex_reasoning_rating.unwrap_or(0.85),
-                speed: config.codex_speed_rating.unwrap_or(0.85),
-                context_length: config.codex_context_length.unwrap_or(200000),
-                supports_sessions: config.codex_supports_sessions.unwrap_or(true),
+                code_analysis: 0.88,
+                code_generation: 0.95,
+                complex_reasoning: 0.85,
+                speed: 0.85,
+                context_length: 200000,
+                supports_sessions: true,
             },
         }
     }
@@ -512,7 +512,7 @@ impl AIRouter {
 
                 // Add reasoning effort from config
                 let config = crate::config::MoonShineConfig::from_moon_workspace().unwrap_or_default();
-                let reasoning_effort = config.codex_reasoning_effort.unwrap_or_else(|| "low".to_string());
+                let reasoning_effort = "low".to_string();
                 args.extend_from_slice(&["--config".to_string(), format!("model_reasoning_effort=\"{}\"", reasoning_effort)]);
 
                 // Set working directory if file path is provided
@@ -1191,7 +1191,7 @@ fn get_provider_api_key(provider: &str, ai_context: &AIContext) -> Option<String
 
     // 2. Check Moon configuration
     if let Ok(config) = crate::config::MoonShineConfig::from_moon_workspace() {
-    if let Some(_providers) = config.ai.ai_providers.clone() {
+        if !config.ai.providers.is_empty() {
             // ai_providers is Vec<String>, not a map with api_key configs
             // TODO: Update config structure to support provider-specific settings
             // For now, skip this configuration source

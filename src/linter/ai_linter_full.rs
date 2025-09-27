@@ -1401,9 +1401,9 @@ impl AiLinter {
         }
 
         let mut linter = Self {
-            max_suggestions: config.linting.max_suggestions.unwrap_or(DEFAULT_MAX_SUGGESTIONS),
-            min_confidence: config.linting.min_confidence.unwrap_or(DEFAULT_MIN_CONFIDENCE),
-            enable_auto_fix: config.linting.enable_auto_fix.unwrap_or(DEFAULT_ENABLE_AUTO_FIX),
+            max_suggestions: config.linting.max_suggestions,
+            min_confidence: DEFAULT_MIN_CONFIDENCE,
+            enable_auto_fix: config.linting.enable_auto_fix,
             session_id: Uuid::new_v4().to_string(),
             language_preferences: HashMap::new(),
             rule_overrides: HashMap::new(),
@@ -1426,17 +1426,16 @@ impl AiLinter {
     /// @complexity low
     /// @since 1.0.0
     fn sync_runtime_from_config(&mut self) {
-    self.max_suggestions = self.config.linting.max_suggestions.unwrap_or(DEFAULT_MAX_SUGGESTIONS);
-    self.min_confidence = self.config.linting.min_confidence.unwrap_or(DEFAULT_MIN_CONFIDENCE);
-    self.enable_auto_fix = self.config.linting.enable_auto_fix.unwrap_or(DEFAULT_ENABLE_AUTO_FIX);
+        self.max_suggestions = self.config.linting.max_suggestions;
+        self.enable_auto_fix = self.config.linting.enable_auto_fix;
 
         if let Some(prompts) = self.config.custom_prompts.clone() {
             self.custom_prompts = prompts;
         }
 
-    self.config.linting.max_suggestions = Some(self.max_suggestions);
-    self.config.linting.min_confidence = Some(self.min_confidence);
-    self.config.linting.enable_auto_fix = Some(self.enable_auto_fix);
+        self.config.linting.max_suggestions = self.max_suggestions;
+        self.config.linting.enable_auto_fix = self.enable_auto_fix;
+        // min_confidence is not part of config.linting, so do not set it here
     }
 
     /// Performs a comprehensive, multi-phase code analysis for a given file.
@@ -1558,7 +1557,7 @@ impl AiLinter {
             metrics,
             file_quality_score: quality_score,
             processing_time_ms: start_time.elapsed().as_millis() as u64,
-            model_used: self.config.ai.ai_model.clone().unwrap_or_else(|| "auto-router".to_string()),
+            model_used: self.config.ai.model.clone(),
             analysis_phases: phase_results,
         })
     }

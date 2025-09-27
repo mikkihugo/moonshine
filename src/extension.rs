@@ -316,7 +316,7 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
     let cache_key = format!(
         "moonshine-{}-{}-{}",
         operation_mode,
-    config.ai.ai_model.as_deref().unwrap_or("sonnet"),
+        config.ai.model.as_str(),
         if copro_enabled { "copro" } else { "static" }
     );
     moon_debug!("Cache key: {}", cache_key);

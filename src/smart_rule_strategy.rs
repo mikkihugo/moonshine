@@ -46,7 +46,7 @@ pub struct SmartRuleEngine {
 
 impl SmartRuleEngine {
     /// Analyze code with smart rule strategy
-    pub async fn analyze_code(&self, source: &str, file_path: &str) -> Result<Vec<AiEnhancedError>, Box<dyn std::error::Error>> {
+    pub async fn analyze_code(&mut self, source: &str, file_path: &str) -> Result<Vec<AiEnhancedError>, Box<dyn std::error::Error>> {
         // 1. Run core static analysis (fast)
         let static_diagnostics = self.run_core_static_analysis(source, file_path)?;
 

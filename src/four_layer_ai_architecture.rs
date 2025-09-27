@@ -563,6 +563,7 @@ pub struct PatternValidator;
 pub struct PatternOptimizer;
 pub struct CombinationStrategy;
 pub struct GenerationStrategy;
+#[derive(Debug, Clone)]
 pub struct QualityMetrics;
 
 impl StaticRuleEngine {
@@ -589,6 +590,7 @@ impl AiErrorEnhancer {
                 end_line: 1,
                 end_column: 1,
                 severity: DiagnosticSeverity::Warning,
+                fix_available: false,
                 suggested_fix: None,
             },
             ai_explanation: "AI explanation".to_string(),

@@ -51,11 +51,9 @@ impl Default for AdaptiveRuleSystemConfiguration {
 impl AdaptiveRuleSystemConfiguration {
     /// Create configuration from Moon PDK extension config
     pub fn from_moon_config(config: &MoonShineConfig) -> Self {
-        let adaptive_config = config.adaptive_rule_system.as_ref();
-
         let mut result = Self::default();
 
-        if let Some(adaptive_config) = adaptive_config {
+        if let Some(adaptive_config) = config.adaptive.as_ref() {
             // Update pattern tracking configuration
             if let Some(pattern_config) = &adaptive_config.pattern_tracking {
                 if let Some(freq) = pattern_config.min_pattern_frequency {

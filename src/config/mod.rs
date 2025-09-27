@@ -281,6 +281,26 @@ pub struct MoonShineConfig {
     pub operation_mode: Option<String>,
     #[serde(default)]
     pub custom_prompts: Option<std::collections::HashMap<String, String>>,
+    #[serde(default)]
+    pub enable_copro_optimization: Option<bool>,
+    #[serde(default)]
+    pub copro_breadth: Option<u32>,
+    #[serde(default)]
+    pub copro_depth: Option<u32>,
+    #[serde(default)]
+    pub copro_temperature: Option<f32>,
+    #[serde(default)]
+    pub optimization_enabled: Option<bool>,
+    #[serde(default)]
+    pub max_optimization_iterations: Option<u32>,
+    #[serde(default)]
+    pub confidence_threshold: Option<f64>,
+    #[serde(default)]
+    pub workflow_enabled: Option<bool>,
+    #[serde(default)]
+    pub workflow_parallel_processing: Option<bool>,
+    #[serde(default)]
+    pub workflow_timeout_seconds: Option<u64>,
 }
 
 impl Default for MoonShineConfig {
@@ -295,6 +315,16 @@ impl Default for MoonShineConfig {
             tsdoc_coverage_target: Some(90.0),
             operation_mode: Some("fix".to_string()),
             custom_prompts: None,
+            enable_copro_optimization: Some(true),
+            copro_breadth: Some(5),
+            copro_depth: Some(3),
+            copro_temperature: Some(1.0),
+            optimization_enabled: Some(true),
+            max_optimization_iterations: Some(10),
+            confidence_threshold: Some(0.8),
+            workflow_enabled: Some(true),
+            workflow_parallel_processing: Some(true),
+            workflow_timeout_seconds: Some(300),
         }
     }
 }
@@ -341,6 +371,21 @@ impl MoonShineConfig {
 
     pub fn keep_debug_sessions(&self) -> bool {
         self.ai.providers.iter().any(|p| p == "debug")
+    }
+
+    /// Get default language for analysis
+    pub fn default_language(&self) -> Option<String> {
+        Some("typescript".to_string())
+    }
+
+    /// Resolve task name for language
+    pub fn resolve_task_name(&self, language: &str) -> String {
+        match language {
+            "typescript" | "ts" => "typescript-check".to_string(),
+            "javascript" | "js" => "javascript-check".to_string(),
+            "rust" => "rust-check".to_string(),
+            _ => "generic-check".to_string(),
+        }
     }
 }
 

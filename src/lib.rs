@@ -134,7 +134,7 @@ pub fn register_extension() -> FnResult<Json<ExtensionManifest>> {
         version: env!("CARGO_PKG_VERSION").to_string(),
         author: Some("PrimeCode Moon Extensions".to_string()),
         homepage: Some("https://github.com/primecode/zenflow/tree/main/packages/tools/moon-shine".to_string()),
-        config_schema: Some(config::create_config_schema()),
+        config_schema: Some(serde_json::Value::String(config::create_config_schema())),
     }))
 }
 

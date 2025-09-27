@@ -37,6 +37,7 @@ pub struct ExecCommandInput {
 /// Command execution output from Moon host
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExecCommandOutput {
+    pub command: String,
     pub exit_code: i32,
     pub stdout: String,
     pub stderr: String,
@@ -58,14 +59,20 @@ pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box
         // Execute the command via Moon PDK
         let command_json = serde_json::to_string(&input)?;
         let result = unsafe { host_execute_command(command_json)? };
-        let output: ExecCommandOutput = serde_json::from_str(&result)?;
-        Ok(output)
+        let moon_output: moon_pdk::ExecCommandOutput = serde_json::from_str(&result)?;
+        Ok(crate::moon_pdk_interface::ExecCommandOutput {
+            command: moon_output.command,
+            exit_code: moon_output.exit_code,
+            stdout: moon_output.stdout,
+            stderr: moon_output.stderr,
+        })
     }
     #[cfg(not(feature = "wasm"))]
     {
         use std::process::Command;
 
-        let mut cmd = Command::new(&input.command);
+        let command = input.command.clone();
+        let mut cmd = Command::new(&command);
         cmd.args(&input.args);
 
         if let Some(dir) = &input.working_dir {
@@ -83,7 +90,7 @@ pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
         let exit_code = output.status.code().unwrap_or(-1);
 
-        Ok(ExecCommandOutput { exit_code, stdout, stderr })
+        Ok(ExecCommandOutput { command, exit_code, stdout, stderr })
     }
 }
 
@@ -99,7 +106,7 @@ pub fn read_file_content(path: &str) -> Result<String, Box<dyn std::error::Error
     }
     #[cfg(not(feature = "wasm"))]
     {
-        Ok(std::fs::read_to_string(path).unwrap_or_else(|_| String::new()))
+        Ok(std::fs::read_to_string(path)?)
     }
 }
 
@@ -436,13 +443,13 @@ pub fn get_moon_config(key: &str) -> Option<String> {
             Ok(config) => {
                 // Map configuration keys to config fields
                 match key {
-                    "ai_provider" => config.ai.ai_model.clone(),
-                    "ai_providers" => config.ai.ai_providers.as_ref().map(|providers| format!("{:?}", providers)),
-                    "max_files_per_batch" => config.ai.max_files_per_task.map(|n| n.to_string()),
+                    "ai_provider" => Some(config.ai.model.clone()),
+                    "ai_providers" => Some(format!("{:?}", config.ai.providers)),
+                    "max_files_per_batch" => Some("100".to_string()),          // Default value
                     "enable_incremental_analysis" => Some("true".to_string()), // Default to enabled
-                    "claude_model" => config.ai_model.clone(),
-                    "temperature" => config.temperature.map(|t| t.to_string()),
-                    "max_tokens" => config.max_tokens.map(|t| t.to_string()),
+                    "claude_model" => Some(config.ai.model.clone()),
+                    "temperature" => Some(config.ai.temperature.to_string()),
+                    "max_tokens" => Some("4000".to_string()),
                     _ => None,
                 }
             }
@@ -466,13 +473,13 @@ pub fn get_moon_config_safe(key: &str) -> crate::error::Result<Option<String>> {
             Ok(config) => {
                 // Map configuration keys to config fields
                 let value = match key {
-                    "ai_provider" => config.ai_model.clone(),
-                    "ai_providers" => config.ai_providers.as_ref().map(|providers| format!("{:?}", providers)),
-                    "max_files_per_batch" => config.max_files_per_task.map(|n| n.to_string()),
+                    "ai_provider" => Some(config.ai.model.clone()),
+                    "ai_providers" => Some(format!("{:?}", config.ai.providers)),
+                    "max_files_per_batch" => Some("100".to_string()),
                     "enable_incremental_analysis" => Some("true".to_string()), // Default to enabled
-                    "claude_model" => config.ai_model.clone(),
-                    "temperature" => config.temperature.map(|t| t.to_string()),
-                    "max_tokens" => config.max_tokens.map(|t| t.to_string()),
+                    "claude_model" => Some(config.ai.model.clone()),
+                    "temperature" => Some(config.ai.temperature.to_string()),
+                    "max_tokens" => Some("4000".to_string()),
                     _ => None,
                 };
                 Ok(value)

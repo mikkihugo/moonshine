@@ -517,13 +517,11 @@ impl RepetitivePatternLearner {
     /// Count nested if statements
     fn count_nested_ifs(&self, if_stmt: &oxc_ast::ast::IfStatement) -> u32 {
         let mut count = 1;
-        if let Some(consequent) = &if_stmt.consequent {
-            if let oxc_ast::ast::Statement::IfStatement(nested) = consequent.as_ref() {
-                count += self.count_nested_ifs(nested);
-            }
+        if let oxc_ast::ast::Statement::IfStatement(nested) = &if_stmt.consequent {
+            count += self.count_nested_ifs(nested);
         }
         if let Some(alternate) = &if_stmt.alternate {
-            if let oxc_ast::ast::Statement::IfStatement(nested) = alternate.as_ref() {
+            if let oxc_ast::ast::Statement::IfStatement(nested) = alternate {
                 count += self.count_nested_ifs(nested);
             }
         }
@@ -533,13 +531,9 @@ impl RepetitivePatternLearner {
     /// Check if for loop is complex
     fn is_complex_for_loop(&self, for_stmt: &oxc_ast::ast::ForStatement) -> bool {
         // Simple heuristic: check if loop has multiple statements in body
-        if let Some(body) = &for_stmt.body {
-            match body.as_ref() {
-                oxc_ast::ast::Statement::BlockStatement(block) => block.statement.len() > 5,
-                _ => false,
-            }
-        } else {
-            false
+        match &for_stmt.body {
+            oxc_ast::ast::Statement::BlockStatement(block) => block.body.len() > 5,
+            _ => false,
         }
     }
 

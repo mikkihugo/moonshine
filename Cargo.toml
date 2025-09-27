@@ -18,6 +18,9 @@ name = "moon_shine"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
+# WASM optimization for Moon extension
+# Note: Moon PDK handles WASM loading
+
 # Standalone package - not part of workspace
 
 [features]
@@ -93,7 +96,7 @@ lol_alloc = { version = "0.4", optional = true }
 
 # Core WASM extension dependencies
 chrono = { version = "0.4.42", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4", "js"], default-features = false }
 regex = "1.11.2"
 schemars = "0.8"
 globset = "0.4"
@@ -104,7 +107,7 @@ moon_pdk_api = "0.3.3"
 # clap = { version = "4.4", features = ["derive"] }
 
 # WASM-specific dependencies
-getrandom = { version = "0.3" }
+getrandom = { version = "0.2", features = ["js"] }
 
 # Parallel execution support (WASM-compatible)
 threadpool = "1.8"
@@ -112,7 +115,17 @@ threadpool = "1.8"
 # COPRO + Pattern Detection dependencies (always included)
 indexmap = { version = "1.9" }
 
-# Removed OXC dependencies - using alternative parsing/analysis approach
+# OXC dependencies for modern JavaScript/TypeScript analysis (WASM-compatible)
+oxc_allocator = "0.40"
+oxc_ast = "0.40"
+oxc_parser = "0.40"
+oxc_semantic = "0.40"
+oxc_span = "0.40"
+oxc_diagnostics = "0.40"
+oxc_codegen = "0.40"
+oxc_transformer = "0.40"
+oxc_minifier = "0.40"
+oxc_mangler = "0.40"
 
 # Configuration and ignore pattern dependencies
 ignore = "0.4"     # Fast .gitignore and ignore pattern matching
@@ -196,6 +209,24 @@ serde_derive = { version = "1.0", optional = true }
 # ================================================================================
 # WASM-SPECIFIC OPTIMIZATIONS: Reduce binary size and improve performance
 # ================================================================================
+
+# Moon PDK WASM profile optimizations
+[profile.release]
+opt-level = "s"          # Optimize for size
+lto = true               # Enable link-time optimization
+codegen-units = 1        # Better optimization
+panic = "abort"          # Smaller binary size
+strip = true             # Remove debug symbols
+
+# WASM-specific release profile for Moon extensions
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"          # Optimize aggressively for size
+lto = "fat"              # Full LTO for smallest binary
+codegen-units = 1        # Single codegen unit
+panic = "abort"          # No unwinding in WASM
+strip = "symbols"        # Strip all symbols
+overflow-checks = false  # Disable overflow checks for speed
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # Override heavy dependencies with lighter alternatives for WASM
 rayon = { version = "1.8", optional = true } # Disable rayon for WASM by default

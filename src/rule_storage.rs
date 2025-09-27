@@ -129,14 +129,17 @@ impl RuleStorage {
 
     /// Update a specific rule in the current ruleset
     pub fn update_rule(&mut self, rule_name: &str, config: RuleConfig) -> Result<()> {
-        let ruleset = self.get_ruleset_mut(&self.current_ruleset)?;
-        ruleset.rules.insert(rule_name.to_string(), config);
-        Ok(())
+    // Avoid overlapping mutable and immutable borrows
+    let current_ruleset = self.current_ruleset.clone();
+    let ruleset = self.get_ruleset_mut(&current_ruleset)?;
+    ruleset.rules.insert(rule_name.to_string(), config);
+    Ok(())
     }
 
     /// Enable/disable a rule
     pub fn set_rule_enabled(&mut self, rule_name: &str, enabled: bool) -> Result<()> {
-        let ruleset = self.get_ruleset_mut(&self.current_ruleset)?;
+        let current_ruleset = self.current_ruleset.clone();
+        let ruleset = self.get_ruleset_mut(&current_ruleset)?;
         let rule = ruleset.rules.get_mut(rule_name).ok_or_else(|| Error::Storage {
             message: format!("Rule '{}' not found", rule_name),
         })?;
@@ -146,7 +149,8 @@ impl RuleStorage {
 
     /// Set rule severity
     pub fn set_rule_severity(&mut self, rule_name: &str, severity: RuleSeverity) -> Result<()> {
-        let ruleset = self.get_ruleset_mut(&self.current_ruleset)?;
+        let current_ruleset = self.current_ruleset.clone();
+        let ruleset = self.get_ruleset_mut(&current_ruleset)?;
         let rule = ruleset.rules.get_mut(rule_name).ok_or_else(|| Error::Storage {
             message: format!("Rule '{}' not found", rule_name),
         })?;

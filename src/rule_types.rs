@@ -13,7 +13,7 @@ pub enum RuleSeverity {
 }
 
 /// Rule categories for organization
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Ord, PartialOrd)]
 pub enum RuleCategory {
     Accessibility,
     Complexity,

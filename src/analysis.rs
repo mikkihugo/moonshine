@@ -202,7 +202,7 @@ pub fn analyze_file_with_config(_content: &str, _language: &str, config: &MoonSh
         quality_score: 0.0,            // Will be calculated by workflow
         parse_errors: Vec::new(),
         ignored_files: Vec::new(),
-    ai_model: config.ai.ai_model.clone().unwrap_or_else(|| "sonnet".to_string()),
+        ai_model: config.ai.model.clone(),
     })
 }
 
@@ -290,14 +290,14 @@ fn generate_training_updates_from_analysis(analysis: &AnalysisResults) -> std::r
     for suggestion in &analysis.suggestions {
         // Create pattern data using available RuleResult fields
         let pattern_data = serde_json::json!({
-            "rule_name": suggestion.rule_name,
+            "rule_name": suggestion.rule_id,
             "message": suggestion.message,
             "line": suggestion.line,
             "column": suggestion.column,
             "last_seen": chrono::Utc::now().to_rfc3339(),
             "severity": suggestion.severity
         });
-        patterns.insert(suggestion.rule_name.clone(), pattern_data);
+        patterns.insert(suggestion.rule_id.clone(), pattern_data);
     }
 
     // Return update object for training.json
@@ -538,7 +538,7 @@ mod tests {
             .with_location(10, 5)
             .with_suggestion("Fix available".to_string());
 
-    assert_eq!(suggestion.rule_name, "no-unused-vars");
+        assert_eq!(suggestion.rule_name, "no-unused-vars");
         assert_eq!(suggestion.line, 10);
         assert_eq!(suggestion.column, 5);
         assert!(suggestion.suggestion.is_some());

@@ -39,7 +39,9 @@ impl RuleRegistry {
             ai_enhanced_count: 0,
             autofix_capable_count: 0,
         };
+        let total_rules = registry.loader.get_metadata().total_rules;
         registry.rebuild_caches();
+        // If total_rules is needed after move, use the cloned value
         Ok(registry)
     }
 
@@ -225,7 +227,13 @@ impl RuleLoader {
                     name: rule_def.name.clone(),
                     description: rule_def.description.clone(),
                     category: RuleCategory::from(rule_def.category.as_str()),
-                    severity: RuleSeverity::from(rule_def.severity.as_str()),
+                    severity: match rule_def.severity.as_str() {
+                        "error" => RuleSeverity::Error,
+                        "warning" => RuleSeverity::Warning,
+                        "info" => RuleSeverity::Info,
+                        "hint" => RuleSeverity::Hint,
+                        _ => RuleSeverity::Warning,
+                    },
                     fix_status: if rule_def.autofix {
                         crate::rule_types::FixStatus::Autofix
                     } else {
@@ -236,7 +244,7 @@ impl RuleLoader {
                     tags: rule_def.tags.clone(),
                     dependencies: rule_def.dependencies.clone(),
                     implementation: RuleImplementation::from_rule_definition(rule_def),
-                    config_schema: rule_def.config_schema.clone(),
+                    config_schema: rule_def.config_schema.as_ref().map(|v| v.to_string()),
                 };
 
                 rules.insert(rule_def.id.clone(), rule_metadata);

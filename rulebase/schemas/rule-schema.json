@@ -1,4 +1,4 @@
-{
+{nts --re
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MoonShine Rule Definition",
   "description": "Schema for defining rules in the MoonShine rulebase",
@@ -45,9 +45,41 @@
           "type": "object",
           "properties": {
             "type": { "const": "AiBehavioral" },
-            "pattern_type": { "type": "string" }
+            "pattern_type": { "type": "string" },
+            "ai_prompt": { "type": "string" },
+            "confidence_threshold": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+            "model_preference": { "type": "string", "enum": ["claude", "gpt-4", "gemini", "auto"] },
+            "context_requirements": {
+              "type": "object",
+              "properties": {
+                "needs_ast": { "type": "boolean" },
+                "needs_dependencies": { "type": "boolean" },
+                "needs_project_context": { "type": "boolean" },
+                "max_context_tokens": { "type": "integer", "minimum": 1000, "maximum": 200000 }
+              }
+            }
           },
           "required": ["type", "pattern_type"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "AIEnhanced" },
+            "base_rule": { "type": "string" },
+            "ai_enhancements": {
+              "type": "object",
+              "properties": {
+                "context_analysis": { "type": "boolean" },
+                "smart_fixes": { "type": "boolean" },
+                "false_positive_reduction": { "type": "boolean" },
+                "severity_adjustment": { "type": "boolean" },
+                "pattern_learning": { "type": "boolean" }
+              }
+            },
+            "enhancement_prompt": { "type": "string" },
+            "fallback_to_static": { "type": "boolean", "default": true }
+          },
+          "required": ["type", "base_rule"]
         },
         {
           "type": "object",
@@ -92,9 +124,33 @@
             "implementations": {
               "type": "array",
               "items": { "$ref": "#/properties/implementation" }
+            },
+            "combination_strategy": {
+              "type": "string",
+              "enum": ["all", "best_confidence", "weighted_average", "majority_vote"],
+              "default": "best_confidence"
+            },
+            "confidence_weights": {
+              "type": "object",
+              "additionalProperties": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
             }
           },
           "required": ["type", "implementations"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "SmartRule" },
+            "learning_enabled": { "type": "boolean", "default": true },
+            "adaptation_threshold": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.8 },
+            "feedback_learning": { "type": "boolean", "default": true },
+            "pattern_evolution": { "type": "boolean", "default": false },
+            "base_implementations": {
+              "type": "array",
+              "items": { "$ref": "#/properties/implementation" }
+            }
+          },
+          "required": ["type", "base_implementations"]
         }
       ]
     },
@@ -164,6 +220,85 @@
       "type": "string",
       "enum": ["minimal", "low", "medium", "high"],
       "description": "Runtime performance impact"
+    },
+    "ai_metadata": {
+      "type": "object",
+      "properties": {
+        "confidence_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "AI model confidence in rule effectiveness"
+        },
+        "training_data_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of examples used for AI training"
+        },
+        "last_training_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the AI rule was last trained"
+        },
+        "model_version": {
+          "type": "string",
+          "description": "AI model version used for this rule"
+        },
+        "adaptation_metrics": {
+          "type": "object",
+          "properties": {
+            "accuracy": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+            "precision": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+            "recall": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+            "f1_score": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+            "false_positive_rate": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+          }
+        },
+        "learning_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "timestamp": { "type": "string", "format": "date-time" },
+              "performance_change": { "type": "number" },
+              "confidence_change": { "type": "number" },
+              "adaptation_trigger": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "hybrid_config": {
+      "type": "object",
+      "properties": {
+        "static_weight": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.6,
+          "description": "Weight given to static analysis results"
+        },
+        "ai_weight": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.4,
+          "description": "Weight given to AI analysis results"
+        },
+        "consensus_threshold": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "Minimum agreement threshold for hybrid rules"
+        },
+        "conflict_resolution": {
+          "type": "string",
+          "enum": ["static_priority", "ai_priority", "highest_confidence", "conservative"],
+          "default": "highest_confidence",
+          "description": "How to resolve conflicts between static and AI analysis"
+        }
+      }
     }
   }
 }
