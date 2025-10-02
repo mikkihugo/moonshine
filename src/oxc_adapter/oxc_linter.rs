@@ -228,9 +228,9 @@ mod tests {
         let config = OxcConfig::default();
         let linter = OxcLinter::new(config);
 
-        assert_eq!(linter.detect_source_type("test.ts").kind(), SourceType::ts().kind());
-        assert_eq!(linter.detect_source_type("test.tsx").kind(), SourceType::tsx().kind());
-        assert_eq!(linter.detect_source_type("test.jsx").kind(), SourceType::jsx().kind());
-        assert_eq!(linter.detect_source_type("test.js").kind(), SourceType::default().kind());
+        assert_eq!(linter.detect_source_type("test.ts"), SourceType::ts());
+        assert_eq!(linter.detect_source_type("test.tsx"), SourceType::tsx());
+        assert_eq!(linter.detect_source_type("test.jsx"), SourceType::jsx());
+        assert_eq!(linter.detect_source_type("test.js"), SourceType::default());
     }
 }

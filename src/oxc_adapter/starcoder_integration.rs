@@ -521,26 +521,27 @@ mod tests {
 
     #[test]
     fn test_starcoder_detector_creation() {
-        let config = StarCoderConfig::default();
-        let detector = StarCoderPatternDetector::new(config);
+        let config = LanguageModelConfig::default();
+        let detector = CodePatternDetector::new(config);
         assert!(!detector.is_loaded);
         assert_eq!(detector.cache.len(), 0);
     }
 
     #[test]
     fn test_ai_mistake_pattern_detection() {
-        let config = StarCoderConfig::default();
-        let detector = StarCoderPatternDetector::new(config);
+        let config = LanguageModelConfig::default();
+        let detector = CodePatternDetector::new(config);
 
         let diagnostic = LintDiagnostic {
-            rule_id: "no-unused-vars".to_string(),
+            rule_name: "no-unused-vars".to_string(),
             message: "Variable 'x' is defined but never used".to_string(),
             severity: DiagnosticSeverity::Warning,
             line: 1,
             column: 1,
-            end_line: Some(1),
-            end_column: Some(10),
+            end_line: 1,
+            end_column: 10,
             file_path: "test.js".to_string(),
+            fix_available: false,
             suggested_fix: None,
         };
 
@@ -549,28 +550,28 @@ mod tests {
 
     #[test]
     fn test_cache_key_generation() {
-        let config = StarCoderConfig::default();
-        let detector = StarCoderPatternDetector::new(config);
+        let config = LanguageModelConfig::default();
+        let detector = CodePatternDetector::new(config);
 
         let code = "const x = 1;";
-        let patterns = vec![PatternType::AiCodeMistakes];
+        let patterns = vec![CodePatternType::ArtificialIntelligenceGeneratedCodeIssues];
 
-        let key1 = detector.generate_cache_key(code, &patterns);
-        let key2 = detector.generate_cache_key(code, &patterns);
+        let key1 = detector.generate_analysis_cache_key(code, &patterns);
+        let key2 = detector.generate_analysis_cache_key(code, &patterns);
 
         assert_eq!(key1, key2);
     }
 
     #[test]
     fn test_input_preparation() {
-        let config = StarCoderConfig::default();
-        let detector = StarCoderPatternDetector::new(config);
+        let config = LanguageModelConfig::default();
+        let detector = CodePatternDetector::new(config);
 
         let code = "const x = 1;";
         let file_path = "test.js";
-        let patterns = vec![PatternType::AiCodeMistakes];
+        let patterns = vec![CodePatternType::ArtificialIntelligenceGeneratedCodeIssues];
 
-        let input = detector.prepare_input(code, file_path, &patterns);
+        let input = detector.prepare_analysis_input(code, file_path, &patterns);
         assert!(input.contains("test.js"));
         assert!(input.contains("const x = 1;"));
     }

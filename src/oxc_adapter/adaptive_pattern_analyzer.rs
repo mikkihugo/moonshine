@@ -618,15 +618,15 @@ mod tests {
 
     #[test]
     fn test_pattern_analyzer_creation() {
-        let config = AdaptiveAnalysisConfig::default();
-        let analyzer = AdaptivePatternAnalyzer::new(config);
+        let config = PatternLearningConfig::default();
+        let analyzer = RepetitivePatternLearner::new(config);
         assert_eq!(analyzer.pattern_frequencies.len(), 0);
     }
 
     #[test]
     fn test_message_normalization() {
-        let config = AdaptiveAnalysisConfig::default();
-        let analyzer = AdaptivePatternAnalyzer::new(config);
+        let config = PatternLearningConfig::default();
+        let analyzer = RepetitivePatternLearner::new(config);
 
         let message = "Variable 'userName' is unused";
         let normalized = analyzer.normalize_message(message);
@@ -635,11 +635,11 @@ mod tests {
 
     #[test]
     fn test_pattern_id_generation() {
-        let config = AdaptiveAnalysisConfig::default();
-        let analyzer = AdaptivePatternAnalyzer::new(config);
+        let config = PatternLearningConfig::default();
+        let analyzer = RepetitivePatternLearner::new(config);
 
         let diagnostic = LintDiagnostic {
-            rule_id: "no-unused-vars".to_string(),
+            rule_name: "no-unused-vars".to_string(),
             message: "Variable 'x' is unused".to_string(),
             severity: crate::types::DiagnosticSeverity::Warning,
             line: 1,
@@ -647,6 +647,7 @@ mod tests {
             end_line: 1,
             end_column: 10,
             file_path: "test.js".to_string(),
+            fix_available: false,
             suggested_fix: None,
         };
 
