@@ -19,30 +19,31 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+/// Configuration options for the C043 rule.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct C043Config {
-    /// Whether to ignore magic numbers in test files (default: true)
+    /// Whether to ignore magic numbers in test files (default: true).
     pub ignore_in_tests: bool,
-    /// Numbers to ignore (default: -1, 0, 1, 2)
+    /// A list of numbers to ignore (default: `[-1, 0, 1, 2]`).
     pub ignore_numbers: Vec<f64>,
-    /// Whether to ignore magic numbers in array indexes (default: true)
+    /// Whether to ignore magic numbers in array indexes (default: true).
     pub ignore_array_indexes: bool,
-    /// Whether to ignore magic numbers in default assignments (default: true)
+    /// Whether to ignore magic numbers in default assignments (default: true).
     pub ignore_default_assignments: bool,
-    /// Whether to ignore magic numbers in return statements (default: false)
+    /// Whether to ignore magic numbers in return statements (default: false).
     pub ignore_return_statements: bool,
-    /// Whether to enforce constants for duplicated numbers (default: true)
+    /// Whether to enforce constants for duplicated numbers (default: true).
     pub enforce_const_for_duplicates: bool,
-    /// Minimum number of occurrences to suggest constants (default: 2)
+    /// The minimum number of occurrences to suggest constants (default: 2).
     pub duplicate_threshold: u32,
-    /// Maximum allowed value for magic numbers (larger numbers are more problematic)
+    /// The maximum allowed value for magic numbers (larger numbers are more problematic).
     pub max_allowed_value: f64,
-    /// Function names where magic numbers are allowed (e.g., setTimeout, setInterval)
+    /// A list of function names where magic numbers are allowed (e.g., `setTimeout`, `setInterval`).
     pub allowed_function_contexts: Vec<String>,
 }
 
-/// C043 rule implementation with AI enhancement
-pub fn check_no_magic_numbers(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
+/// The main entry point for the C043 rule checking.
+pub fn check_no_magic_numbers(program: &Program, _semantic: &Semantic, code: &str, _config: Option<&str>) -> Vec<LintIssue> {
     let config = C043Config::default();
     let mut visitor = MagicNumberVisitor::new(program, code, &config);
 
@@ -53,6 +54,7 @@ pub fn check_no_magic_numbers(program: &Program, _semantic: &Semantic, code: &st
     visitor.finalize_issues()
 }
 
+/// Holds information about a number usage, including its value, span, context, and a suggested name.
 #[derive(Debug, Clone)]
 struct NumberUsage {
     value: f64,
@@ -61,6 +63,7 @@ struct NumberUsage {
     suggested_name: Option<String>,
 }
 
+/// The context in which a number is used.
 #[derive(Debug, Clone)]
 enum NumberContext {
     BinaryOperation,
@@ -76,6 +79,7 @@ enum NumberContext {
 }
 
 impl NumberContext {
+    /// Checks if the context should be ignored based on the configuration.
     fn should_ignore(&self, config: &C043Config) -> bool {
         match self {
             NumberContext::ArrayIndex => config.ignore_array_indexes,
@@ -90,6 +94,7 @@ impl NumberContext {
         }
     }
 
+    /// Returns a description of the number context.
     fn description(&self) -> &'static str {
         match self {
             NumberContext::BinaryOperation => "binary operation",
@@ -106,6 +111,7 @@ impl NumberContext {
     }
 }
 
+/// An AST visitor for detecting magic number violations.
 struct MagicNumberVisitor<'a> {
     config: &'a C043Config,
     program: &'a Program<'a>,

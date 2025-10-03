@@ -25,22 +25,21 @@ use crate::dspy::{
 };
 use anyhow::Result;
 
-/// Modern DSPy Optimizer trait matching real framework capabilities
+/// A trait for modern DSPy optimizers, known as "teleprompters".
 ///
-/// Real DSPy optimizers like MIPROv2, BootstrapFinetune, and COPRO provide:
-/// - Multi-stage optimization (bootstrapping, proposal, search)
-/// - Metric-based evaluation and selection
-/// - State serialization and resumption
-/// - Composable optimizer chains (BetterTogether pattern)
-/// - Automatic instruction and demonstration generation
-///
-/// @category dspy-trait
-/// @safe program
-/// @mvp core
-/// @complexity high
-/// @since 2.0.0
+/// Teleprompters are responsible for compiling and optimizing DSPy programs.
+/// They support multi-stage optimization, metric-based evaluation, and state management.
 pub trait Teleprompter: Send + Sync {
-  /// Compile and optimize a DSPy program (matches real DSPy API)
+  /// Compiles and optimizes a DSPy program.
+  ///
+  /// # Arguments
+  ///
+  /// * `program` - The DSPy module to be optimized.
+  /// * `trainset` - A vector of `Example`s for training.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing the optimized module on success, or an error.
   async fn compile<M>(
     &mut self,
     program: M,
@@ -49,19 +48,29 @@ pub trait Teleprompter: Send + Sync {
   where
     M: Module + Clone;
 
-  /// Get optimizer name for logging and state management
+  /// Returns the name of the optimizer for logging and state management.
   fn name(&self) -> &str;
 
-  /// Serialize optimizer state for resumption
+  /// Serializes the optimizer's state for resumption.
   fn dump_state(&self) -> Result<serde_json::Value>;
 
-  /// Load optimizer state from previous session
+  /// Loads the optimizer's state from a previous session.
   fn load_state(&mut self, state: serde_json::Value) -> Result<()>;
 }
 
-/// Legacy optimizer trait for backwards compatibility
+/// A legacy trait for DSPy optimizers, maintained for backward compatibility.
 #[allow(async_fn_in_trait)]
 pub trait Optimizer {
+  /// Compiles and optimizes a DSPy module.
+  ///
+  /// # Arguments
+  ///
+  /// * `module` - The DSPy module to be optimized.
+  /// * `trainset` - A vector of `Example`s for training.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an error.
   async fn compile<M>(
     &self,
     module: &mut M,
@@ -71,10 +80,10 @@ pub trait Optimizer {
     M: Module + Optimizable + Evaluator;
 }
 
-/// Metric function type for evaluating program performance
+/// A type alias for a metric function used to evaluate program performance.
 pub type MetricFn = Box<dyn Fn(&Example, &Prediction) -> f64 + Send + Sync>;
 
-/// Optimization configuration matching real DSPy patterns
+/// Configuration settings for the optimization process.
 #[derive(Debug, Clone)]
 pub struct OptimizationConfig {
   pub max_bootstrapped_demos: usize,

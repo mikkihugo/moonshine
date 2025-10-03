@@ -11,13 +11,14 @@
 
 use crate::wasm_safe_linter::LintIssue;
 
-/// AI enhancer for rule violations
+/// An AI enhancer for rule violations.
 pub struct AIEnhancer {
     enabled: bool,
     context: Option<String>,
 }
 
 impl AIEnhancer {
+    /// Creates a new `AIEnhancer`.
     pub fn new() -> Self {
         Self {
             enabled: true,
@@ -25,6 +26,7 @@ impl AIEnhancer {
         }
     }
 
+    /// Sets the context for the AI enhancer.
     pub fn set_context(&mut self, context: String) {
         self.context = Some(context);
     }
@@ -36,7 +38,16 @@ impl Default for AIEnhancer {
     }
 }
 
-/// Enhance lint issues with AI suggestions
+/// Enhances lint issues with AI suggestions.
+///
+/// # Arguments
+///
+/// * `issues` - A vector of `LintIssue`s to enhance.
+/// * `_ai_context` - An optional string containing the AI context.
+///
+/// # Returns
+///
+/// A vector of enhanced `LintIssue`s.
 pub fn enhance_with_ai(mut issues: Vec<LintIssue>, _ai_context: &Option<String>) -> Vec<LintIssue> {
     // TODO: Integrate with Claude API for intelligent suggestions
     // For now, enhance messages with AI placeholders

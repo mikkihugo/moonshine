@@ -16,14 +16,15 @@ use oxc_semantic::{Semantic, ScopeFlags};
 use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 
-/// Configuration options for C017 rule
+/// Configuration options for the C017 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C017Config {
-    /// Maximum number of statements allowed in constructor (default: 10)
+    /// The maximum number of statements allowed in a constructor (default: 10).
     #[serde(default = "default_max_statements")]
     pub max_statements: u32,
 }
 
+/// Returns the default maximum number of statements allowed in a constructor.
 fn default_max_statements() -> u32 {
     10
 }
@@ -36,7 +37,7 @@ impl Default for C017Config {
     }
 }
 
-/// Main entry point for C017 rule checking
+/// The main entry point for the C017 rule checking.
 pub fn check_limit_constructor_logic(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C017Config::default();
     let mut visitor = C017Visitor::new(&config, program, code);
@@ -44,7 +45,7 @@ pub fn check_limit_constructor_logic(program: &Program, _semantic: &Semantic, co
     visitor.issues
 }
 
-/// AST visitor for detecting excessive constructor logic
+/// An AST visitor for detecting excessive constructor logic.
 struct C017Visitor<'a> {
     config: &'a C017Config,
     source_code: &'a str,
@@ -53,6 +54,7 @@ struct C017Visitor<'a> {
 }
 
 impl<'a> C017Visitor<'a> {
+    /// Creates a new `C017Visitor`.
     fn new(config: &'a C017Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -62,12 +64,12 @@ impl<'a> C017Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, statement_count: usize) -> String {
         format!("Constructor contains {} statements, exceeding the limit of {}. Constructors should only perform basic initialization. Move complex logic to separate methods for better testability and maintainability.", statement_count, self.config.max_statements)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Extract complex initialization logic into a separate init() method".to_string(),
@@ -77,7 +79,7 @@ impl<'a> C017Visitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -97,7 +99,7 @@ impl<'a> C017Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for constructor logic violation with AI enhancement
+    /// Creates a lint issue for a constructor logic violation with AI enhancement.
     fn create_constructor_issue(&self, statement_count: usize, span: Span) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -115,6 +117,7 @@ impl<'a> C017Visitor<'a> {
         }
     }
 
+    /// Checks if a statement is a simple assignment.
     fn is_simple_assignment(&self, stmt: &Statement) -> bool {
         match stmt {
             Statement::ExpressionStatement(expr_stmt) => {
@@ -140,6 +143,7 @@ impl<'a> C017Visitor<'a> {
         }
     }
 
+    /// Counts the number of complex statements in a block.
     fn count_complex_statements(&self, statements: &[Statement]) -> usize {
         statements.iter()
             .filter(|stmt| !self.is_simple_assignment(stmt))

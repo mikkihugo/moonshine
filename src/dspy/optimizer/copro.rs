@@ -13,7 +13,7 @@ use std::collections::HashMap;
 
 const GLOBAL_OPTIMIZATION_THRESHOLD_FACTOR: f32 = 1.1;
 
-// Complex manual MetaSignature implementation with custom business logic
+/// A `MetaSignature` for generating a basic instruction.
 #[derive(Debug, Clone)]
 struct BasicGenerateInstruction {
   /// You are an instruction optimizer for large language models. I will give you a ``signature`` of fields (inputs and outputs) in English. Your task is to propose an instruction that will lead a good language model to perform the task well. Don't be afraid to be creative.
@@ -22,6 +22,7 @@ struct BasicGenerateInstruction {
 }
 
 impl BasicGenerateInstruction {
+  /// Creates a new `BasicGenerateInstruction`.
   fn new() -> Self {
     Self {
       basic_instruction: String::new(),
@@ -29,17 +30,17 @@ impl BasicGenerateInstruction {
     }
   }
 
-  /// Get input field description for API documentation
+  /// Returns the description for the input field.
   pub fn get_input_description() -> &'static str {
     "The initial instructions before optimization"
   }
 
-  /// Get output field description for API documentation
+  /// Returns the description for the output field.
   pub fn get_output_description() -> &'static str {
     "The improved instructions for the language model"
   }
 
-  /// Get complete signature metadata for debugging and documentation
+  /// Returns the complete signature metadata for debugging and documentation.
   pub fn get_signature_metadata() -> (String, String) {
     (
       Self::get_input_description().to_string(),
@@ -47,7 +48,7 @@ impl BasicGenerateInstruction {
     )
   }
 
-  /// Validate signature fields using metadata
+  /// Validates the signature fields using metadata.
   pub fn validate_signature(&self) -> anyhow::Result<()> {
     let (input_desc, output_desc) = Self::get_signature_metadata();
 
@@ -135,7 +136,7 @@ impl crate::dspy::MetaSignature for BasicGenerateInstruction {
   }
 }
 
-// Complex manual MetaSignature implementation with custom business logic
+/// A `MetaSignature` for generating a new instruction based on previous attempts.
 #[derive(Debug, Clone)]
 struct GenerateInstructionGivenAttempts {
   /// You are an instruction optimizer for large language models. I will give some task instructions I've tried, along with their corresponding validation scores. The instructions are arranged in increasing order based on their scores, where higher scores indicate better quality.
@@ -146,6 +147,7 @@ struct GenerateInstructionGivenAttempts {
 }
 
 impl GenerateInstructionGivenAttempts {
+  /// Creates a new `GenerateInstructionGivenAttempts`.
   fn new() -> Self {
     Self {
       attempted_instructions: Vec::new(),
@@ -235,6 +237,7 @@ impl crate::dspy::MetaSignature for GenerateInstructionGivenAttempts {
   }
 }
 
+/// Represents a candidate program with its score, instruction, and prefix.
 #[derive(Clone)]
 struct Candidate {
   pub score: f32,
@@ -242,6 +245,7 @@ struct Candidate {
   pub prefix: String,
 }
 
+/// Holds statistics about the optimization process.
 #[derive(Clone)]
 struct ProgramStats {
   pub results_best: HashMap<String, Vec<f32>>,
@@ -249,16 +253,22 @@ struct ProgramStats {
   pub total_calls: usize,
 }
 
+/// The Collaborative Optimization (COPRO) optimizer.
 #[derive(Builder)]
 pub struct COPRO {
+  /// The number of candidate programs to generate at each step.
   #[builder(default = 10)]
   pub breadth: usize,
+  /// The number of optimization iterations.
   #[builder(default = 3)]
   pub depth: usize,
+  /// The initial temperature for the language model.
   #[builder(default = 1.4)]
   pub init_temperature: f32,
+  /// Whether to track statistics during optimization.
   #[builder(default = false)]
   pub track_stats: bool,
+  /// An optional language model to use for generating prompts.
   pub prompt_model: Option<LM>,
 }
 
@@ -282,7 +292,16 @@ fn get_refinement_generator() -> &'static Predict {
 }
 
 impl COPRO {
-  /// WASM-compatible batch processing for candidate generation
+  /// Generates a batch of candidate programs.
+  ///
+  /// # Arguments
+  ///
+  /// * `basic_instruction` - The basic instruction to generate candidates from.
+  /// * `count` - The number of candidates to generate.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing a vector of instruction-prefix pairs on success, or an error.
   async fn generate_candidates_batch(
     &self,
     basic_instruction: &str,
@@ -339,7 +358,16 @@ impl COPRO {
     Ok(results)
   }
 
-  /// Normalize LM responses to always return string arrays for consistent processing
+  /// Normalizes language model responses to always return string arrays for consistent processing.
+  ///
+  /// # Arguments
+  ///
+  /// * `data` - The data from the language model response.
+  /// * `field_name` - The name of the field to normalize.
+  ///
+  /// # Returns
+  ///
+  /// A vector of strings.
   fn normalize_lm_response(
     data: &std::collections::HashMap<String, serde_json::Value>,
     field_name: &str,
@@ -360,6 +388,15 @@ impl COPRO {
     }
   }
 
+  /// Returns the prefix of the last output field of a predictor.
+  ///
+  /// # Arguments
+  ///
+  /// * `predictor` - The predictor to get the output field prefix from.
+  ///
+  /// # Returns
+  ///
+  /// The prefix of the last output field.
   fn get_output_field_prefix(&self, predictor: &dyn Optimizable) -> String {
     // Get the last output field's prefix/desc
     let output_fields = predictor.get_signature().output_fields();

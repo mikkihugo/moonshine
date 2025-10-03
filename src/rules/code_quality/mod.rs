@@ -39,7 +39,7 @@ pub mod t004_test_coverage_threshold;
 pub mod t007_test_description_quality;
 pub mod t010_test_setup_teardown;
 
-/// Register all code quality rules
+/// Registers all code quality rules.
 pub fn register_rules(rules: &mut HashMap<String, MoonShineRule>) {
     // C002: No duplicate code blocks
     rules.insert("C002".to_string(), MoonShineRule {
@@ -252,12 +252,12 @@ pub fn register_rules(rules: &mut HashMap<String, MoonShineRule>) {
     });
 }
 
-/// Check semantic-based code quality rules
+/// Checks semantic-based code quality rules.
 pub fn check_semantic_rule(_rule_id: &str, _program: &Program, _semantic: &Semantic, _code: &str) -> Vec<LintIssue> {
     Vec::new()
 }
 
-/// Check AST-based code quality rules
+/// Checks AST-based code quality rules.
 pub fn check_ast_rule(rule_id: &str, program: &Program, code: &str) -> Vec<LintIssue> {
     match rule_id {
         "C017" => c017_limit_constructor_logic::check_limit_constructor_logic(program, &oxc_semantic::SemanticBuilder::new().build(program).semantic, code),
@@ -267,7 +267,7 @@ pub fn check_ast_rule(rule_id: &str, program: &Program, code: &str) -> Vec<LintI
     }
 }
 
-/// Check AI-assisted code quality rules
+/// Checks AI-assisted code quality rules.
 pub fn check_ai_rule(rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     match rule_id {
         "C002" => c002_no_duplicate_code::check_no_duplicate_code(program, semantic, code),
@@ -292,13 +292,13 @@ pub fn check_ai_rule(rule_id: &str, program: &Program, semantic: &Semantic, code
     }
 }
 
-/// NEW: Check OXC semantic-based code quality rules with AI enhancement
+/// Checks OXC semantic-based code quality rules with AI enhancement.
 pub fn check_oxc_semantic_rule(_rule_id: &str, _program: &Program, _semantic: &Semantic, _code: &str) -> Vec<LintIssue> {
     // For now, delegate to existing semantic rule implementation
     check_semantic_rule(_rule_id, _program, _semantic, _code)
 }
 
-/// NEW: Check OXC AST visitor-based code quality rules with AI enhancement
+/// Checks OXC AST visitor-based code quality rules with AI enhancement.
 pub fn check_oxc_ast_visitor_rule(rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     match rule_id {
         "C002" => c002_no_duplicate_code::check_no_duplicate_code(program, semantic, code),

@@ -14,13 +14,13 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-/// Configuration options for C030 rule
+/// Configuration options for the C030 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C030Config {
-    /// Allowed built-in error classes
+    /// A list of allowed built-in error classes.
     #[serde(default)]
     pub allowed_builtin_errors: Vec<String>,
-    /// Custom error class patterns (regex)
+    /// A list of custom error class patterns (regex).
     #[serde(default)]
     pub custom_error_patterns: Vec<String>,
 }
@@ -43,7 +43,7 @@ impl Default for C030Config {
     }
 }
 
-/// Main entry point for C030 rule checking
+/// The main entry point for the C030 rule checking.
 pub fn check_use_custom_error_classes(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C030Config::default();
     let mut visitor = C030Visitor::new(&config, program, code);
@@ -51,7 +51,7 @@ pub fn check_use_custom_error_classes(program: &Program, _semantic: &Semantic, c
     visitor.issues
 }
 
-/// AST visitor for detecting generic error class usage
+/// An AST visitor for detecting generic error class usage.
 struct C030Visitor<'a> {
     config: &'a C030Config,
     source_code: &'a str,
@@ -61,6 +61,7 @@ struct C030Visitor<'a> {
 }
 
 impl<'a> C030Visitor<'a> {
+    /// Creates a new `C030Visitor`.
     fn new(config: &'a C030Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let allowed_builtin_errors: HashSet<String> = config.allowed_builtin_errors
             .iter()
@@ -76,12 +77,12 @@ impl<'a> C030Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, error_class: &str) -> String {
         format!("Using generic error class '{}'. Create custom error classes that extend Error to provide better error categorization and handling. Custom errors improve debugging and allow for more specific error handling.", error_class)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, error_class: &str) -> Vec<String> {
         vec![
             format!("Create a custom {} class that extends Error", error_class),
@@ -91,7 +92,7 @@ impl<'a> C030Visitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -111,7 +112,7 @@ impl<'a> C030Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for custom error class violation with AI enhancement
+    /// Creates a lint issue for a custom error class violation with AI enhancement.
     fn create_error_class_issue(&self, error_class: &str, span: Span) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -129,6 +130,7 @@ impl<'a> C030Visitor<'a> {
         }
     }
 
+    /// Checks if an expression is a generic `Error`.
     fn is_generic_error(&self, expr: &Expression) -> bool {
         match expr {
             Expression::Identifier(ident) => {
@@ -138,6 +140,7 @@ impl<'a> C030Visitor<'a> {
         }
     }
 
+    /// Returns the name of the error class from an expression.
     fn get_error_class_name(&self, expr: &Expression) -> Option<String> {
         match expr {
             Expression::Identifier(ident) => Some(ident.name.to_string()),

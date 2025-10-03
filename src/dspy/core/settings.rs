@@ -23,12 +23,6 @@ use crate::dspy::adapter::Adapter;
 ///
 /// This includes the configured Language Model (`LM`) and the `Adapter`
 /// responsible for communicating with it.
-///
-/// @category dspy-struct
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 pub struct Settings {
   /// The Language Model (LM) instance used by DSPy.
   pub lm: LM,
@@ -40,12 +34,6 @@ pub struct Settings {
 ///
 /// This ensures that the settings are initialized only once and can be safely
 /// read by multiple threads, while allowing exclusive write access for configuration.
-///
-/// @category dspy-global
-/// @safe program
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> =
   LazyLock::new(|| RwLock::new(None));
 
@@ -55,13 +43,9 @@ pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> =
 /// via the `configure` function. It will panic if DSPy settings have not
 /// been configured yet.
 ///
-/// @returns The configured `LM` instance.
+/// # Returns
 ///
-/// @category dspy-function
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
+/// The configured `LM` instance.
 pub fn get_lm() -> LM {
   GLOBAL_SETTINGS
     .read()
@@ -78,14 +62,10 @@ pub fn get_lm() -> LM {
 /// making them available for all DSPy operations. It should be called once at the
 /// application's startup.
 ///
-/// @param lm The Language Model (LM) instance to use.
-/// @param adapter The `Adapter` implementation for the LM.
+/// # Arguments
 ///
-/// @category dspy-function
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
+/// * `lm` - The Language Model (LM) instance to use.
+/// * `adapter` - The `Adapter` implementation for the LM.
 pub fn configure(lm: LM, adapter: impl Adapter + 'static) {
   let settings = Settings {
     lm,

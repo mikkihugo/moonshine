@@ -12,20 +12,21 @@ use oxc_ast_visit::Visit;
 use oxc_semantic::Semantic;
 use serde::{Deserialize, Serialize};
 
-/// Configuration options for C006 rule
+/// Configuration options for the C006 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C006Config {
-    /// Additional verbs to allow (beyond common ones)
+    /// A list of additional verbs to allow (beyond common ones).
     #[serde(default)]
     pub allowed_verbs: Vec<String>,
-    /// Allowed verb prefixes (default: get, set, is, has, can, should, etc.)
+    /// A list of allowed verb prefixes (default: get, set, is, has, can, should, etc.).
     #[serde(default)]
     pub allowed_prefixes: Vec<String>,
-    /// Allow constructor functions (PascalCase) (default: true)
+    /// Whether to allow constructor functions (PascalCase) (default: true).
     #[serde(default = "default_allow_constructors")]
     pub allow_constructors: bool,
 }
 
+/// Returns the default value for allowing constructor functions.
 fn default_allow_constructors() -> bool {
     true
 }
@@ -40,7 +41,7 @@ impl Default for C006Config {
     }
 }
 
-/// Main entry point for C006 rule checking
+/// The main entry point for the C006 rule checking.
 pub fn check_function_naming(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C006Config::default();
     let mut visitor = C006Visitor::new(&config, program, code);
@@ -48,7 +49,7 @@ pub fn check_function_naming(program: &Program, _semantic: &Semantic, code: &str
     visitor.issues
 }
 
-/// AST visitor for detecting function naming violations
+/// An AST visitor for detecting function naming violations.
 struct C006Visitor<'a> {
     config: &'a C006Config,
     source_code: &'a str,
@@ -57,6 +58,7 @@ struct C006Visitor<'a> {
 }
 
 impl<'a> C006Visitor<'a> {
+    /// Creates a new `C006Visitor`.
     fn new(config: &'a C006Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -66,7 +68,7 @@ impl<'a> C006Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, function_name: &str, issue_type: &str) -> String {
         match issue_type {
             "not_verb" => format!("Function name '{}' should start with a verb or verb-noun phrase. Consider renaming to something like 'get{}', 'set{}', or 'process{}'", function_name, function_name, function_name, function_name),
@@ -75,7 +77,7 @@ impl<'a> C006Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, function_name: &str) -> Vec<String> {
         let mut suggestions = Vec::new();
 
@@ -94,7 +96,7 @@ impl<'a> C006Visitor<'a> {
         suggestions
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -114,7 +116,7 @@ impl<'a> C006Visitor<'a> {
         (line, column)
     }
 
-    /// Check if a name starts with a verb prefix
+    /// Checks if a name starts with a verb prefix.
     fn starts_with_verb(&self, name: &str) -> bool {
         if name.is_empty() {
             return false;
@@ -143,17 +145,17 @@ impl<'a> C006Visitor<'a> {
         verb_prefixes.iter().any(|prefix| lower_name.starts_with(prefix))
     }
 
-    /// Check if a name follows verb-noun pattern
+    /// Checks if a name follows the verb-noun pattern.
     fn is_verb_noun_pattern(&self, name: &str) -> bool {
         self.starts_with_verb(name)
     }
 
-    /// Check if a name is likely a noun-only (no verb prefix)
+    /// Checks if a name is likely a noun-only name (i.e., does not start with a verb prefix).
     fn is_likely_noun_only(&self, name: &str) -> bool {
         !self.starts_with_verb(name) && name.chars().next().map_or(false, |c| c.is_lowercase())
     }
 
-    /// Check if name uses generic verbs that should be flagged
+    /// Checks if a name uses generic verbs that should be flagged.
     fn is_generic_verb_usage(&self, name: &str) -> bool {
         let lower_name = name.to_lowercase();
         matches!(lower_name.as_str(),
@@ -165,7 +167,7 @@ impl<'a> C006Visitor<'a> {
         )
     }
 
-    /// Create lint issue for function naming violation with AI enhancement
+    /// Creates a lint issue for a function naming violation with AI enhancement.
     fn create_function_naming_issue(&self, function_name: &str, span: Span, issue_type: &str) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -183,17 +185,17 @@ impl<'a> C006Visitor<'a> {
         }
     }
 
-    /// Check if a name follows verb-noun pattern
+    /// Checks if a name follows the verb-noun pattern.
     fn is_verb_noun_pattern(&self, name: &str) -> bool {
         self.starts_with_verb(name)
     }
 
-    /// Check if a name is likely a noun-only (no verb prefix)
+    /// Checks if a name is likely a noun-only name (i.e., does not start with a verb prefix).
     fn is_likely_noun_only(&self, name: &str) -> bool {
         !self.starts_with_verb(name) && name.chars().next().map_or(false, |c| c.is_lowercase())
     }
 
-    /// Check if name uses generic verbs that should be flagged
+    /// Checks if a name uses generic verbs that should be flagged.
     fn is_generic_verb_usage(&self, name: &str) -> bool {
         let lower_name = name.to_lowercase();
         matches!(lower_name.as_str(),
@@ -205,7 +207,7 @@ impl<'a> C006Visitor<'a> {
         )
     }
 
-    /// Create lint issue for function naming violation with AI enhancement
+    /// Creates a lint issue for a function naming violation with AI enhancement.
     fn create_function_naming_issue(&self, function_name: &str, span: Span, issue_type: &str) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -272,7 +274,7 @@ impl<'a> Visit<'a> for C006Visitor<'a> {
 }
 
 impl<'a> C006Visitor<'a> {
-    /// Check function name and create issues if needed
+    /// Checks a function name and creates issues if needed.
     fn check_function_name(&mut self, name: &str, span: Span) {
         // Safety checks
         if name.is_empty() {
@@ -309,7 +311,7 @@ impl<'a> C006Visitor<'a> {
         self.issues.push(self.create_function_naming_issue(name, span, "not_verb"));
     }
 
-    /// Helper function to check if a name is PascalCase (likely a constructor)
+    /// A helper function to check if a name is in PascalCase (and likely a constructor).
     fn is_pascal_case(&self, name: &str) -> bool {
         let mut chars = name.chars();
         match chars.next() {

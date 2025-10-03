@@ -24,17 +24,19 @@ use crate::token_usage::LmUsage;
 use crate::dspy::core::signature::{DspySignature, DspyInput, DspyOutput, DspyExample};
 use anyhow::Result;
 
-// Concrete predictor implementations for testing
+/// A predictor that uses a chain-of-thought approach.
 #[derive(Debug, Clone)]
 pub struct ChainOfThoughtPredictor {
     pub signature: DspySignature,
 }
 
 impl ChainOfThoughtPredictor {
+    /// Creates a new `ChainOfThoughtPredictor`.
     pub fn new(signature: DspySignature) -> Self {
         Self { signature }
     }
 
+    /// Makes a prediction using a chain-of-thought approach.
     pub async fn predict(&self, input: DspyInput) -> Result<DspyOutput> {
         // Mock implementation for testing
         let mut output = DspyOutput::new();
@@ -49,6 +51,7 @@ impl ChainOfThoughtPredictor {
     }
 }
 
+/// A predictor that uses few-shot examples.
 #[derive(Debug, Clone)]
 pub struct FewShotPredictor {
     pub signature: DspySignature,
@@ -56,6 +59,7 @@ pub struct FewShotPredictor {
 }
 
 impl FewShotPredictor {
+    /// Creates a new `FewShotPredictor`.
     pub fn new(signature: DspySignature) -> Self {
         Self {
             signature,
@@ -63,10 +67,12 @@ impl FewShotPredictor {
         }
     }
 
+    /// Adds an example to the predictor.
     pub fn add_example(&mut self, example: DspyExample) {
         self.examples.push(example);
     }
 
+    /// Makes a prediction using few-shot examples.
     pub async fn predict(&self, input: DspyInput) -> Result<DspyOutput> {
         // Mock implementation using examples for context
         let mut output = DspyOutput::new();
@@ -87,16 +93,19 @@ impl FewShotPredictor {
     }
 }
 
+/// A predictor that uses a ReAct-style approach.
 #[derive(Debug, Clone)]
 pub struct ReactPredictor {
     pub signature: DspySignature,
 }
 
 impl ReactPredictor {
+    /// Creates a new `ReactPredictor`.
     pub fn new(signature: DspySignature) -> Self {
         Self { signature }
     }
 
+    /// Makes a prediction using a ReAct-style approach.
     pub async fn predict(&self, input: DspyInput) -> Result<DspyOutput> {
         // Mock ReAct-style reasoning
         let mut output = DspyOutput::new();
@@ -119,38 +128,31 @@ impl ReactPredictor {
 /// A `Predictor` is responsible for generating a `Prediction` from an `Example` input,
 /// typically by interacting with a language model. It provides methods for both
 /// standard forward passes and forward passes with a specific language model configuration.
-///
-/// @category dspy-trait
-/// @safe program
-/// @mvp core
-/// @complexity medium
-/// @since 1.0.0
 #[allow(async_fn_in_trait)]
 pub trait Predictor: Send + Sync {
   /// Performs a standard forward pass, generating a `Prediction` from an `Example`.
   ///
-  /// @param inputs The input `Example` for the prediction.
-  /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example` for the prediction.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
   async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction>;
+
   /// Performs a forward pass using a specific language model configuration.
   ///
   /// This method allows overriding the default language model settings for a particular prediction.
   ///
-  /// @param inputs The input `Example` for the prediction.
-  /// @param lm A mutable reference to the `LM` (Language Model) instance to use.
-  /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example` for the prediction.
+  /// * `lm` - A mutable reference to the `LM` (Language Model) instance to use.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
   async fn forward_with_config(
     &self,
     inputs: Example,
@@ -162,12 +164,6 @@ pub trait Predictor: Send + Sync {
 ///
 /// This struct simply returns a `Prediction` containing the input data,
 /// without performing any actual AI inference.
-///
-/// @category dspy-struct
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 pub struct DummyPredict;
 
 impl Predictor for DummyPredict {
@@ -175,14 +171,13 @@ impl Predictor for DummyPredict {
   ///
   /// It returns a `Prediction` containing the input data and default `LmUsage`.
   ///
-  /// @param inputs The input `Example`.
-  /// @returns An `anyhow::Result` containing a `Prediction`.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example`.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` containing a `Prediction`.
   async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction> {
     Ok(Prediction::new(inputs.data, LmUsage::default()))
   }
@@ -192,15 +187,14 @@ impl Predictor for DummyPredict {
   /// It returns a `Prediction` containing the input data and default `LmUsage`,
   /// ignoring the provided `lm` configuration.
   ///
-  /// @param inputs The input `Example`.
-  /// @param lm A mutable reference to the `LM` instance (ignored).
-  /// @returns An `anyhow::Result` containing a `Prediction`.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example`.
+  /// * `lm` - A mutable reference to the `LM` instance (ignored).
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` containing a `Prediction`.
   async fn forward_with_config(
     &self,
     inputs: Example,

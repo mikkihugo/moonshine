@@ -18,28 +18,31 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Configuration options for C002 rule
+/// Configuration options for the C002 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C002Config {
-    /// Minimum number of lines to consider as duplicate code
+    /// The minimum number of lines to consider as duplicate code.
     #[serde(default = "default_min_lines")]
     pub min_lines: u32,
-    /// Whether to ignore comments when comparing code blocks
+    /// Whether to ignore comments when comparing code blocks.
     #[serde(default = "default_ignore_comments")]
     pub ignore_comments: bool,
-    /// Whether to ignore whitespace differences when comparing code blocks
+    /// Whether to ignore whitespace differences when comparing code blocks.
     #[serde(default = "default_ignore_whitespace")]
     pub ignore_whitespace: bool,
 }
 
+/// Returns the default minimum number of lines for the C002 rule.
 fn default_min_lines() -> u32 {
     10
 }
 
+/// Returns the default value for ignoring comments for the C002 rule.
 fn default_ignore_comments() -> bool {
     true
 }
 
+/// Returns the default value for ignoring whitespace for the C002 rule.
 fn default_ignore_whitespace() -> bool {
     true
 }
@@ -54,7 +57,7 @@ impl Default for C002Config {
     }
 }
 
-/// Main entry point for C002 rule checking
+/// The main entry point for the C002 rule checking.
 pub fn check_no_duplicate_code(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C002Config::default();
     let mut visitor = DuplicateCodeVisitor::new(&config, program, code);
@@ -62,6 +65,7 @@ pub fn check_no_duplicate_code(program: &Program, _semantic: &Semantic, code: &s
     visitor.finalize_issues()
 }
 
+/// Represents a block of code with its span, line count, normalized code, and whether it has been reported.
 struct CodeBlock {
     span: Span,
     lines: u32,
@@ -69,7 +73,7 @@ struct CodeBlock {
     reported: bool,
 }
 
-/// AST visitor for detecting duplicate code violations
+/// An AST visitor for detecting duplicate code violations.
 struct DuplicateCodeVisitor<'a> {
     config: &'a C002Config,
     source_code: &'a str,
@@ -80,6 +84,7 @@ struct DuplicateCodeVisitor<'a> {
 }
 
 impl<'a> DuplicateCodeVisitor<'a> {
+    /// Creates a new `DuplicateCodeVisitor`.
     fn new(config: &'a C002Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let code_lines: Vec<&str> = source_code.lines().collect();
         Self {
@@ -92,12 +97,12 @@ impl<'a> DuplicateCodeVisitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, duplicate_count: usize, lines: u32) -> String {
         format!("Found {} instances of duplicate code blocks with {} lines each. Duplicate code violates the DRY (Don't Repeat Yourself) principle and makes maintenance harder. Consider extracting the common logic into a shared function or utility.", duplicate_count, lines)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Extract the duplicate code into a separate function with a descriptive name".to_string(),
@@ -108,7 +113,7 @@ impl<'a> DuplicateCodeVisitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -128,6 +133,7 @@ impl<'a> DuplicateCodeVisitor<'a> {
         (line, column)
     }
 
+    /// Normalizes the given code text by ignoring whitespace and comments based on the configuration.
     fn normalize_code(&self, text: &str) -> String {
         let mut normalized = text.to_string();
 
@@ -165,6 +171,7 @@ impl<'a> DuplicateCodeVisitor<'a> {
         normalized.trim().to_string()
     }
 
+    /// Returns the code text for the given span.
     fn get_code_text(&self, span: Span) -> String {
         let start_line = span.start as usize;
         let end_line = span.end as usize;
@@ -176,11 +183,13 @@ impl<'a> DuplicateCodeVisitor<'a> {
         self.source_code[start_line..end_line].to_string()
     }
 
+    /// Counts the number of lines in the given span.
     fn count_lines(&self, span: Span) -> u32 {
         let text = self.get_code_text(span);
         text.lines().count() as u32
     }
 
+    /// Analyzes a code block for duplication.
     fn analyze_code_block(&mut self, span: Span) {
         let line_count = self.count_lines(span);
 
@@ -208,6 +217,7 @@ impl<'a> DuplicateCodeVisitor<'a> {
             .push(code_block);
     }
 
+    /// Finalizes the issues by reporting duplicate code blocks.
     fn finalize_issues(mut self) -> Vec<LintIssue> {
         // Collect duplicate information first to avoid borrowing conflicts
         let mut duplicates_to_report = Vec::new();

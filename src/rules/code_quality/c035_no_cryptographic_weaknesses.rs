@@ -20,30 +20,32 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
+/// Configuration options for the C035 rule.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct C035Config {
-    /// Whether to allow weak algorithms in test files (default: true)
+    /// Whether to allow weak algorithms in test files (default: true).
     pub allow_weak_in_tests: bool,
-    /// Custom list of additional weak algorithms to detect
+    /// A custom list of additional weak algorithms to detect.
     pub additional_weak_algorithms: Vec<String>,
-    /// Custom list of secure algorithms that should be recommended
+    /// A custom list of secure algorithms that should be recommended.
     pub recommended_algorithms: Vec<String>,
-    /// Whether to check for insecure random number generators (default: true)
+    /// Whether to check for insecure random number generators (default: true).
     pub check_insecure_random: bool,
-    /// Whether to check for hardcoded cryptographic keys/secrets (default: true)
+    /// Whether to check for hardcoded cryptographic keys/secrets (default: true).
     pub check_hardcoded_secrets: bool,
-    /// Minimum key size requirements for various algorithms
+    /// Minimum key size requirements for various algorithms.
     pub minimum_key_sizes: HashMap<String, u32>,
 }
 
-/// C035 rule implementation with AI enhancement
-pub fn check_no_cryptographic_weaknesses(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
+/// The main entry point for the C035 rule checking.
+pub fn check_no_cryptographic_weaknesses(program: &Program, _semantic: &Semantic, code: &str, _config: Option<&AIEnhancer>) -> Vec<LintIssue> {
     let config = C035Config::default();
     let mut visitor = CryptographicWeaknessVisitor::new(program, code, &config);
     visitor.visit_program(program);
     visitor.finalize_issues()
 }
 
+/// Holds information about a cryptographic algorithm.
 #[derive(Debug, Clone)]
 struct AlgorithmInfo {
     name: String,
@@ -51,6 +53,7 @@ struct AlgorithmInfo {
     recommendation: String,
 }
 
+/// The type of cryptographic weakness.
 #[derive(Debug, Clone)]
 enum WeaknessType {
     DeprecatedAlgorithm,
@@ -61,6 +64,7 @@ enum WeaknessType {
     InsecureProtocol,
 }
 
+/// An AST visitor for detecting cryptographic weakness violations.
 struct CryptographicWeaknessVisitor<'a> {
     config: &'a C035Config,
     program: &'a Program<'a>,
@@ -69,6 +73,7 @@ struct CryptographicWeaknessVisitor<'a> {
 }
 
 impl<'a> CryptographicWeaknessVisitor<'a> {
+    /// Creates a new `CryptographicWeaknessVisitor`.
     fn new(program: &'a Program<'a>, source_code: &'a str, config: &'a C035Config) -> Self {
         Self {
             config,
@@ -78,11 +83,13 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         }
     }
 
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, base_message: &str, span: Span) -> String {
         // Context extraction removed: obsolete extract_context utility.
         format!("{}", base_message)
     }
 
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Replace weak cryptographic algorithms with secure alternatives".to_string(),
@@ -92,10 +99,12 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         ]
     }
 
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, span: Span) -> (usize, usize) {
         crate::rules::utils::span_to_line_col(self.source_code, span)
     }
 
+    /// Finalizes the issues by applying AI enhancements.
     fn finalize_issues(mut self) -> Vec<LintIssue> {
         // Apply AI enhancements to all issues
         let ai_suggestions = self.generate_ai_fix_suggestions();
@@ -107,6 +116,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         self.issues
     }
 
+    /// Returns a set of insecure function names.
     fn get_insecure_functions(&self) -> HashSet<String> {
         [
             "Math.random", "random", "rand", "srand", "time",
@@ -114,6 +124,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         ].iter().map(|s| s.to_string()).collect()
     }
 
+    /// Returns a map of weak algorithms and their information.
     fn get_weak_algorithms(&self) -> HashMap<String, AlgorithmInfo> {
         let mut weak_algorithms = HashMap::new();
 
@@ -166,6 +177,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         weak_algorithms
     }
 
+    /// Returns a map of minimum key sizes for various algorithms.
     fn get_minimum_key_sizes(&self) -> HashMap<String, u32> {
         let mut minimum_key_sizes = HashMap::new();
         minimum_key_sizes.insert("RSA".to_string(), 2048);
@@ -181,6 +193,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         minimum_key_sizes
     }
 
+    /// Returns the name of a function from an expression.
     fn get_function_name(&self, expr: &Expression) -> Option<String> {
         match expr {
             Expression::Identifier(ident) => Some(ident.name.to_string()),
@@ -191,6 +204,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         }
     }
 
+    /// Returns the name of a member expression.
     fn get_member_expression_name(&self, member: &MemberExpression) -> Option<String> {
         let object_name = match &member.object {
             Expression::Identifier(ident) => ident.name.to_string(),
@@ -206,6 +220,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         None
     }
 
+    /// Checks for weak cryptographic algorithms.
     fn check_weak_algorithm(&mut self, algorithm_name: &str, span: Span) {
         if self.is_test_context() {
             return;
@@ -240,6 +255,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         }
     }
 
+    /// Checks for insecure random number generators.
     fn check_insecure_random(&mut self, function_name: &str, span: Span) {
         if !self.config.check_insecure_random || self.is_test_context() {
             return;
@@ -262,6 +278,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         }
     }
 
+    /// Checks for hardcoded secrets.
     fn check_hardcoded_secret(&mut self, value: &str, span: Span) {
         if !self.config.check_hardcoded_secrets || self.is_test_context() {
             return;
@@ -299,6 +316,7 @@ impl<'a> CryptographicWeaknessVisitor<'a> {
         }
     }
 
+    /// Checks for weak key sizes.
     fn check_key_size(&mut self, algorithm: &str, key_size_arg: &Expression, span: Span) {
         if self.is_test_context() {
             return;

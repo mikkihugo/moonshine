@@ -27,12 +27,6 @@ use crate::dspy::core::MetaSignature;
 /// A `Module` is capable of performing a `forward` pass, which typically involves interacting
 /// with a language model to generate a `Prediction` based on an `Example` input.
 /// It also provides a `batch` method for processing multiple examples concurrently.
-///
-/// @category dspy-trait
-/// @safe program
-/// @mvp core
-/// @complexity medium
-/// @since 1.0.0
 #[allow(async_fn_in_trait)]
 pub trait Module: Send + Sync {
   /// Performs a single forward pass of the module.
@@ -40,14 +34,13 @@ pub trait Module: Send + Sync {
   /// This is the core logic of the module, taking an `Example` as input
   /// and producing a `Prediction` as output.
   ///
-  /// @param inputs The input `Example` for the forward pass.
-  /// @returns A `Result` containing a `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example` for the forward pass.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing a `Prediction` on success, or an `Error` on failure.
   async fn forward(&self, inputs: Example) -> Result<Prediction>;
 
   /// Processes a batch of `Example` inputs concurrently.
@@ -56,16 +49,15 @@ pub trait Module: Send + Sync {
   /// up to a specified `max_concurrency`. It collects all predictions and provides
   /// optional progress display.
   ///
-  /// @param inputs A vector of `Example` inputs to process.
-  /// @param max_concurrency The maximum number of concurrent `forward` calls.
-  /// @param display_progress If `true`, progress messages will be printed.
-  /// @returns A `Result` containing a vector of `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `inputs` - A vector of `Example` inputs to process.
+  /// * `max_concurrency` - The maximum number of concurrent `forward` calls.
+  /// * `display_progress` - If `true`, progress messages will be printed.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing a vector of `Prediction` on success, or an `Error` on failure.
   async fn batch(
     &self,
     inputs: Vec<Example>,
@@ -103,25 +95,15 @@ pub trait Module: Send + Sync {
 /// The `Optimizable` trait allows DSPy's optimizers to inspect and modify
 /// the internal parameters and behavior of a module, typically by updating
 /// its `MetaSignature` or accessing its sub-modules.
-///
-/// @category dspy-trait
-/// @safe program
-/// @mvp core
-/// @complexity medium
-/// @since 1.0.0
 pub trait Optimizable {
   /// Returns a reference to the module's `MetaSignature`.
   ///
   /// This signature defines the inputs and outputs of the module, and can be
   /// modified by optimizers to improve performance.
   ///
-  /// @returns A reference to the `MetaSignature` trait object.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// A reference to the `MetaSignature` trait object.
   fn get_signature(&self) -> &dyn MetaSignature {
     unimplemented!("get_signature must be implemented by the concrete type - this is a trait method requiring implementation by each DSPy module")
   }
@@ -130,13 +112,9 @@ pub trait Optimizable {
   ///
   /// This allows optimizers to recursively traverse and modify nested modules.
   ///
-  /// @returns An `IndexMap` where keys are parameter names and values are mutable references to `Optimizable` trait objects.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// An `IndexMap` where keys are parameter names and values are mutable references to `Optimizable` trait objects.
   fn parameters(&mut self) -> IndexMap<String, &mut dyn Optimizable>;
 
   /// Updates the instruction string of the module's `MetaSignature`.
@@ -144,14 +122,13 @@ pub trait Optimizable {
   /// This method is used by optimizers to refine the prompt or instruction
   /// given to the underlying language model.
   ///
-  /// @param instruction The new instruction string.
-  /// @returns A `Result` indicating success or an `Error` if the update fails.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `instruction` - The new instruction string.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an `Error` if the update fails.
   fn update_signature_instruction(
     &mut self,
     instruction: String,
@@ -181,14 +158,13 @@ pub trait Optimizable {
   /// This method is used by optimizers to add a prefix to the prompt,
   /// often for few-shot learning or context injection.
   ///
-  /// @param prefix The new prefix string.
-  /// @returns A `Result` indicating success or an `Error` if the update fails.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `prefix` - The new prefix string.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an `Error` if the update fails.
   fn update_signature_prefix(&mut self, prefix: String) -> anyhow::Result<()> {
     // Default implementation: validate and process the prefix
     if prefix.len() > 1_000_000 {

@@ -23,6 +23,22 @@ pub use utils::*;
 
 // pub use dsrs_macros::*;  // WASM: Disabled dependency
 
+/// Creates an `Example` instance for use in DSPy modules.
+///
+/// This macro simplifies the creation of `Example` objects, which are used
+/// to provide training data or inputs for prediction. It automatically
+/// separates fields into inputs and outputs based on the provided field type.
+///
+/// # Usage
+///
+/// ```
+/// use moon_shine::dspy::example;
+///
+/// let my_example = example! {
+///     "question": "input" => "What is the capital of France?",
+///     "answer": "output" => "Paris"
+/// };
+/// ```
 #[macro_export]
 macro_rules! example {
     // Pattern: { "key": <__dsrs_field_type>: "value", ... }
@@ -52,6 +68,21 @@ macro_rules! example {
     }};
 }
 
+/// Creates a `Prediction` instance.
+///
+/// This macro provides a concise way to construct a `Prediction` object,
+/// which typically holds the output from a language model.
+///
+/// # Usage
+///
+/// ```
+/// use moon_shine::dspy::prediction;
+///
+/// let my_prediction = prediction! {
+///     "answer" => "The answer is 42.",
+///     "confidence" => 0.9
+/// };
+/// ```
 #[macro_export]
 macro_rules! prediction {
     { $($key:literal => $value:expr),* $(,)? } => {{
@@ -68,6 +99,23 @@ macro_rules! prediction {
     }};
 }
 
+/// Defines fields for a `Signature`, including their type, description, and whether they are inputs or outputs.
+///
+/// This macro is used within a `Signature` definition to declare the structure of inputs and outputs.
+///
+/// # Usage
+///
+/// ```
+/// use moon_shine::dspy::field;
+/// use serde_json::json;
+///
+/// let signature_fields = field! {
+///   input["The user's question"] => question: String,
+///   output["The model's answer"] => answer: String
+/// };
+///
+/// assert_eq!(signature_fields["question"]["desc"], "The user's question");
+/// ```
 #[macro_export]
 macro_rules! field {
     // Example Usage: field! {
@@ -158,6 +206,21 @@ macro_rules! field {
     }};
 }
 
+/// Creates an anonymous `Signature` struct.
+///
+/// This macro allows for the quick, inline definition of a `Signature`
+/// without the need for a formal `struct` declaration. It's useful for
+/// simple, one-off signature definitions.
+///
+/// # Usage
+///
+/// ```
+/// use moon_shine::dspy::sign;
+///
+/// let signature = sign! {
+///     (question: String) -> answer: String
+/// };
+/// ```
 #[macro_export]
 macro_rules! sign {
     // Example Usage: signature! {

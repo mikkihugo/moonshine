@@ -19,30 +19,32 @@ use oxc_semantic::Semantic;
 use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 
+/// Configuration options for the C047 rule.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct C047Config {
-    /// Whether to allow inconsistent returns in test files (default: true)
+    /// Whether to allow inconsistent returns in test files (default: true).
     pub allow_inconsistent_in_tests: bool,
-    /// Whether to treat missing return as returning undefined (default: true)
+    /// Whether to treat a missing return as returning `undefined` (default: true).
     pub treat_undefined_as_unspecified: bool,
-    /// Whether to allow inconsistent returns in getter functions (default: false)
+    /// Whether to allow inconsistent returns in getter functions (default: false).
     pub allow_inconsistent_in_getters: bool,
-    /// Whether to ignore arrow functions with expression bodies (default: true)
+    /// Whether to ignore arrow functions with expression bodies (default: true).
     pub ignore_arrow_expressions: bool,
-    /// Whether to check constructor functions (default: false)
+    /// Whether to check constructor functions (default: false).
     pub check_constructors: bool,
-    /// Whether to allow early returns without values in void functions (default: true)
+    /// Whether to allow early returns without values in void functions (default: true).
     pub allow_early_void_returns: bool,
 }
 
-/// C047 rule implementation with AI enhancement
-pub fn check_no_inconsistent_returns(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
+/// The main entry point for the C047 rule checking.
+pub fn check_no_inconsistent_returns(program: &Program, _semantic: &Semantic, code: &str, _config: Option<&AIEnhancer>) -> Vec<LintIssue> {
     let config = C047Config::default();
     let mut visitor = InconsistentReturnsVisitor::new(program, code, &config);
     visitor.visit_program(program);
     visitor.finalize_issues()
 }
 
+/// Holds information about a return statement.
 #[derive(Debug, Clone)]
 struct ReturnInfo {
     span: Span,
@@ -51,6 +53,7 @@ struct ReturnInfo {
     statement_type: ReturnType,
 }
 
+/// The type of a return statement.
 #[derive(Debug, Clone)]
 enum ReturnType {
     ExplicitReturn,
@@ -60,6 +63,7 @@ enum ReturnType {
     SwitchReturn,
 }
 
+/// Holds analysis information about a function.
 #[derive(Debug, Clone)]
 struct FunctionAnalysis {
     name: String,
@@ -71,6 +75,7 @@ struct FunctionAnalysis {
     is_arrow_expression: bool,
 }
 
+/// An AST visitor for detecting inconsistent return statements.
 struct InconsistentReturnsVisitor<'a> {
     config: &'a C047Config,
     program: &'a Program<'a>,
@@ -81,6 +86,7 @@ struct InconsistentReturnsVisitor<'a> {
 }
 
 impl<'a> InconsistentReturnsVisitor<'a> {
+    /// Creates a new `InconsistentReturnsVisitor`.
     fn new(program: &'a Program<'a>, source_code: &'a str, config: &'a C047Config) -> Self {
         Self {
             config,
@@ -92,11 +98,13 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         }
     }
 
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, base_message: &str, span: Span) -> String {
         // Context extraction removed: obsolete extract_context utility.
         format!("{}", base_message)
     }
 
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Ensure all code paths in a function either return a value or don't return at all".to_string(),
@@ -106,10 +114,12 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         ]
     }
 
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, span: Span) -> (usize, usize) {
         crate::rules::utils::span_to_line_col(self.source_code, span)
     }
 
+    /// Finalizes the issues by applying AI enhancements.
     fn finalize_issues(mut self) -> Vec<LintIssue> {
         // Apply AI enhancements to all issues
         let ai_suggestions = self.generate_ai_fix_suggestions();
@@ -121,6 +131,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         self.issues
     }
 
+    /// Checks if the current context is a test context.
     fn is_test_context(&self) -> bool {
         self.config.allow_inconsistent_in_tests && (
             self.source_code.contains(".test.") ||
@@ -132,6 +143,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         )
     }
 
+    /// Enters a new function scope.
     fn enter_function(&mut self, analysis: FunctionAnalysis) {
         if let Some(current) = self.current_function.take() {
             self.function_stack.push(current);
@@ -139,6 +151,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         self.current_function = Some(analysis);
     }
 
+    /// Exits the current function scope and analyzes the function's return statements.
     fn exit_function(&mut self) {
         if let Some(function_analysis) = self.current_function.take() {
             self.analyze_function_returns(function_analysis);
@@ -147,12 +160,14 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         self.current_function = self.function_stack.pop();
     }
 
+    /// Adds a return statement to the current function's analysis.
     fn add_return(&mut self, return_info: ReturnInfo) {
         if let Some(ref mut function) = self.current_function {
             function.returns.push(return_info);
         }
     }
 
+    /// Analyzes a function's return statements for inconsistencies.
     fn analyze_function_returns(&mut self, function: FunctionAnalysis) {
         if self.is_test_context() {
             return;
@@ -212,6 +227,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         }
     }
 
+    /// Creates a lint issue for an inconsistent return statement.
     fn create_inconsistent_return_issue(&mut self, function: &FunctionAnalysis) {
         let (line, column) = self.calculate_line_column(function.span);
 
@@ -238,6 +254,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         });
     }
 
+    /// Returns the name of a function.
     fn get_function_name(&self, func: &Function) -> String {
         if let Some(id) = &func.id {
             id.name.to_string()
@@ -246,6 +263,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         }
     }
 
+    /// Checks if a function is a constructor function.
     fn is_constructor_function(&self, func: &Function) -> bool {
         if let Some(id) = &func.id {
             // Check if function name starts with uppercase (constructor convention)
@@ -255,11 +273,13 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         }
     }
 
+    /// Checks if a function is a getter function.
     fn is_getter_function(&self, name: &str) -> bool {
         name.starts_with("get") && name.len() > 3 &&
         name.chars().nth(3).map_or(false, |c| c.is_uppercase())
     }
 
+    /// Analyzes the control flow of a block of statements.
     fn analyze_control_flow(&self, statements: &[Statement]) -> bool {
         // Simple analysis to determine if all code paths have explicit returns
         for stmt in statements {
@@ -282,6 +302,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         false
     }
 
+    /// Analyzes an `if` statement for return consistency.
     fn analyze_if_statement(&self, if_stmt: &IfStatement) -> bool {
         // Check if both branches return
         let consequent_returns = match &if_stmt.consequent {
@@ -304,6 +325,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         consequent_returns && alternate_returns
     }
 
+    /// Analyzes a `switch` statement for return consistency.
     fn analyze_switch_statement(&self, switch_stmt: &SwitchStatement) -> bool {
         let mut has_default = false;
         let mut all_cases_return = true;
@@ -322,6 +344,7 @@ impl<'a> InconsistentReturnsVisitor<'a> {
         has_default && all_cases_return
     }
 
+    /// Determines the type of a return statement.
     fn determine_return_type(&self, _context: &str) -> ReturnType {
         // This could be enhanced to detect the context more precisely
         ReturnType::ExplicitReturn

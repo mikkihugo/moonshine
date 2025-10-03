@@ -15,7 +15,7 @@
 use serde_json::json;
 use crate::dspy::core::signature::{DspySignature, DspyField};
 
-// Simple signature macro for tests
+/// A simplified signature macro for testing purposes.
 #[macro_export]
 macro_rules! signature_simple {
     (

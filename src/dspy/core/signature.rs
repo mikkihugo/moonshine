@@ -19,7 +19,7 @@ use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
 
-// DSPy concrete types needed by tests
+/// Represents a DSPy signature, defining the inputs and outputs of a model.
 #[derive(Debug, Clone)]
 pub struct DspySignature {
     pub name: String,
@@ -27,22 +27,26 @@ pub struct DspySignature {
     pub outputs: Vec<DspyField>,
 }
 
+/// Represents a field within a DSPy signature, including its name and description.
 #[derive(Debug, Clone)]
 pub struct DspyField {
     pub name: String,
     pub description: String,
 }
 
+/// Represents the input to a DSPy model, consisting of a set of named fields.
 #[derive(Debug, Clone)]
 pub struct DspyInput {
     pub fields: HashMap<String, String>,
 }
 
+/// Represents the output from a DSPy model, consisting of a set of named fields.
 #[derive(Debug, Clone)]
 pub struct DspyOutput {
     pub fields: HashMap<String, String>,
 }
 
+/// Represents an example for training or evaluation, containing inputs, outputs, and metadata.
 #[derive(Debug, Clone)]
 pub struct DspyExample {
     pub inputs: Vec<(String, String)>,
@@ -51,6 +55,7 @@ pub struct DspyExample {
 }
 
 impl DspySignature {
+    /// Creates a new `DspySignatureBuilder` for constructing a `DspySignature`.
     pub fn new() -> DspySignatureBuilder {
         DspySignatureBuilder {
             name: String::new(),
@@ -59,7 +64,15 @@ impl DspySignature {
         }
     }
 
-    /// Create signature from string format like "input1, input2 -> output1, output2"
+    /// Creates a signature from a string format like "input1, input2 -> output1, output2".
+    ///
+    /// # Arguments
+    ///
+    /// * `signature_str` - The string representation of the signature.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the new `DspySignature` on success, or an error.
     pub fn from_string(signature_str: &str) -> Result<Self> {
         let parts: Vec<&str> = signature_str.split(" -> ").collect();
         if parts.len() != 2 {
@@ -87,7 +100,16 @@ impl DspySignature {
         Ok(builder.build())
     }
 
-    /// Update field properties (like real DSPy's with_updated_fields)
+    /// Updates field properties, similar to DSPy's `with_updated_fields`.
+    ///
+    /// # Arguments
+    ///
+    /// * `field_name` - The name of the field to update.
+    /// * `field_type` - An optional new type for the field.
+    ///
+    /// # Returns
+    ///
+    /// The updated `DspySignature`.
     pub fn with_updated_fields(mut self, field_name: &str, field_type: Option<String>) -> Self {
         // Update field type if found
         for field in &mut self.inputs {
@@ -107,6 +129,11 @@ impl DspySignature {
         self
     }
 
+    /// Validates the signature, ensuring it has at least one input and one output.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an error if validation fails.
     pub fn validate(&self) -> Result<()> {
         if self.inputs.is_empty() {
             return Err(anyhow::anyhow!("Signature must have at least one input"));
@@ -117,6 +144,15 @@ impl DspySignature {
         Ok(())
     }
 
+    /// Validates an input against the signature, checking for required fields.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The `DspyInput` to validate.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an error if validation fails.
     pub fn validate_input(&self, input: &DspyInput) -> Result<()> {
         for field in &self.inputs {
             if !input.fields.contains_key(&field.name) {
@@ -126,6 +162,15 @@ impl DspySignature {
         Ok(())
     }
 
+    /// Validates an output against the signature, checking for required fields.
+    ///
+    /// # Arguments
+    ///
+    /// * `output` - The `DspyOutput` to validate.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an error if validation fails.
     pub fn validate_output(&self, output: &DspyOutput) -> Result<()> {
         for field in &self.outputs {
             if !output.fields.contains_key(&field.name) {
@@ -136,6 +181,7 @@ impl DspySignature {
     }
 }
 
+/// A builder for creating `DspySignature` instances.
 pub struct DspySignatureBuilder {
     name: String,
     inputs: Vec<DspyField>,
@@ -143,11 +189,13 @@ pub struct DspySignatureBuilder {
 }
 
 impl DspySignatureBuilder {
+    /// Sets the name of the signature.
     pub fn name(mut self, name: &str) -> Self {
         self.name = name.to_string();
         self
     }
 
+    /// Adds an input field to the signature.
     pub fn input(mut self, name: &str, description: &str) -> Self {
         self.inputs.push(DspyField {
             name: name.to_string(),
@@ -156,6 +204,7 @@ impl DspySignatureBuilder {
         self
     }
 
+    /// Adds an output field to the signature.
     pub fn output(mut self, name: &str, description: &str) -> Self {
         self.outputs.push(DspyField {
             name: name.to_string(),
@@ -164,6 +213,7 @@ impl DspySignatureBuilder {
         self
     }
 
+    /// Builds the `DspySignature`.
     pub fn build(self) -> DspySignature {
         DspySignature {
             name: if self.name.is_empty() { "DefaultSignature".to_string() } else { self.name },
@@ -174,12 +224,14 @@ impl DspySignatureBuilder {
 }
 
 impl DspyInput {
+    /// Creates a new, empty `DspyInput`.
     pub fn new() -> Self {
         Self {
             fields: HashMap::new(),
         }
     }
 
+    /// Adds a field to the input.
     pub fn field(mut self, name: &str, value: &str) -> Self {
         self.fields.insert(name.to_string(), value.to_string());
         self
@@ -187,41 +239,44 @@ impl DspyInput {
 }
 
 impl DspyOutput {
+    /// Creates a new, empty `DspyOutput`.
     pub fn new() -> Self {
         Self {
             fields: HashMap::new(),
         }
     }
 
+    /// Adds a field to the output.
     pub fn field(mut self, name: &str, value: &str) -> Self {
         self.fields.insert(name.to_string(), value.to_string());
         self
     }
 
+    /// Retrieves a field's value from the output.
     pub fn get_field(&self, name: &str) -> Option<&String> {
         self.fields.get(name)
     }
 }
 
-/// Trait for creating DSPy Signature types
+/// A trait for creating DSPy Signature types.
 ///
-/// Real DSPy signatures support:
+/// DSPy signatures support:
 /// - Automatic field definition with descriptions
 /// - Type validation with Pydantic-like types
 /// - Schema generation for LM interaction
 /// - Field update capabilities
 /// - Instruction optimization
 pub trait Signature: Send + Sync + Clone {
-  /// Creates a new instance of this signature
+  /// Creates a new instance of this signature.
   fn new() -> Self;
 
-  /// Updates a field's properties
+  /// Updates a field's properties.
   fn with_updated_fields(self, field_name: &str, field_type: Option<String>) -> Self;
 
-  /// Gets the signature's instruction string
+  /// Gets the signature's instruction string.
   fn get_instructions(&self) -> String;
 
-  /// Updates the signature's instructions
+  /// Updates the signature's instructions.
   fn set_instructions(&mut self, instructions: String);
 }
 
@@ -231,72 +286,53 @@ pub trait Signature: Send + Sync + Clone {
 /// that define how an AI model should process data. It also supports managing
 /// demonstration examples for few-shot learning and allows for dynamic updates
 /// to the model's behavior.
-///
-/// @category dspy-trait
-/// @safe program
-/// @mvp core
-/// @complexity medium
-/// @since 1.0.0
 pub trait MetaSignature: Send + Sync {
   /// Returns a vector of demonstration `Example`s for few-shot learning.
   ///
   /// These examples provide the AI model with successful input-output pairs
   /// to guide its behavior.
   ///
-  /// @returns A `Vec<Example>` containing the demonstration examples.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// A `Vec<Example>` containing the demonstration examples.
   fn demos(&self) -> Vec<Example>;
+
   /// Sets the demonstration `Example`s for few-shot learning.
   ///
-  /// @param demos A `Vec<Example>` to set as the new demonstration examples.
-  /// @returns A `Result` indicating success or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `demos` - A `Vec<Example>` to set as the new demonstration examples.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an `Error` on failure.
   fn set_demos(&mut self, demos: Vec<Example>) -> Result<()>;
+
   /// Returns the instruction string for the AI model.
   ///
   /// This instruction guides the AI on what task to perform.
   ///
-  /// @returns The instruction string as a `String`.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// The instruction string as a `String`.
   fn instruction(&self) -> String;
+
   /// Returns a `serde_json::Value` representing the input fields of the signature.
   ///
   /// This typically includes the name, type, and description of each input field.
   ///
-  /// @returns A `serde_json::Value` describing the input fields.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// A `serde_json::Value` describing the input fields.
   fn input_fields(&self) -> Value;
+
   /// Returns a `serde_json::Value` representing the output fields of the signature.
   ///
   /// This typically includes the name, type, and description of each output field.
   ///
-  /// @returns A `serde_json::Value` describing the output fields.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// A `serde_json::Value` describing the output fields.
   fn output_fields(&self) -> Value;
 
   /// Updates the instruction string for the AI model.
@@ -304,28 +340,26 @@ pub trait MetaSignature: Send + Sync {
   /// This method allows optimizers to dynamically change the task instruction
   /// provided to the underlying language model.
   ///
-  /// @param instruction The new instruction string.
-  /// @returns A `Result` indicating success or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `instruction` - The new instruction string.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an `Error` on failure.
   fn update_instruction(&mut self, instruction: String) -> Result<()>;
 
-  /// Validates input data against the signature schema
+  /// Validates input data against the signature schema.
   ///
   /// This method checks that all required inputs are present and correctly typed.
   ///
-  /// @param inputs The input data to validate
-  /// @returns A `Result` indicating success or validation errors
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 2.0.0
+  /// * `inputs` - The input data to validate.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or validation errors.
   fn validate_inputs(&self, inputs: &serde_json::Value) -> Result<()> {
     let input_fields = self.input_fields();
     if let Some(fields_obj) = input_fields.as_object() {
@@ -341,18 +375,17 @@ pub trait MetaSignature: Send + Sync {
     Ok(())
   }
 
-  /// Validates output data against the signature schema
+  /// Validates output data against the signature schema.
   ///
   /// This method checks that all required outputs are present and correctly typed.
   ///
-  /// @param outputs The output data to validate
-  /// @returns A `Result` indicating success or validation errors
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 2.0.0
+  /// * `outputs` - The output data to validate.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or validation errors.
   fn validate_outputs(&self, outputs: &serde_json::Value) -> Result<()> {
     let output_fields = self.output_fields();
     if let Some(fields_obj) = output_fields.as_object() {
@@ -368,41 +401,29 @@ pub trait MetaSignature: Send + Sync {
     Ok(())
   }
 
-  /// Gets the count of input fields
+  /// Gets the count of input fields.
   ///
-  /// @returns The number of input fields in this signature
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
+  /// The number of input fields in this signature.
   fn input_fields_len(&self) -> usize {
     self.input_fields().as_object().map_or(0, |obj| obj.len())
   }
 
-  /// Gets the count of output fields
+  /// Gets the count of output fields.
   ///
-  /// @returns The number of output fields in this signature
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
+  /// The number of output fields in this signature.
   fn output_fields_len(&self) -> usize {
     self.output_fields().as_object().map_or(0, |obj| obj.len())
   }
 
-  /// Gets the names of input fields
+  /// Gets the names of input fields.
   ///
-  /// @returns A vector of input field names
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
+  /// A vector of input field names.
   fn input_field_names(&self) -> Vec<String> {
     self
       .input_fields()
@@ -410,15 +431,11 @@ pub trait MetaSignature: Send + Sync {
       .map_or(Vec::new(), |obj| obj.keys().cloned().collect())
   }
 
-  /// Gets the names of output fields
+  /// Gets the names of output fields.
   ///
-  /// @returns A vector of output field names
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 2.0.0
+  /// A vector of output field names.
   fn output_field_names(&self) -> Vec<String> {
     self
       .output_fields()
@@ -426,19 +443,18 @@ pub trait MetaSignature: Send + Sync {
       .map_or(Vec::new(), |obj| obj.keys().cloned().collect())
   }
 
-  /// Generates a complete prompt with examples and instruction
+  /// Generates a complete prompt with examples and instruction.
   ///
   /// This method creates a full prompt by combining the instruction,
   /// demonstration examples, and current input context.
   ///
-  /// @param inputs Current input values for context
-  /// @returns A formatted prompt string ready for LM execution
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity high
-  /// @since 2.0.0
+  /// * `inputs` - Current input values for context.
+  ///
+  /// # Returns
+  ///
+  /// A formatted prompt string ready for LM execution.
   fn generate_prompt(&self, inputs: &serde_json::Value) -> String {
     let mut prompt = String::new();
 
@@ -493,43 +509,36 @@ pub trait MetaSignature: Send + Sync {
   ///
   /// This method allows for dynamic modification of the signature's fields.
   ///
-  /// @param name The name of the field to append.
-  /// @param value The `serde_json::Value` representing the field's definition.
-  /// @returns A `Result` indicating success or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `name` - The name of the field to append.
+  /// * `value` - The `serde_json::Value` representing the field's definition.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an `Error` on failure.
   fn append(&mut self, name: &str, value: Value) -> Result<()>;
 
-  // Prefix optimization support
   /// Returns the current prefix string for the AI model.
   ///
   /// The prefix is typically prepended to the prompt, often used for few-shot learning.
   ///
-  /// @returns The prefix string as a `String`.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// The prefix string as a `String`.
   fn prefix(&self) -> String {
     String::new() // Default empty prefix
   }
 
   /// Updates the prefix string for the AI model.
   ///
-  /// @param prefix The new prefix string.
-  /// @returns A `Result` indicating success or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `prefix` - The new prefix string.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` indicating success or an `Error` on failure.
   fn update_prefix(&mut self, prefix: String) -> Result<()> {
     // Production: Store prefix for future prompt generation and formatting
     // Default implementation provides basic prefix storage functionality

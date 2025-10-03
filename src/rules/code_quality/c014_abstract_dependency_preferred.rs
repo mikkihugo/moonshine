@@ -18,17 +18,18 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-/// Configuration options for C014 rule
+/// Configuration options for the C014 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C014Config {
-    /// Allowed class names that can be directly instantiated
+    /// A list of allowed class names that can be directly instantiated.
     #[serde(default)]
     pub allowed_classes: Vec<String>,
-    /// Whether to check built-in JavaScript classes like Date, Error, etc.
+    /// Whether to check built-in JavaScript classes like `Date`, `Error`, etc.
     #[serde(default = "default_check_builtin_classes")]
     pub check_builtin_classes: bool,
 }
 
+/// Returns the default value for checking built-in classes.
 fn default_check_builtin_classes() -> bool {
     false
 }
@@ -54,7 +55,7 @@ impl Default for C014Config {
     }
 }
 
-/// Main entry point for C014 rule checking
+/// The main entry point for the C014 rule checking.
 pub fn check_abstract_dependency_preferred(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C014Config::default();
     let mut visitor = C014Visitor::new(&config, program, code);
@@ -62,7 +63,7 @@ pub fn check_abstract_dependency_preferred(program: &Program, _semantic: &Semant
     visitor.issues
 }
 
-/// AST visitor for detecting direct class instantiation violations
+/// An AST visitor for detecting direct class instantiation violations.
 struct C014Visitor<'a> {
     config: &'a C014Config,
     source_code: &'a str,
@@ -72,6 +73,7 @@ struct C014Visitor<'a> {
 }
 
 impl<'a> C014Visitor<'a> {
+    /// Creates a new `C014Visitor`.
     fn new(config: &'a C014Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let mut allowed_classes = HashSet::new();
 
@@ -104,12 +106,12 @@ impl<'a> C014Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, class_name: &str) -> String {
         format!("Direct instantiation of '{}' detected. Consider using dependency injection to improve testability and maintain loose coupling. Inject dependencies through constructor parameters instead of creating them directly.", class_name)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, class_name: &str) -> Vec<String> {
         vec![
             format!("Add '{}' as a constructor parameter and inject it", class_name),
@@ -119,7 +121,7 @@ impl<'a> C014Visitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -139,7 +141,7 @@ impl<'a> C014Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for abstract dependency violation with AI enhancement
+    /// Creates a lint issue for an abstract dependency violation with AI enhancement.
     fn create_abstract_dependency_issue(&self, class_name: &str, span: Span) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -157,12 +159,12 @@ impl<'a> C014Visitor<'a> {
         }
     }
 
-    /// Check if a class should be flagged for direct instantiation
+    /// Checks if a class should be flagged for direct instantiation.
     fn should_check_class(&self, class_name: &str) -> bool {
         !self.allowed_classes.contains(class_name)
     }
 
-    /// Create dependency issue (legacy method for compatibility)
+    /// Creates a dependency issue (legacy method for compatibility).
     fn create_dependency_issue(&self, class_name: &str, span: Span) -> LintIssue {
         self.create_abstract_dependency_issue(class_name, span)
     }

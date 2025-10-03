@@ -20,43 +20,46 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use regex::Regex;
 
-/// Configuration options for C018 rule
+/// Configuration options for the C018 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C018Config {
-    /// Whether to allow generic throws in test files (default: true)
+    /// Whether to allow generic throws in test files (default: true).
     #[serde(default = "default_allow_generic_in_tests")]
     pub allow_generic_in_tests: bool,
-    /// Whether to allow rethrowing caught errors (default: true)
+    /// Whether to allow rethrowing caught errors (default: true).
     #[serde(default = "default_allow_rethrow")]
     pub allow_rethrow: bool,
-    /// Whether to allow throwing variables/identifiers (default: false)
+    /// Whether to allow throwing variables/identifiers (default: false).
     #[serde(default)]
     pub allow_throw_variable: bool,
-    /// Regex patterns that error messages must match
+    /// A list of regex patterns that error messages must match.
     #[serde(default)]
     pub required_message_patterns: Vec<String>,
-    /// Minimum length for error messages (default: 10)
+    /// The minimum length for error messages (default: 10).
     #[serde(default = "default_minimum_message_length")]
     pub minimum_message_length: u32,
-    /// List of allowed generic messages
+    /// A list of allowed generic messages.
     #[serde(default)]
     pub allowed_generic_messages: Vec<String>,
-    /// Custom error class names that are allowed
+    /// A list of custom error class names that are allowed.
     #[serde(default)]
     pub custom_error_classes: Vec<String>,
-    /// Enable strict mode with additional checks (default: false)
+    /// Whether to enable strict mode with additional checks (default: false).
     #[serde(default)]
     pub strict_mode: bool,
 }
 
+/// Returns the default value for allowing generic throws in tests.
 fn default_allow_generic_in_tests() -> bool {
     true
 }
 
+/// Returns the default value for allowing rethrowing caught errors.
 fn default_allow_rethrow() -> bool {
     true
 }
 
+/// Returns the default minimum length for error messages.
 fn default_minimum_message_length() -> u32 {
     10
 }
@@ -90,7 +93,7 @@ impl Default for C018Config {
     }
 }
 
-/// Main entry point for C018 rule checking
+/// The main entry point for the C018 rule checking.
 pub fn check_no_generic_throw(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C018Config::default();
     let mut visitor = C018Visitor::new(&config, program, code);
@@ -98,7 +101,7 @@ pub fn check_no_generic_throw(program: &Program, _semantic: &Semantic, code: &st
     visitor.issues
 }
 
-/// AST visitor for detecting generic throw violations
+/// An AST visitor for detecting generic throw violations.
 struct C018Visitor<'a> {
     config: &'a C018Config,
     source_code: &'a str,
@@ -110,6 +113,7 @@ struct C018Visitor<'a> {
 }
 
 impl<'a> C018Visitor<'a> {
+    /// Creates a new `C018Visitor`.
     fn new(config: &'a C018Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let allowed_generic_messages: HashSet<String> = config.allowed_generic_messages
             .iter()
@@ -137,7 +141,7 @@ impl<'a> C018Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, issue_type: &str, details: &str) -> String {
         match issue_type {
             "generic_message" => format!("Generic error message '{}' detected. Use specific, descriptive error messages that help developers understand what went wrong and how to fix it.", details),
@@ -148,7 +152,7 @@ impl<'a> C018Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, issue_type: &str) -> Vec<String> {
         match issue_type {
             "generic_message" => vec![
@@ -173,7 +177,7 @@ impl<'a> C018Visitor<'a> {
         }
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -193,7 +197,7 @@ impl<'a> C018Visitor<'a> {
         (line, column)
     }
 
-    /// Check if a throw statement violates generic throw rules
+    /// Checks if a throw statement violates generic throw rules.
     fn check_throw_statement(&mut self, node: &ThrowStatement) {
         // Allow rethrowing caught errors if configured
         if self.config.allow_rethrow {
@@ -249,6 +253,7 @@ impl<'a> C018Visitor<'a> {
         }
     }
 
+    /// Returns the name of the error class from a `NewExpression`.
     fn get_error_class_name(&self, expr: &Expression) -> Option<String> {
         if let Expression::NewExpression(new_expr) = expr {
             if let Expression::Identifier(ident) = &new_expr.callee {
@@ -258,6 +263,7 @@ impl<'a> C018Visitor<'a> {
         None
     }
 
+    /// Returns the error message from a `NewExpression`.
     fn get_error_message(&self, expr: &Expression) -> Option<String> {
         if let Expression::NewExpression(new_expr) = expr {
             if let Some(first_arg) = new_expr.arguments.first() {
@@ -275,6 +281,7 @@ impl<'a> C018Visitor<'a> {
         }
     }
 
+    /// Validates an error message against the configured rules.
     fn validate_message(&mut self, message: &str, span: Span) {
         if message.trim().is_empty() {
             self.issues.push(self.create_throw_issue("missing_message", "empty message", span));
@@ -300,6 +307,7 @@ impl<'a> C018Visitor<'a> {
         }
     }
 
+    /// Checks if a message is a generic error message.
     fn is_generic_error_message(&self, message: &str) -> bool {
         let binding = message.to_lowercase();
         let normalized = binding.trim();
@@ -313,6 +321,7 @@ impl<'a> C018Visitor<'a> {
         generic_messages.iter().any(|&generic| normalized.contains(generic))
     }
 
+    /// Checks if a message matches the required patterns.
     fn matches_required_patterns(&self, message: &str) -> bool {
         if self.required_patterns.is_empty() {
             return true;

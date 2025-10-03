@@ -14,17 +14,18 @@ use oxc_ast_visit::Visit;
 use oxc_semantic::{Semantic, ScopeFlags};
 use oxc_span::Span;
 
-/// OXC-based implementation for C042 boolean naming rule
+/// An OXC-based implementation for the C042 boolean naming rule.
 pub struct BooleanNamingRule;
 
 impl BooleanNamingRule {
-    /// Create a new boolean naming rule instance
+    /// Creates a new boolean naming rule instance.
     pub fn new() -> Self {
         Self
     }
 
-    /// Check boolean naming conventions using OXC AST visitor pattern
-    /// Production implementation using proper AST traversal instead of regex patterns
+    /// Checks boolean naming conventions using the OXC AST visitor pattern.
+    ///
+    /// This is a production implementation that uses proper AST traversal instead of regex patterns.
     pub fn check_boolean_naming(&self, program: &Program, semantic: &Semantic, code: &str) -> Vec<String> {
         let mut visitor = BooleanNamingVisitor::new(program, code);
         visitor.visit_program(program);
@@ -33,7 +34,7 @@ impl BooleanNamingRule {
 
 }
 
-/// OXC AST visitor for boolean naming analysis
+/// An OXC AST visitor for boolean naming analysis.
 struct BooleanNamingVisitor<'a> {
     program: &'a Program<'a>,
     code: &'a str,
@@ -43,6 +44,7 @@ struct BooleanNamingVisitor<'a> {
 }
 
 impl<'a> BooleanNamingVisitor<'a> {
+    /// Creates a new `BooleanNamingVisitor`.
     fn new(program: &'a Program<'a>, code: &'a str) -> Self {
         Self {
             program,
@@ -61,6 +63,7 @@ impl<'a> BooleanNamingVisitor<'a> {
         }
     }
 
+    /// Checks a boolean name for naming convention violations.
     fn check_boolean_name(&mut self, name: &str, span: Span, context: &str) {
         if name.is_empty() || name.len() <= 2 {
             return;
@@ -77,6 +80,7 @@ impl<'a> BooleanNamingVisitor<'a> {
         }
     }
 
+    /// Checks if a name follows boolean naming conventions.
     fn follows_boolean_naming_convention(&self, name: &str) -> bool {
         let lower_name = name.to_lowercase();
 
@@ -99,6 +103,7 @@ impl<'a> BooleanNamingVisitor<'a> {
         acceptable_abbreviations.contains(&lower_name.as_str())
     }
 
+    /// Generates suggestions for a boolean name.
     fn generate_suggestions(&self, name: &str) -> String {
         let pascal_name = self.to_pascal_case(name);
         vec![
@@ -109,6 +114,7 @@ impl<'a> BooleanNamingVisitor<'a> {
         ].join(", ")
     }
 
+    /// Converts a string to PascalCase.
     fn to_pascal_case(&self, name: &str) -> String {
         if name.is_empty() {
             return name.to_string();
@@ -121,6 +127,7 @@ impl<'a> BooleanNamingVisitor<'a> {
         }
     }
 
+    /// Converts a span to a line and column number.
     fn span_to_line_col(&self, span: Span) -> (usize, usize) {
         let source_text = self.code;
         let offset = span.start as usize;
@@ -144,6 +151,7 @@ impl<'a> BooleanNamingVisitor<'a> {
         (line, column)
     }
 
+    /// Checks if an expression is a boolean literal.
     fn is_boolean_literal(&self, expr: &Expression) -> bool {
         match expr {
             Expression::BooleanLiteral(_) => true,

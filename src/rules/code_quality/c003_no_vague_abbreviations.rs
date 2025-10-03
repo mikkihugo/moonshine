@@ -27,20 +27,21 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use regex::Regex;
 
-/// Configuration options for C003 rule
+/// Configuration options for the C003 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C003Config {
-    /// Single character variables that are allowed (default: i, j, k, x, y, z)
+    /// A list of single character variables that are allowed (default: i, j, k, x, y, z).
     #[serde(default)]
     pub allowed_single_char: Vec<String>,
-    /// Common abbreviations that are allowed
+    /// A list of common abbreviations that are allowed.
     #[serde(default)]
     pub allowed_abbreviations: Vec<String>,
-    /// Minimum variable name length (default: 2)
+    /// The minimum length for a variable name (default: 2).
     #[serde(default = "default_min_length")]
     pub min_length: u32,
 }
 
+/// Returns the default minimum length for a variable name.
 fn default_min_length() -> u32 {
     2
 }
@@ -63,7 +64,7 @@ impl Default for C003Config {
     }
 }
 
-/// Main entry point for C003 rule checking
+/// The main entry point for the C003 rule checking.
 pub fn check_no_vague_abbreviations(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C003Config::default();
     let mut visitor = C003Visitor::new(&config, program, code);
@@ -71,7 +72,7 @@ pub fn check_no_vague_abbreviations(program: &Program, _semantic: &Semantic, cod
     visitor.issues
 }
 
-/// AST visitor for detecting vague abbreviation violations
+/// An AST visitor for detecting vague abbreviation violations.
 struct C003Visitor<'a> {
     config: &'a C003Config,
     source_code: &'a str,
@@ -84,6 +85,7 @@ struct C003Visitor<'a> {
 }
 
 impl<'a> C003Visitor<'a> {
+    /// Creates a new `C003Visitor`.
     fn new(config: &'a C003Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let allowed_single_char: HashSet<String> = config.allowed_single_char
             .iter()
@@ -123,7 +125,7 @@ impl<'a> C003Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, variable_name: &str, issue_type: &str) -> String {
         match issue_type {
             "single_char" => format!("Variable '{}' is only 1 character long. Single-character variables should be reserved for loop counters (i, j, k) or mathematical contexts (x, y, z). Consider using a more descriptive name like 'index', 'counter', or 'coordinate'.", variable_name),
@@ -134,7 +136,7 @@ impl<'a> C003Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, variable_name: &str, issue_type: &str) -> Vec<String> {
         match issue_type {
             "single_char" => vec![
@@ -164,7 +166,7 @@ impl<'a> C003Visitor<'a> {
         }
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -184,7 +186,7 @@ impl<'a> C003Visitor<'a> {
         (line, column)
     }
 
-    /// Check if name is in math context
+    /// Checks if a name is in a math context.
     fn is_math_context(&self, name: &str) -> bool {
         // Math variable patterns
         let math_patterns = [
@@ -198,7 +200,7 @@ impl<'a> C003Visitor<'a> {
         math_patterns.iter().any(|pattern| pattern.is_match(name))
     }
 
-    /// Check if a variable name violates vague abbreviation rules
+    /// Checks if a variable name violates vague abbreviation rules.
     fn check_variable_name(&mut self, name: &str, span: Span) {
         let name_lower = name.to_lowercase();
 
@@ -236,7 +238,7 @@ impl<'a> C003Visitor<'a> {
         }
     }
 
-    /// Extract variable name from binding pattern
+    /// Extracts a variable name from a binding pattern.
     fn extract_variable_name(&self, binding_pattern: &BindingPattern) -> Option<String> {
         match &binding_pattern.kind {
             BindingPatternKind::BindingIdentifier(ident) => Some(ident.name.to_string()),

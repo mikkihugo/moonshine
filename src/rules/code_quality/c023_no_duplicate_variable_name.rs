@@ -22,20 +22,21 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-/// Configuration options for C023 rule
+/// Configuration options for the C023 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C023Config {
-    /// Whether to allow variable shadowing between different scope levels (default: false)
+    /// Whether to allow variable shadowing between different scope levels (default: false).
     #[serde(default)]
     pub allow_shadowing: bool,
-    /// Whether to check function parameters for duplicates (default: true)
+    /// Whether to check function parameters for duplicates (default: true).
     #[serde(default = "default_check_function_parameters")]
     pub check_function_parameters: bool,
-    /// Whether to allow duplicate variable names in catch clauses (default: false)
+    /// Whether to allow duplicate variable names in catch clauses (default: false).
     #[serde(default)]
     pub allow_catch_duplicates: bool,
 }
 
+/// Returns the default value for checking function parameters.
 fn default_check_function_parameters() -> bool {
     true
 }
@@ -50,21 +51,22 @@ impl Default for C023Config {
     }
 }
 
-/// Main entry point for C023 rule checking
-pub fn check_no_duplicate_variable_name(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
+/// The main entry point for the C023 rule checking.
+pub fn check_no_duplicate_variable_name(program: &Program, _semantic: &Semantic, code: &str, _config: Option<&str>) -> Vec<LintIssue> {
     let config = C023Config::default();
     let mut visitor = DuplicateVariableVisitor::new(&config, program, code);
     visitor.visit_program(program);
     visitor.issues
 }
 
+/// Holds information about a variable, including its span and scope ID.
 #[derive(Debug, Clone)]
 struct VariableInfo {
     span: Span,
     scope_id: usize,
 }
 
-/// AST visitor for detecting duplicate variable name violations
+/// An AST visitor for detecting duplicate variable name violations.
 struct DuplicateVariableVisitor<'a> {
     config: &'a C023Config,
     source_code: &'a str,
@@ -75,6 +77,7 @@ struct DuplicateVariableVisitor<'a> {
 }
 
 impl<'a> DuplicateVariableVisitor<'a> {
+    /// Creates a new `DuplicateVariableVisitor`.
     fn new(config: &'a C023Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -86,12 +89,12 @@ impl<'a> DuplicateVariableVisitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, variable_name: &str) -> String {
         format!("Variable '{}' is declared multiple times in the same scope, which can cause confusion and bugs. Variable shadowing makes code harder to understand and maintain. Consider using unique variable names or different scopes.", variable_name)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Rename one of the variables to have a more specific name".to_string(),
@@ -102,7 +105,7 @@ impl<'a> DuplicateVariableVisitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -122,15 +125,18 @@ impl<'a> DuplicateVariableVisitor<'a> {
         (line, column)
     }
 
+    /// Enters a new scope.
     fn enter_scope(&mut self) {
         self.scope_stack.push(HashMap::new());
         self.current_scope_id += 1;
     }
 
+    /// Exits the current scope.
     fn exit_scope(&mut self) {
         self.scope_stack.pop();
     }
 
+    /// Checks a variable for duplication and shadowing.
     fn check_variable(&mut self, name: &str, span: Span) {
         if self.scope_stack.is_empty() {
             return;
@@ -193,10 +199,12 @@ impl<'a> DuplicateVariableVisitor<'a> {
         }
     }
 
+    /// Checks a binding identifier for duplication and shadowing.
     fn check_binding_identifier(&mut self, ident: &BindingIdentifier) {
         self.check_variable(&ident.name, ident.span);
     }
 
+    /// Checks function parameters for duplication.
     fn check_function_parameters(&mut self, params: &oxc_ast::ast::FormalParameters) {
         if !self.config.check_function_parameters {
             return;

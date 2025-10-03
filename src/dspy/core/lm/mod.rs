@@ -32,12 +32,6 @@ use secrecy::SecretString;
 ///
 /// `DirectAILM` acts as DSPy's primary interface to AI models, abstracting away the complexities
 /// of provider selection and communication. It maintains a history of all LM interactions.
-///
-/// @category dspy-struct
-/// @safe team
-/// @mvp core
-/// @complexity medium
-/// @since 1.0.0
 #[derive(Clone, Debug)]
 pub struct DirectAILM {
   /// A unique session identifier for the LM instance.
@@ -51,15 +45,14 @@ pub struct DirectAILM {
 impl DirectAILM {
   /// Creates a new `DirectAILM` instance.
   ///
-  /// @param session_id The session identifier for this LM.
-  /// @param config The `MoonShineConfig` to use.
-  /// @returns A new `DirectAILM` instance.
+  /// # Arguments
   ///
-  /// @category constructor
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `session_id` - The session identifier for this LM.
+  /// * `config` - The `MoonShineConfig` to use.
+  ///
+  /// # Returns
+  ///
+  /// A new `DirectAILM` instance.
   pub fn new(session_id: String, config: MoonShineConfig) -> Self {
     Self {
       session_id,
@@ -74,15 +67,14 @@ impl DirectAILM {
   /// sends it to the `moon-shine` AI provider, and then parses the response back into a `Message`
   /// and tracks token usage.
   ///
-  /// @param messages The `Chat` object containing the conversation history and prompt.
-  /// @param signature A string representing the signature or task for the AI (used in prompt formatting).
-  /// @returns A `Result` containing a tuple of `(Message, LmUsage)` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `messages` - The `Chat` object containing the conversation history and prompt.
+  /// * `signature` - A string representing the signature or task for the AI (used in prompt formatting).
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing a tuple of `(Message, LmUsage)` on success, or an `Error` on failure.
   pub async fn call(
     &mut self,
     messages: Chat,
@@ -125,15 +117,14 @@ impl DirectAILM {
   /// This function concatenates system, user, and assistant messages from the chat history
   /// into a format suitable for sending to the AI model, optionally including a task signature.
   ///
-  /// @param chat The `Chat` object to convert.
-  /// @param signature The task signature string.
-  /// @returns The formatted prompt string.
+  /// # Arguments
   ///
-  /// @category utility
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `chat` - The `Chat` object to convert.
+  /// * `signature` - The task signature string.
+  ///
+  /// # Returns
+  ///
+  /// The formatted prompt string.
   fn convert_chat_to_prompt(&self, chat: &Chat, signature: &str) -> String {
     let mut prompt_parts = Vec::new();
 
@@ -160,26 +151,19 @@ impl DirectAILM {
 
   /// Inspects the LM's interaction history.
   ///
-  /// @param n The number of most recent interactions to retrieve.
-  /// @returns A vector of references to `LMResponse` objects from the history.
+  /// # Arguments
   ///
-  /// @category utility
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `n` - The number of most recent interactions to retrieve.
+  ///
+  /// # Returns
+  ///
+  /// A vector of references to `LMResponse` objects from the history.
   pub fn inspect_history(&self, n: usize) -> Vec<&LMResponse> {
     self.history.iter().rev().take(n).collect()
   }
 }
 
 /// Represents a single response from the Language Model, including the chat history and configuration.
-///
-/// @category dspy-struct
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 #[derive(Clone, Debug)]
 pub struct LMResponse {
   /// The `Chat` object representing the conversation history for this response.
@@ -196,14 +180,13 @@ pub struct LMResponse {
 ///
 /// This function maps common AI provider names to their respective API base URLs.
 ///
-/// @param provider The name of the AI provider.
-/// @returns The base URL as a `String`.
+/// # Arguments
 ///
-/// @category utility
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
+/// * `provider` - The name of the AI provider.
+///
+/// # Returns
+///
+/// The base URL as a `String`.
 pub fn get_base_url(provider: &str) -> String {
   match provider {
     "openai" => "https://api.openai.com/v1".to_string(),
@@ -224,36 +207,18 @@ pub fn get_base_url(provider: &str) -> String {
 }
 
 /// Type alias for `DirectAILM`, representing the primary Language Model type in DSPy.
-///
-/// @category type-alias
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 pub type LM = DirectAILM;
 
 /// Legacy type alias for `DirectAILM`, previously used for Claude-specific LM.
 ///
 /// This alias is maintained for backward compatibility but `DirectAILM` should be used directly.
-///
-/// @deprecated Use `DirectAILM` instead.
-/// @category type-alias
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
+#[deprecated(since = "1.0.0", note = "Use `DirectAILM` instead.")]
 pub type ClaudeLM = DirectAILM;
 
 /// A dummy Language Model implementation for testing and development purposes.
 ///
 /// This struct provides a mock LM that can be used to simulate AI responses
 /// without making actual API calls. It's useful for unit testing and rapid prototyping.
-///
-/// @category dspy-struct
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 #[derive(Clone, Builder, Default)]
 pub struct DummyLM {
   /// The API key for the dummy LM (can be a secret string).
@@ -274,16 +239,15 @@ impl DummyLM {
   ///
   /// This method records the interaction in the history and returns a dummy response.
   ///
-  /// @param messages The `Chat` object representing the conversation.
-  /// @param signature The task signature.
-  /// @param prediction The predefined prediction string to return.
-  /// @returns A `Result` containing a tuple of `(Message, LmUsage)`.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `messages` - The `Chat` object representing the conversation.
+  /// * `signature` - The task signature.
+  /// * `prediction` - The predefined prediction string to return.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing a tuple of `(Message, LmUsage)`.
   pub async fn call(
     &mut self,
     messages: Chat,
@@ -309,14 +273,13 @@ impl DummyLM {
 
   /// Inspects the dummy LM's interaction history.
   ///
-  /// @param n The number of most recent interactions to retrieve.
-  /// @returns A vector of references to `LMResponse` objects from the history.
+  /// # Arguments
   ///
-  /// @category utility
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `n` - The number of most recent interactions to retrieve.
+  ///
+  /// # Returns
+  ///
+  /// A vector of references to `LMResponse` objects from the history.
   pub fn inspect_history(&self, n: usize) -> Vec<&LMResponse> {
     self.history.iter().rev().take(n).collect()
   }

@@ -30,12 +30,6 @@ use crate::dspy::{Chat, Message, MetaSignature, LM};
 /// `ChatAdapter` is responsible for converting DSPy signatures and examples
 /// into a conversational format suitable for chat models, and for parsing
 /// their responses back into DSPy predictions.
-///
-/// @category dspy-adapter
-/// @safe team
-/// @mvp core
-/// @complexity medium
-/// @since 1.0.0
 #[derive(Default, Clone)]
 pub struct ChatAdapter;
 
@@ -45,14 +39,13 @@ pub struct ChatAdapter;
 /// about the expected format of a field's value, especially when dealing with
 /// non-string types or specific JSON schemas.
 ///
-/// @param field A `serde_json::Value` representing the field definition.
-/// @returns A `String` containing the type hint, or an empty string if no hint is needed.
+/// # Arguments
 ///
-/// @category utility
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
+/// * `field` - A `serde_json::Value` representing the field definition.
+///
+/// # Returns
+///
+/// A `String` containing the type hint, or an empty string if no hint is needed.
 fn get_type_hint(field: &Value) -> String {
   let schema = &field["schema"];
   let type_str = field["type"].as_str().unwrap_or("String");
@@ -77,14 +70,13 @@ impl ChatAdapter {
   /// This is used to describe the input and output fields to the AI model
   /// in the system message.
   ///
-  /// @param field_iter An iterator over `(field_name, field_value)` tuples.
-  /// @returns A `String` containing the formatted list of field attributes.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `field_iter` - An iterator over `(field_name, field_value)` tuples.
+  ///
+  /// # Returns
+  ///
+  /// A `String` containing the formatted list of field attributes.
   fn get_field_attribute_list(
     &self,
     field_iter: impl Iterator<Item = (String, Value)>,
@@ -108,14 +100,13 @@ impl ChatAdapter {
   ///
   /// This helps the AI understand the expected format of the data it needs to produce.
   ///
-  /// @param field_iter An iterator over `(field_name, field_value)` tuples.
-  /// @returns A `String` containing the formatted field structure.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `field_iter` - An iterator over `(field_name, field_value)` tuples.
+  ///
+  /// # Returns
+  ///
+  /// A `String` containing the formatted field structure.
   fn get_field_structure(
     &self,
     field_iter: impl Iterator<Item = (String, Value)>,
@@ -166,14 +157,13 @@ impl ChatAdapter {
   /// The system message provides the AI with instructions about its role,
   /// the structure of inputs and outputs, and the overall task description.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @returns A `String` containing the formatted system message.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  ///
+  /// # Returns
+  ///
+  /// A `String` containing the formatted system message.
   fn format_system_message(&self, signature: &dyn MetaSignature) -> String {
     let field_description = self.format_field_description(signature);
     let field_structure = self.format_field_structure(signature);
@@ -188,14 +178,13 @@ impl ChatAdapter {
 
   /// Formats the description of input and output fields for the system message.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @returns A `String` describing the input and output fields.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  ///
+  /// # Returns
+  ///
+  /// A `String` describing the input and output fields.
   fn format_field_description(&self, signature: &dyn MetaSignature) -> String {
     let input_field_description = self
       .get_field_attribute_list(get_iter_from_value(&signature.input_fields()));
@@ -215,14 +204,13 @@ Your output fields are:
   ///
   /// This includes markers and schema hints to guide the AI's response generation.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @returns A `String` representing the structured fields.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  ///
+  /// # Returns
+  ///
+  /// A `String` representing the structured fields.
   fn format_field_structure(&self, signature: &dyn MetaSignature) -> String {
     let input_field_structure =
       self.get_field_structure(get_iter_from_value(&signature.input_fields()));
@@ -242,14 +230,13 @@ Your output fields are:
   /// This provides the AI with its primary objective for the current interaction.
   /// If no specific instruction is provided in the signature, a default one is generated.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @returns A `String` containing the formatted task description.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  ///
+  /// # Returns
+  ///
+  /// A `String` containing the formatted task description.
   fn format_task_description(&self, signature: &dyn MetaSignature) -> String {
     let instruction = if signature.instruction().is_empty() {
       // Safe field extraction with graceful fallbacks
@@ -296,15 +283,14 @@ Your output fields are:
   /// The user message contains the actual input data for the AI to process,
   /// formatted according to the defined signature.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @param inputs The `Example` containing the input data.
-  /// @returns A `String` containing the formatted user message.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  /// * `inputs` - The `Example` containing the input data.
+  ///
+  /// # Returns
+  ///
+  /// A `String` containing the formatted user message.
   fn format_user_message(
     &self,
     signature: &dyn MetaSignature,
@@ -370,15 +356,14 @@ Your output fields are:
   /// This method structures the AI's response according to the defined signature,
   /// including field markers and the completion marker.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @param outputs The `Example` containing the output data.
-  /// @returns A `String` containing the formatted assistant message.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  /// * `outputs` - The `Example` containing the output data.
+  ///
+  /// # Returns
+  ///
+  /// A `String` containing the formatted assistant message.
   fn format_assistant_message(
     &self,
     signature: &dyn MetaSignature,
@@ -416,15 +401,14 @@ Your output fields are:
   /// These demonstrations are used to provide few-shot learning examples to the AI model,
   /// guiding its behavior based on successful past interactions.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @param demos A vector of `Example` instances representing the demonstrations.
-  /// @returns A `Chat` object containing the formatted demonstration messages.
+  /// # Arguments
   ///
-  /// @category formatting
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  /// * `demos` - A vector of `Example` instances representing the demonstrations.
+  ///
+  /// # Returns
+  ///
+  /// A `Chat` object containing the formatted demonstration messages.
   fn format_demos(
     &self,
     signature: &dyn MetaSignature,
@@ -451,15 +435,14 @@ impl Adapter for ChatAdapter {
   /// It constructs the system message, incorporates demonstration examples (if any),
   /// and formats the current user input into a complete chat history.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @param inputs The `Example` containing the current input data.
-  /// @returns A `Chat` object ready to be sent to the AI model.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  /// * `inputs` - The `Example` containing the current input data.
+  ///
+  /// # Returns
+  ///
+  /// A `Chat` object ready to be sent to the AI model.
   fn format(&self, signature: &dyn MetaSignature, inputs: Example) -> Chat {
     let system_message = self.format_system_message(signature);
     let user_message = self.format_user_message(signature, &inputs);
@@ -481,15 +464,14 @@ impl Adapter for ChatAdapter {
   /// handling various parsing scenarios and providing graceful error handling
   /// for malformed output.
   ///
-  /// @param signature The `MetaSignature` of the AI model.
-  /// @param response The raw `Message` received from the AI model.
-  /// @returns A `HashMap` where keys are field names and values are `serde_json::Value`.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` of the AI model.
+  /// * `response` - The raw `Message` received from the AI model.
+  ///
+  /// # Returns
+  ///
+  /// A `HashMap` where keys are field names and values are `serde_json::Value`.
   fn parse_response(
     &self,
     signature: &dyn MetaSignature,
@@ -557,16 +539,15 @@ impl Adapter for ChatAdapter {
   /// This method orchestrates the communication with the underlying AI model,
   /// including sending the formatted prompt and parsing the response.
   ///
-  /// @param lm A mutable reference to the `LM` (Language Model) instance.
-  /// @param signature The metadata signature of the AI model.
-  /// @param inputs The input example for the prediction.
-  /// @returns A `Result` containing a `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `lm` - A mutable reference to the `LM` (Language Model) instance.
+  /// * `signature` - The metadata signature of the AI model.
+  /// * `inputs` - The input example for the prediction.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing a `Prediction` on success, or an `Error` on failure.
   async fn call(
     &self,
     lm: &mut LM,

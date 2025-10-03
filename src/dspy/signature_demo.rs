@@ -66,7 +66,7 @@ signature! {
     }
 }
 
-/// Demonstrates how our macro-generated signatures implement MetaSignature trait
+/// Demonstrates how macro-generated signatures implement the `MetaSignature` trait.
 pub fn demonstrate_metasignature_usage() -> anyhow::Result<()> {
   // Create instances using generated constructors
   let mut code_analysis = CodeAnalysisSignature::new();

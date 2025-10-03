@@ -12,12 +12,12 @@ use oxc_ast_visit::Visit;
 use oxc_semantic::Semantic;
 use serde::{Deserialize, Serialize};
 
-/// Configuration options for C029 rule
+/// Configuration options for the C029 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C029Config {
-    /// Whether to allow empty catch blocks in test files (default: true)
+    /// Whether to allow empty catch blocks in test files (default: true).
     pub allow_empty_in_tests: bool,
-    /// Additional logging function names to recognize (default: ["log", "error", "warn"])
+    /// A list of additional logging function names to recognize (default: `["log", "error", "warn"]`).
     pub allowed_logging_functions: Vec<String>,
 }
 
@@ -36,7 +36,7 @@ impl Default for C029Config {
     }
 }
 
-/// Main entry point for C029 rule checking
+/// The main entry point for the C029 rule checking.
 pub fn check_catch_block_logging(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C029Config::default();
     let mut visitor = CatchBlockVisitor::new(&config, program, code);
@@ -44,7 +44,7 @@ pub fn check_catch_block_logging(program: &Program, _semantic: &Semantic, code: 
     visitor.issues
 }
 
-/// AST visitor for detecting catch block logging violations
+/// An AST visitor for detecting catch block logging violations.
 struct CatchBlockVisitor<'a> {
     config: &'a C029Config,
     source_code: &'a str,
@@ -53,6 +53,7 @@ struct CatchBlockVisitor<'a> {
 }
 
 impl<'a> CatchBlockVisitor<'a> {
+    /// Creates a new `CatchBlockVisitor`.
     fn new(config: &'a C029Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -62,7 +63,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, has_empty_block: bool) -> String {
         if has_empty_block {
             "Empty catch block detected - this silently swallows errors and makes debugging impossible. Add error logging or rethrow the error.".to_string()
@@ -71,7 +72,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, has_empty_block: bool) -> Vec<String> {
         if has_empty_block {
             vec![
@@ -88,7 +89,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -108,6 +109,7 @@ impl<'a> CatchBlockVisitor<'a> {
         (line, column)
     }
 
+    /// Checks if a statement is a logging statement or a throw statement.
     fn check_statement_for_logging(&self, stmt: &Statement) -> bool {
         match stmt {
             // Check for throw statements
@@ -146,6 +148,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
+    /// Checks if a call expression is a logging call.
     fn is_logging_call(&self, call: &CallExpression) -> bool {
         match &call.callee {
             Expression::MemberExpression(member) => {
@@ -155,6 +158,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
+    /// Checks if a member expression is a `console.log`, `console.error`, or `console.warn` call.
     fn is_console_log(&self, member: &MemberExpression) -> bool {
         // Check for console.log, console.error, console.warn
         if let (Expression::Identifier(obj), Some(prop)) = (&member.object, &member.property) {
@@ -166,6 +170,7 @@ impl<'a> CatchBlockVisitor<'a> {
         false
     }
 
+    /// Checks if a member expression is a custom logger call.
     fn is_custom_logger(&self, member: &MemberExpression) -> bool {
         // Check for custom logger calls (logger.error, log.error, etc.)
         if let Some(prop) = &member.property {
@@ -178,6 +183,7 @@ impl<'a> CatchBlockVisitor<'a> {
         false
     }
 
+    /// Checks if a call expression is a test assertion.
     fn is_test_assertion(&self, call: &CallExpression) -> bool {
         // Check for test assertions (Jest patterns)
         if let Expression::Identifier(callee) = &call.callee {
@@ -187,6 +193,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
+    /// Checks if a call expression is a `handleAxiosError` call.
     fn is_handle_axios_error(&self, call: &CallExpression) -> bool {
         if let Expression::Identifier(callee) = &call.callee {
             callee.name == "handleAxiosError"
@@ -195,6 +202,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
+    /// Checks if a call expression is a `rejectWithValue` call.
     fn is_reject_with_value(&self, call: &CallExpression) -> bool {
         if let Expression::Identifier(callee) = &call.callee {
             callee.name == "rejectWithValue"
@@ -203,7 +211,7 @@ impl<'a> CatchBlockVisitor<'a> {
         }
     }
 
-    /// Create lint issue for catch block without proper error handling with AI enhancement
+    /// Creates a lint issue for a catch block without proper error handling, with AI enhancement.
     fn create_catch_logging_issue(&self, span: oxc_span::Span, is_empty: bool) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 

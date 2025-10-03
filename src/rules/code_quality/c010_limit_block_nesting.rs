@@ -21,14 +21,15 @@ use oxc_semantic::Semantic;
 use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 
-/// Configuration options for C010 rule
+/// Configuration options for the C010 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C010Config {
-    /// Maximum allowed nesting depth (default: 3)
+    /// The maximum allowed nesting depth (default: 3).
     #[serde(default = "default_max_depth")]
     pub max_depth: u32,
 }
 
+/// Returns the default maximum nesting depth.
 fn default_max_depth() -> u32 {
     3
 }
@@ -41,7 +42,7 @@ impl Default for C010Config {
     }
 }
 
-/// Main entry point for C010 rule checking
+/// The main entry point for the C010 rule checking.
 pub fn check_limit_block_nesting(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C010Config::default();
     let mut visitor = C010Visitor::new(&config, program, code);
@@ -49,7 +50,7 @@ pub fn check_limit_block_nesting(program: &Program, _semantic: &Semantic, code: 
     visitor.issues
 }
 
-/// AST visitor for detecting excessive block nesting
+/// An AST visitor for detecting excessive block nesting.
 struct C010Visitor<'a> {
     config: &'a C010Config,
     source_code: &'a str,
@@ -59,6 +60,7 @@ struct C010Visitor<'a> {
 }
 
 impl<'a> C010Visitor<'a> {
+    /// Creates a new `C010Visitor`.
     fn new(config: &'a C010Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -69,12 +71,12 @@ impl<'a> C010Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, depth: u32) -> String {
         format!("Block nesting is too deep (level {}). Maximum allowed is {} levels. Deeply nested code is harder to read, test, and maintain. Consider extracting nested logic into separate functions or using early returns.", depth, self.config.max_depth)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Extract nested logic into a separate function".to_string(),
@@ -84,7 +86,7 @@ impl<'a> C010Visitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -104,7 +106,7 @@ impl<'a> C010Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for excessive nesting with AI enhancement
+    /// Creates a lint issue for excessive nesting with AI enhancement.
     fn create_nesting_issue(&self, span: Span, depth: u32) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -122,6 +124,7 @@ impl<'a> C010Visitor<'a> {
         }
     }
 
+    /// Enters a block, increments the current depth, and checks if the maximum depth has been exceeded.
     fn enter_block(&mut self, span: Span) {
         self.current_depth += 1;
 
@@ -130,6 +133,7 @@ impl<'a> C010Visitor<'a> {
         }
     }
 
+    /// Exits a block and decrements the current depth.
     fn exit_block(&mut self) {
         if self.current_depth > 0 {
             self.current_depth -= 1;

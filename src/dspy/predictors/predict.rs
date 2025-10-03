@@ -28,12 +28,6 @@ use uuid::Uuid;
 /// `Predict` encapsulates a `MetaSignature` and uses the globally configured
 /// Language Model (LM) and Adapter to generate predictions based on input examples.
 /// It is a key component in the forward pass of DSPy modules.
-///
-/// @category dspy-struct
-/// @safe team
-/// @mvp core
-/// @complexity low
-/// @since 1.0.0
 pub struct Predict {
   /// The `MetaSignature` that defines the inputs, outputs, and instructions for this predictor.
   pub signature: Box<dyn MetaSignature>,
@@ -42,30 +36,26 @@ pub struct Predict {
 impl Predict {
   /// Creates a new `Predict` instance with the given `MetaSignature`.
   ///
-  /// @param signature The `MetaSignature` to associate with this predictor.
-  /// @returns A new `Predict` instance.
+  /// # Arguments
   ///
-  /// @category constructor
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `signature` - The `MetaSignature` to associate with this predictor.
+  ///
+  /// # Returns
+  ///
+  /// A new `Predict` instance.
   pub fn new(signature: impl MetaSignature + 'static) -> Self {
     Self {
       signature: Box::new(signature),
     }
   }
 
-  /// Safely retrieve global DSPy settings using Moon PDK patterns
-  /// Production-grade error handling for WASM extension stability
+  /// Safely retrieves global DSPy settings using Moon PDK patterns.
   ///
-  /// @returns Result containing (Adapter, LM) tuple or error message
+  /// This method provides production-grade error handling for WASM extension stability.
   ///
-  /// @category error-handling
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 2.0.0
+  /// # Returns
+  ///
+  /// A `Result` containing a tuple of the adapter and language model on success, or an error message.
   fn get_global_settings_safe(&self) -> anyhow::Result<(Arc<dyn Adapter>, LM)> {
     // Use Moon PDK pattern: try_read() with proper timeout handling
     let guard = GLOBAL_SETTINGS.try_read().map_err(|_| {
@@ -81,16 +71,13 @@ impl Predict {
     Ok((settings.adapter.clone(), settings.lm.clone()))
   }
 
-  /// Create fallback DSPy settings when global settings are unavailable
-  /// Ensures system continues operating with reasonable defaults
+  /// Creates fallback DSPy settings when global settings are unavailable.
   ///
-  /// @returns Result containing fallback (Adapter, LM) configuration
+  /// This method ensures the system continues to operate with reasonable defaults.
   ///
-  /// @category error-handling
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 2.0.0
+  /// # Returns
+  ///
+  /// A `Result` containing the fallback adapter and language model configuration.
   async fn create_fallback_settings(
     &self,
   ) -> anyhow::Result<(Arc<dyn Adapter>, LM)> {
@@ -101,20 +88,20 @@ impl Predict {
     Ok((Arc::new(ChatAdapter::default()), fallback_lm))
   }
 
-  /// Execute prediction with Moon PDK compatible retry logic
-  /// Handles transient failures gracefully in WASM extension environment
+  /// Executes a prediction with Moon PDK-compatible retry logic.
   ///
-  /// @param adapter The DSPy adapter for LM communication
-  /// @param lm Mutable reference to the language model
-  /// @param inputs Input example for prediction
-  /// @param max_retries Maximum number of retry attempts
-  /// @returns Result containing Prediction or aggregated error
+  /// This method handles transient failures gracefully in a WASM extension environment.
   ///
-  /// @category error-handling
-  /// @safe team
-  /// @mvp core
-  /// @complexity high
-  /// @since 2.0.0
+  /// # Arguments
+  ///
+  /// * `adapter` - The DSPy adapter for LM communication.
+  /// * `lm` - A mutable reference to the language model.
+  /// * `inputs` - The input example for the prediction.
+  /// * `max_retries` - The maximum number of retry attempts.
+  ///
+  /// # Returns
+  ///
+  /// A `Result` containing the prediction on success, or an aggregated error.
   async fn execute_prediction_with_retry(
     &self,
     adapter: Arc<dyn Adapter>,
@@ -177,16 +164,15 @@ impl super::Predictor for Predict {
   ///
   /// This method retrieves the global `LM` and `Adapter` from `GLOBAL_SETTINGS` and uses them
   /// to make a call to the AI model based on the predictor's signature and input example.
-  /// Uses production-grade error handling with graceful degradation and retry logic.
+  /// It uses production-grade error handling with graceful degradation and retry logic.
   ///
-  /// @param inputs The input `Example` for the prediction.
-  /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example` for the prediction.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
   async fn forward(&self, inputs: Example) -> anyhow::Result<Prediction> {
     // Production-grade error handling: graceful degradation without panics
     let (adapter, mut lm) = match self.get_global_settings_safe() {
@@ -217,18 +203,17 @@ impl super::Predictor for Predict {
   /// Performs a forward pass using a specific `LM` instance provided as an argument.
   ///
   /// This method allows overriding the globally configured LM for a particular prediction,
-  /// useful for testing or specific optimization scenarios. Includes production-grade
+  /// which is useful for testing or specific optimization scenarios. It includes production-grade
   /// error handling with retry logic for enhanced reliability.
   ///
-  /// @param inputs The input `Example` for the prediction.
-  /// @param lm A mutable reference to the `LM` (Language Model) instance to use.
-  /// @returns An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity medium
-  /// @since 1.0.0
+  /// * `inputs` - The input `Example` for the prediction.
+  /// * `lm` - A mutable reference to the `LM` (Language Model) instance to use.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` containing a `Prediction` on success, or an `Error` on failure.
   async fn forward_with_config(
     &self,
     inputs: Example,
@@ -249,40 +234,31 @@ impl super::Predictor for Predict {
 impl Optimizable for Predict {
   /// Returns a reference to the predictor's `MetaSignature`.
   ///
-  /// @returns A reference to the `MetaSignature` trait object.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// A reference to the `MetaSignature` trait object.
   fn get_signature(&self) -> &dyn MetaSignature {
     self.signature.as_ref()
   }
 
   /// Returns an empty `IndexMap` as `Predict` does not have optimizable sub-parameters.
   ///
-  /// @returns An empty `IndexMap`.
+  /// # Returns
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// An empty `IndexMap`.
   fn parameters(&mut self) -> IndexMap<String, &mut (dyn Optimizable)> {
     IndexMap::new()
   }
 
   /// Updates the instruction string of the predictor's `MetaSignature`.
   ///
-  /// @param instruction The new instruction string.
-  /// @returns An `anyhow::Result` indicating success or an `Error` if the update fails.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `instruction` - The new instruction string.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` indicating success or an `Error` if the update fails.
   fn update_signature_instruction(
     &mut self,
     instruction: String,
@@ -293,14 +269,13 @@ impl Optimizable for Predict {
 
   /// Updates the prefix string of the predictor's `MetaSignature`.
   ///
-  /// @param prefix The new prefix string.
-  /// @returns An `anyhow::Result` indicating success or an `Error` if the update fails.
+  /// # Arguments
   ///
-  /// @category dspy-method
-  /// @safe team
-  /// @mvp core
-  /// @complexity low
-  /// @since 1.0.0
+  /// * `prefix` - The new prefix string.
+  ///
+  /// # Returns
+  ///
+  /// An `anyhow::Result` indicating success or an `Error` if the update fails.
   fn update_signature_prefix(&mut self, prefix: String) -> anyhow::Result<()> {
     self.signature.update_prefix(prefix)
   }

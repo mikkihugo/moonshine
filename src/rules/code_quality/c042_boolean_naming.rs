@@ -13,23 +13,24 @@ use oxc_semantic::Semantic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-/// Configuration options for C042 rule
+/// Configuration options for the C042 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C042Config {
-    /// Allowed boolean prefixes (default: ["is", "has", "should", "can", "will", "must", "may", "was", "were"])
+    /// A list of allowed boolean prefixes (default: `["is", "has", "should", "can", "will", "must", "may", "was", "were"]`).
     #[serde(default)]
     pub allowed_prefixes: Vec<String>,
-    /// Whether to enforce strict mode (default: false)
+    /// Whether to enforce strict mode (default: false).
     #[serde(default)]
     pub strict_mode: bool,
-    /// Names to ignore (default: ["flag", "enabled", "disabled", "active", "valid", "ok"])
+    /// A list of names to ignore (default: `["flag", "enabled", "disabled", "active", "valid", "ok"]`).
     #[serde(default)]
     pub ignored_names: Vec<String>,
-    /// Whether to check return types (default: true)
+    /// Whether to check return types (default: true).
     #[serde(default = "default_check_return_types")]
     pub check_return_types: bool,
 }
 
+/// Returns the default value for checking return types.
 fn default_check_return_types() -> bool {
     true
 }
@@ -49,7 +50,7 @@ impl Default for C042Config {
     }
 }
 
-/// Main entry point for C042 rule checking
+/// The main entry point for the C042 rule checking.
 pub fn check_boolean_naming(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C042Config::default();
     let mut visitor = C042Visitor::new(&config, program, code);
@@ -57,7 +58,7 @@ pub fn check_boolean_naming(program: &Program, _semantic: &Semantic, code: &str)
     visitor.issues
 }
 
-/// AST visitor for detecting boolean naming violations
+/// An AST visitor for detecting boolean naming violations.
 struct C042Visitor<'a> {
     config: &'a C042Config,
     source_code: &'a str,
@@ -67,6 +68,7 @@ struct C042Visitor<'a> {
 }
 
 impl<'a> C042Visitor<'a> {
+    /// Creates a new `C042Visitor`.
     fn new(config: &'a C042Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let ignored_names: HashSet<String> = config.ignored_names
             .iter()
@@ -82,7 +84,7 @@ impl<'a> C042Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, variable_name: &str, is_boolean: bool) -> String {
         if is_boolean {
             format!("Boolean variable '{}' should start with a descriptive prefix like 'is', 'has', or 'should' to clearly indicate its boolean nature. Consider: is{}, has{}, should{}",
@@ -93,7 +95,7 @@ impl<'a> C042Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, variable_name: &str, is_boolean: bool) -> Vec<String> {
         if is_boolean {
             self.config.allowed_prefixes.iter()
@@ -108,7 +110,7 @@ impl<'a> C042Visitor<'a> {
         }
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -128,13 +130,13 @@ impl<'a> C042Visitor<'a> {
         (line, column)
     }
 
-    /// Check if name starts with boolean prefix
+    /// Checks if a name starts with a boolean prefix.
     fn starts_with_boolean_prefix(&self, name: &str) -> bool {
         let lower_name = name.to_lowercase();
         self.config.allowed_prefixes.iter().any(|prefix| lower_name.starts_with(&prefix.to_lowercase()))
     }
 
-    /// Check if expression is a boolean literal
+    /// Checks if an expression is a boolean literal.
     fn is_boolean_literal(&self, expr: &Expression) -> bool {
         match expr {
             Expression::BooleanLiteral(_) => true,
@@ -161,7 +163,7 @@ impl<'a> C042Visitor<'a> {
         }
     }
 
-    /// Check if expression is definitely not boolean
+    /// Checks if an expression is definitely not a boolean.
     fn is_definitely_not_boolean(&self, expr: &Expression) -> bool {
         match expr {
             Expression::StringLiteral(_) |
@@ -171,7 +173,7 @@ impl<'a> C042Visitor<'a> {
         }
     }
 
-    /// Create lint issue for boolean naming violation with AI enhancement
+    /// Creates a lint issue for a boolean naming violation with AI enhancement.
     fn create_boolean_naming_issue(&self, variable_name: &str, span: oxc_span::Span, is_boolean: bool) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -190,7 +192,7 @@ impl<'a> C042Visitor<'a> {
         }
     }
 
-    /// Check variable name for boolean naming violations
+    /// Checks a variable name for boolean naming violations.
     fn check_variable_name(&mut self, name: &str, span: oxc_span::Span, init: Option<&Expression>) {
         if name.is_empty() || name.len() <= 2 {
             return;

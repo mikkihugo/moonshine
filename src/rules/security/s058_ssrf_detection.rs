@@ -14,16 +14,16 @@ use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-/// Configuration options for S058 rule
+/// Configuration options for the S058 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct S058Config {
-    /// HTTP methods that are considered dangerous for SSRF
+    /// A list of HTTP methods that are considered dangerous for SSRF.
     #[serde(default)]
     pub dangerous_methods: Vec<String>,
-    /// URL schemes that should be blocked
+    /// A list of URL schemes that should be blocked.
     #[serde(default)]
     pub blocked_schemes: Vec<String>,
-    /// Host patterns that should be flagged
+    /// A list of host patterns that should be flagged.
     #[serde(default)]
     pub suspicious_host_patterns: Vec<String>,
 }
@@ -61,7 +61,7 @@ impl Default for S058Config {
     }
 }
 
-/// Main entry point for S058 rule checking
+/// The main entry point for the S058 rule checking.
 pub fn check_ssrf(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = S058Config::default();
     let mut visitor = S058Visitor::new(&config, program, code);
@@ -69,7 +69,7 @@ pub fn check_ssrf(program: &Program, _semantic: &Semantic, code: &str) -> Vec<Li
     visitor.issues
 }
 
-/// AST visitor for detecting SSRF vulnerabilities
+/// An AST visitor for detecting SSRF vulnerabilities.
 struct S058Visitor<'a> {
     config: &'a S058Config,
     source_code: &'a str,
@@ -80,6 +80,7 @@ struct S058Visitor<'a> {
 }
 
 impl<'a> S058Visitor<'a> {
+    /// Creates a new `S058Visitor`.
     fn new(config: &'a S058Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         let dangerous_methods: HashSet<String> = config.dangerous_methods
             .iter()
@@ -101,7 +102,7 @@ impl<'a> S058Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, vulnerability_type: &str) -> String {
         match vulnerability_type {
             "user_input_url" => "Potential SSRF vulnerability: URL constructed from user input. This could allow attackers to make requests to internal services or external systems. Always validate and sanitize URLs before making HTTP requests.".to_string(),
@@ -111,7 +112,7 @@ impl<'a> S058Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, vulnerability_type: &str) -> Vec<String> {
         match vulnerability_type {
             "user_input_url" => vec![
@@ -140,7 +141,7 @@ impl<'a> S058Visitor<'a> {
         }
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -160,7 +161,7 @@ impl<'a> S058Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for SSRF vulnerability with AI enhancement
+    /// Creates a lint issue for an SSRF vulnerability with AI enhancement.
     fn create_ssrf_issue(&self, vulnerability_type: &str, span: Span) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -178,7 +179,7 @@ impl<'a> S058Visitor<'a> {
         }
     }
 
-    /// Check if an expression involves user input
+    /// Checks if an expression involves user input.
     fn involves_user_input(&self, expr: &Expression) -> bool {
         // This is a simplified check - in practice, you'd need more sophisticated
         // analysis to track user input through the codebase
@@ -205,7 +206,7 @@ impl<'a> S058Visitor<'a> {
         }
     }
 
-    /// Check for potential SSRF in HTTP requests
+    /// Checks for potential SSRF in HTTP requests.
     fn check_http_request(&mut self, call_expr: &CallExpression, span: Span) {
         // Check if this is an HTTP request method
         if let Expression::MemberExpression(member) = &call_expr.callee {
@@ -229,7 +230,7 @@ impl<'a> S058Visitor<'a> {
         }
     }
 
-    /// Check for URL construction from user input
+    /// Checks for URL construction from user input.
     fn check_url_construction(&mut self, new_expr: &NewExpression, span: Span) {
         // Check if creating a URL object
         if let Expression::Identifier(ident) = &new_expr.callee {

@@ -19,7 +19,7 @@ use oxc_semantic::Semantic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// MoonShine rule implementation with AI enhancement
+/// A MoonShine rule implementation with AI enhancement.
 #[derive(Debug, Clone)]
 pub struct MoonShineRule {
     pub id: String,
@@ -30,7 +30,7 @@ pub struct MoonShineRule {
     pub implementation: RuleImplementation,
 }
 
-/// MoonShine rule categories
+/// The categories for MoonShine rules.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MoonShineRuleCategory {
     CodeQuality,   // C-series rules
@@ -40,7 +40,7 @@ pub enum MoonShineRuleCategory {
     Naming,        // N-series rules
 }
 
-/// Rule implementation types with AI enhancement capabilities
+/// The implementation types for rules, with AI enhancement capabilities.
 #[derive(Debug, Clone)]
 pub enum RuleImplementation {
     OxcSemantic,      // Uses OXC semantic analysis with AI context
@@ -50,7 +50,7 @@ pub enum RuleImplementation {
     Hybrid,           // Combines OXC AST + OXLint + AI for maximum accuracy
 }
 
-/// MoonShine AI-enhanced rule engine with comprehensive rule coverage
+/// A MoonShine AI-enhanced rule engine with comprehensive rule coverage.
 pub struct MoonShineRuleEngine {
     // Custom MoonShine rules (loaded from modules)
     custom_rules: HashMap<String, MoonShineRule>,
@@ -62,7 +62,7 @@ pub struct MoonShineRuleEngine {
 mod registry_autogen;
 
 impl MoonShineRuleEngine {
-    /// Create new MoonShine rule engine with AI enhancement
+    /// Creates a new MoonShine rule engine with AI enhancement.
     pub fn new() -> Self {
         let mut engine = Self {
             custom_rules: HashMap::new(),
@@ -75,12 +75,14 @@ impl MoonShineRuleEngine {
         engine
     }
 
-    /// Set AI context for enhanced suggestions
+    /// Sets the AI context for enhanced suggestions.
     pub fn set_ai_context(&mut self, context: String) {
         self.ai_context = Some(context);
     }
 
-    /// Run all enabled rules on code (582 OXLint + Custom MoonShine rules)
+    /// Runs all enabled rules on the given code.
+    ///
+    /// This includes 582 OXLint rules and custom MoonShine rules.
     pub fn check_all_rules(&self, program: &Program, semantic: &Semantic, code: &str, file_path: &str) -> Vec<LintIssue> {
         let mut issues = Vec::new();
 
@@ -114,7 +116,7 @@ impl MoonShineRuleEngine {
         issues
     }
 
-    /// Register all rules from modules
+    /// Registers all rules from the various rule modules.
     fn register_all_rules(&mut self) {
         // 1) Auto-generated registry from JS references (SunLint/Moonshine)
         registry_autogen::register_rules(&mut self.custom_rules);
@@ -124,7 +126,7 @@ impl MoonShineRuleEngine {
         super::security::register_rules(&mut self.custom_rules);
     }
 
-    /// Run OXLint's 582 built-in rules
+    /// Runs OXLint's 582 built-in rules.
     fn run_oxlint_rules(&self, _program: &Program, _semantic: &Semantic, _code: &str, _file_path: &str) -> Vec<LintIssue> {
         let mut issues = Vec::new();
 
@@ -144,7 +146,7 @@ impl MoonShineRuleEngine {
         issues
     }
 
-    // Rule execution methods (delegate to rule modules)
+    /// Checks a semantic-based rule.
     fn check_semantic_rule(&self, rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
         // Delegate to appropriate module based on rule prefix
         if rule_id.starts_with('C') {
@@ -156,6 +158,7 @@ impl MoonShineRuleEngine {
         }
     }
 
+    /// Checks an AST-based rule.
     fn check_ast_rule(&self, rule_id: &str, program: &Program, code: &str) -> Vec<LintIssue> {
         if rule_id.starts_with('C') {
             super::code_quality::check_ast_rule(rule_id, program, code)
@@ -166,6 +169,7 @@ impl MoonShineRuleEngine {
         }
     }
 
+    /// Checks an AI-assisted rule.
     fn check_ai_assisted_rule(&self, rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
         let base_issues = if rule_id.starts_with('C') {
             super::code_quality::check_ai_rule(rule_id, program, semantic, code)
@@ -179,6 +183,7 @@ impl MoonShineRuleEngine {
         super::ai_integration::enhance_with_ai(base_issues, &self.ai_context)
     }
 
+    /// Checks a hybrid rule.
     fn check_hybrid_rule(&self, rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
         // Combine semantic and AI approaches
         let mut issues = self.check_semantic_rule(rule_id, program, semantic, code);
@@ -187,7 +192,7 @@ impl MoonShineRuleEngine {
         issues
     }
 
-    /// NEW: OXC semantic analysis with AI context and suggestions
+    /// Checks an OXC semantic-based rule with AI enhancement.
     fn check_oxc_semantic_rule(&self, rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
         // Use OXC's semantic analysis for precise type information + AI enhancement
         let mut issues = if rule_id.starts_with('C') {
@@ -203,7 +208,7 @@ impl MoonShineRuleEngine {
         issues
     }
 
-    /// NEW: OXC AST visitor pattern with AI suggestions
+    /// Checks an OXC AST visitor-based rule with AI enhancement.
     fn check_oxc_ast_visitor_rule(&self, rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
         // Use proper OXC AST visitors instead of regex patterns + AI enhancement
         let mut issues = if rule_id.starts_with('C') {
@@ -219,7 +224,7 @@ impl MoonShineRuleEngine {
         issues
     }
 
-    /// NEW: OXLint rules enhanced with AI context
+    /// Checks an OXLint rule enhanced with AI context.
     fn check_oxlint_enhanced_rule(&self, rule_id: &str, program: &Program, semantic: &Semantic, code: &str) -> Vec<LintIssue> {
         // TODO: When OXLint API is stable, run OXLint rules and enhance with AI
         // let oxlint_issues = run_oxlint_rule(rule_id, program, semantic, code);
@@ -229,7 +234,7 @@ impl MoonShineRuleEngine {
         self.check_oxc_ast_visitor_rule(rule_id, program, semantic, code)
     }
 
-    /// Add AI context and explanations to rule violations
+    /// Adds AI context and explanations to rule violations.
     fn enhance_issues_with_ai_context(&self, issues: &mut Vec<LintIssue>, code: &str) {
         for issue in issues.iter_mut() {
             if let Some(ai_context) = &self.ai_context {
@@ -239,7 +244,7 @@ impl MoonShineRuleEngine {
         }
     }
 
-    /// Generate AI-powered fix suggestions based on AST analysis
+    /// Generates AI-powered fix suggestions based on AST analysis.
     fn add_ai_fix_suggestions(&self, issues: &mut Vec<LintIssue>, program: &Program, code: &str) {
         for issue in issues.iter_mut() {
             // AI analyzes the AST context and suggests intelligent fixes

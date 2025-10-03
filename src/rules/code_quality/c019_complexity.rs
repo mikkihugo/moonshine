@@ -16,24 +16,26 @@ use oxc_semantic::Semantic;
 use oxc_span::Span;
 use serde::{Deserialize, Serialize};
 
-/// Configuration options for C019 rule
+/// Configuration options for the C019 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C019Config {
-    /// Maximum allowed cyclomatic complexity (default: 10)
+    /// The maximum allowed cyclomatic complexity (default: 10).
     #[serde(default = "default_max_complexity")]
     pub max_complexity: u32,
-    /// Whether to ignore arrow functions (default: false)
+    /// Whether to ignore arrow functions (default: false).
     #[serde(default)]
     pub ignore_arrow_functions: bool,
-    /// Whether to ignore simple getters/setters (default: true)
+    /// Whether to ignore simple getters/setters (default: true).
     #[serde(default = "default_ignore_simple_getters")]
     pub ignore_simple_getters: bool,
 }
 
+/// Returns the default maximum cyclomatic complexity.
 fn default_max_complexity() -> u32 {
     10
 }
 
+/// Returns the default value for ignoring simple getters/setters.
 fn default_ignore_simple_getters() -> bool {
     true
 }
@@ -48,7 +50,7 @@ impl Default for C019Config {
     }
 }
 
-/// Main entry point for C019 rule checking
+/// The main entry point for the C019 rule checking.
 pub fn check_complexity(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C019Config::default();
     let mut visitor = C019Visitor::new(&config, program, code);
@@ -56,7 +58,7 @@ pub fn check_complexity(program: &Program, _semantic: &Semantic, code: &str) -> 
     visitor.issues
 }
 
-/// AST visitor for detecting function complexity violations
+/// An AST visitor for detecting function complexity violations.
 struct C019Visitor<'a> {
     config: &'a C019Config,
     source_code: &'a str,
@@ -66,6 +68,7 @@ struct C019Visitor<'a> {
 }
 
 impl<'a> C019Visitor<'a> {
+    /// Creates a new `C019Visitor`.
     fn new(config: &'a C019Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -76,12 +79,12 @@ impl<'a> C019Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, complexity: u32, function_name: &str) -> String {
         format!("Function '{}' has a cyclomatic complexity of {} which exceeds the maximum allowed complexity of {}. High complexity makes code harder to understand, test, and maintain. Consider breaking this function into smaller, more focused functions.", function_name, complexity, self.config.max_complexity)
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self) -> Vec<String> {
         vec![
             "Extract complex conditional logic into separate functions".to_string(),
@@ -92,7 +95,7 @@ impl<'a> C019Visitor<'a> {
         ]
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -112,7 +115,7 @@ impl<'a> C019Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for complexity violation with AI enhancement
+    /// Creates a lint issue for a complexity violation with AI enhancement.
     fn create_complexity_issue(&self, complexity: u32, function_name: &str, span: Span) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -130,7 +133,7 @@ impl<'a> C019Visitor<'a> {
         }
     }
 
-    /// Calculate cyclomatic complexity for a function
+    /// Calculates the cyclomatic complexity for a function.
     fn calculate_function_complexity(&self, statements: &[Statement]) -> u32 {
         let mut complexity = 1; // Base complexity
 
@@ -141,7 +144,7 @@ impl<'a> C019Visitor<'a> {
         complexity
     }
 
-    /// Calculate complexity contribution of a single statement
+    /// Calculates the complexity contribution of a single statement.
     fn calculate_statement_complexity(&self, stmt: &Statement) -> u32 {
         match stmt {
             Statement::IfStatement(_) => 1, // +1 for if
@@ -165,7 +168,7 @@ impl<'a> C019Visitor<'a> {
         }
     }
 
-    /// Calculate complexity contribution of expressions
+    /// Calculates the complexity contribution of expressions.
     fn calculate_expression_complexity(&self, expr: &Expression) -> u32 {
         match expr {
             Expression::BinaryExpression(bin_expr) => {
@@ -185,13 +188,13 @@ impl<'a> C019Visitor<'a> {
         }
     }
 
-    /// Get function name for reporting
+    /// Returns the name of a function for reporting purposes.
     fn get_function_name(&self, func: &Function) -> String {
         // Try to get function name from context - this is simplified
         "anonymous function".to_string()
     }
 
-    /// Check if function should be ignored
+    /// Checks if a function should be ignored based on the configuration.
     fn should_ignore_function(&self, func: &Function) -> bool {
         if self.config.ignore_simple_getters {
             // Simple getters/setters have very low complexity

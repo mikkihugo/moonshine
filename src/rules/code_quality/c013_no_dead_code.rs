@@ -20,14 +20,15 @@ use oxc_span::{GetSpan, Span};
 use oxc_semantic::Semantic;
 use serde::{Deserialize, Serialize};
 
-/// Configuration options for C013 rule
+/// Configuration options for the C013 rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C013Config {
-    /// Whether to check for commented-out code patterns (default: true)
+    /// Whether to check for commented-out code patterns (default: true).
     #[serde(default = "default_check_commented_code")]
     pub check_commented_code: bool,
 }
 
+/// Returns the default value for checking for commented-out code.
 fn default_check_commented_code() -> bool {
     true
 }
@@ -40,7 +41,7 @@ impl Default for C013Config {
     }
 }
 
-/// Main entry point for C013 rule checking
+/// The main entry point for the C013 rule checking.
 pub fn check_no_dead_code(program: &Program, _semantic: &Semantic, code: &str) -> Vec<LintIssue> {
     let config = C013Config::default();
     let mut visitor = C013Visitor::new(&config, program, code);
@@ -48,7 +49,7 @@ pub fn check_no_dead_code(program: &Program, _semantic: &Semantic, code: &str) -
     visitor.issues
 }
 
-/// AST visitor for detecting dead code violations
+/// An AST visitor for detecting dead code violations.
 struct C013Visitor<'a> {
     config: &'a C013Config,
     source_code: &'a str,
@@ -57,6 +58,7 @@ struct C013Visitor<'a> {
 }
 
 impl<'a> C013Visitor<'a> {
+    /// Creates a new `C013Visitor`.
     fn new(config: &'a C013Config, program: &'a Program<'a>, source_code: &'a str) -> Self {
         Self {
             config,
@@ -66,7 +68,7 @@ impl<'a> C013Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate context-aware error message
+    /// Generates a context-aware error message using AI enhancement.
     fn generate_ai_enhanced_message(&self, issue_type: &str) -> String {
         match issue_type {
             "unreachable" => "Unreachable code detected. Code after return, throw, continue, or break statements will never execute. Remove this dead code to improve maintainability.".to_string(),
@@ -75,7 +77,7 @@ impl<'a> C013Visitor<'a> {
         }
     }
 
-    /// AI Enhancement: Generate intelligent fix suggestions
+    /// Generates intelligent fix suggestions using AI enhancement.
     fn generate_ai_fix_suggestions(&self, issue_type: &str) -> Vec<String> {
         match issue_type {
             "unreachable" => vec![
@@ -92,7 +94,7 @@ impl<'a> C013Visitor<'a> {
         }
     }
 
-    /// Calculate line and column from byte offset
+    /// Calculates the line and column from a byte offset.
     fn calculate_line_column(&self, offset: usize) -> (u32, u32) {
         let mut line = 1;
         let mut column = 1;
@@ -112,7 +114,7 @@ impl<'a> C013Visitor<'a> {
         (line, column)
     }
 
-    /// Create lint issue for dead code violation with AI enhancement
+    /// Creates a lint issue for a dead code violation with AI enhancement.
     fn create_dead_code_issue(&self, span: Span, issue_type: &str) -> LintIssue {
         let (line, column) = self.calculate_line_column(span.start as usize);
 
@@ -130,6 +132,7 @@ impl<'a> C013Visitor<'a> {
         }
     }
 
+    /// Checks if a statement is a terminating statement (e.g., `return`, `throw`).
     fn is_terminating_statement(&self, stmt: &Statement) -> bool {
         matches!(stmt,
             Statement::ReturnStatement(_) |
@@ -139,6 +142,7 @@ impl<'a> C013Visitor<'a> {
         )
     }
 
+    /// Checks if a statement is an executable statement.
     fn is_executable_statement(&self, stmt: &Statement) -> bool {
         // Exclude declarations and empty statements
         !matches!(stmt,
@@ -158,6 +162,7 @@ impl<'a> C013Visitor<'a> {
         )
     }
 
+    /// Checks a block for unreachable code.
     fn check_block_for_unreachable_code(&mut self, block: &BlockStatement) {
         let mut unreachable = false;
 
@@ -172,6 +177,7 @@ impl<'a> C013Visitor<'a> {
         }
     }
 
+    /// Checks a switch case for unreachable code.
     fn check_switch_case_for_unreachable_code(&mut self, switch_case: &SwitchCase) {
         let mut unreachable = false;
 
