@@ -24,10 +24,15 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Setup Moon
-        uses: moonrepo/setup-moon-action@v1
-        with:
-          auto-install: true
+      - name: Install Moon with proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash
+          echo "$HOME/.proto/bin" >> $GITHUB_PATH
+          
+      - name: Install Moon
+        run: |
+          export PATH="$HOME/.proto/bin:$PATH"
+          proto install moon
 
       - name: Install WASM dependencies
         run: |
@@ -53,7 +58,7 @@ jobs:
           key: ${{ runner.os }}-moon-${{ hashFiles('.moon/**/*') }}
 
       - name: Build WASM extension
-        run: moon run moon-shine:build
+        run: moon run moon-shine:build-wasm
         continue-on-error: true
 
       - name: Run type check
