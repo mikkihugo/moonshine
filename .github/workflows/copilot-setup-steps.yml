@@ -22,7 +22,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-wasip1
+          targets: wasm32-unknown-unknown
 
       - name: Setup Moon
         uses: moonrepo/setup-moon-action@v1
@@ -77,6 +77,6 @@ jobs:
           echo "✅ Moon installed"
           moon --version
           echo "✅ WASM target available"
-          rustup target list --installed | grep wasm32-wasip1
+          rustup target list --installed | grep wasm32-unknown-unknown
           echo "✅ Environment ready for Moon Shine development"
         continue-on-error: true
