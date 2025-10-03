@@ -45,9 +45,14 @@ impl Message {
     ///
     /// If an invalid role is provided, it defaults to a `User` message with an informative error.
     ///
-    /// @param role The role of the message ("system", "user", "assistant").
-    /// @param content The textual content of the message.
-    /// @returns A new `Message` instance.
+    /// # Arguments
+    ///
+    /// * `role` - The role of the message ("system", "user", "assistant").
+    /// * `content` - The textual content of the message.
+    ///
+    /// # Returns
+    ///
+    /// A new `Message` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -65,8 +70,13 @@ impl Message {
 
     /// Creates a new `User` message.
     ///
-    /// @param content The content of the user message.
-    /// @returns A new `Message::User` instance.
+    /// # Arguments
+    ///
+    /// * `content` - The content of the user message.
+    ///
+    /// # Returns
+    ///
+    /// A new `Message::User` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -79,8 +89,13 @@ impl Message {
 
     /// Creates a new `Assistant` message.
     ///
-    /// @param content The content of the assistant message.
-    /// @returns A new `Message::Assistant` instance.
+    /// # Arguments
+    ///
+    /// * `content` - The content of the assistant message.
+    ///
+    /// # Returns
+    ///
+    /// A new `Message::Assistant` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -93,8 +108,13 @@ impl Message {
 
     /// Creates a new `System` message.
     ///
-    /// @param content The content of the system message.
-    /// @returns A new `Message::System` instance.
+    /// # Arguments
+    ///
+    /// * `content` - The content of the system message.
+    ///
+    /// # Returns
+    ///
+    /// A new `Message::System` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -107,7 +127,9 @@ impl Message {
 
     /// Returns the textual content of the message.
     ///
-    /// @returns The message content as a `String`.
+    /// # Returns
+    ///
+    /// The message content as a `String`.
     ///
     /// @category getter
     /// @safe team
@@ -126,7 +148,9 @@ impl Message {
     ///
     /// This is typically used for serialization when communicating with external systems or APIs.
     ///
-    /// @returns A `serde_json::Value` representing the message.
+    /// # Returns
+    ///
+    /// A `serde_json::Value` representing the message.
     ///
     /// @category serialization
     /// @safe team
@@ -167,8 +191,13 @@ pub struct Chat {
 impl Chat {
     /// Creates a new `Chat` instance with an initial list of messages.
     ///
-    /// @param messages A `Vec<Message>` to initialize the chat history.
-    /// @returns A new `Chat` instance.
+    /// # Arguments
+    ///
+    /// * `messages` - A `Vec<Message>` to initialize the chat history.
+    ///
+    /// # Returns
+    ///
+    /// A new `Chat` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -181,7 +210,9 @@ impl Chat {
 
     /// Returns the number of messages in the chat history.
     ///
-    /// @returns The length of the message vector as a `usize`.
+    /// # Returns
+    ///
+    /// The length of the message vector as a `usize`.
     ///
     /// @category getter
     /// @safe team
@@ -194,7 +225,9 @@ impl Chat {
 
     /// Checks if the chat history is empty.
     ///
-    /// @returns `true` if there are no messages, `false` otherwise.
+    /// # Returns
+    ///
+    /// `true` if there are no messages, `false` otherwise.
     ///
     /// @category utility
     /// @safe team
@@ -207,8 +240,10 @@ impl Chat {
 
     /// Adds a new message to the end of the chat history.
     ///
-    /// @param role The role of the message ("system", "user", "assistant").
-    /// @param content The textual content of the message.
+    /// # Arguments
+    ///
+    /// * `role` - The role of the message ("system", "user", "assistant").
+    /// * `content` - The textual content of the message.
     ///
     /// @category mutator
     /// @safe team
@@ -221,7 +256,9 @@ impl Chat {
 
     /// Appends all messages from another `Chat` instance to the current chat history.
     ///
-    /// @param chat A reference to the `Chat` instance whose messages are to be appended.
+    /// # Arguments
+    ///
+    /// * `chat` - A reference to the `Chat` instance whose messages are to be appended.
     ///
     /// @category mutator
     /// @safe team
@@ -234,7 +271,9 @@ impl Chat {
 
     /// Removes and returns the last message from the chat history.
     ///
-    /// @returns An `Option` containing the last `Message` if the chat is not empty, otherwise `None`.
+    /// # Returns
+    ///
+    /// An `Option` containing the last `Message` if the chat is not empty, otherwise `None`.
     ///
     /// @category mutator
     /// @safe team
@@ -249,8 +288,13 @@ impl Chat {
     ///
     /// This function is used for deserializing chat histories from JSON formats.
     ///
-    /// @param json_dump The `serde_json::Value` representing the JSON array of messages.
-    /// @returns A `Result` containing the parsed `Chat` instance on success, or an `Error` on failure.
+    /// # Arguments
+    ///
+    /// * `json_dump` - The `serde_json::Value` representing the JSON array of messages.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the parsed `Chat` instance on success, or an `Error` on failure.
     ///
     /// @category deserialization
     /// @safe team
@@ -274,7 +318,9 @@ impl Chat {
     ///
     /// This is typically used for serialization when storing or transmitting chat histories.
     ///
-    /// @returns A `serde_json::Value` representing the chat history as a JSON array.
+    /// # Returns
+    ///
+    /// A `serde_json::Value` representing the chat history as a JSON array.
     ///
     /// @category serialization
     /// @safe team

@@ -14,6 +14,7 @@
 //! @complexity medium
 //! @since 1.0.0
 
+/// The Collaborative Prompt Optimization (COPRO) optimizer.
 pub mod copro;
 
 pub use copro::*;
@@ -25,7 +26,7 @@ use crate::dspy::{
 };
 use anyhow::Result;
 
-/// Modern DSPy Optimizer trait matching real framework capabilities
+/// A trait for modern DSPy optimizers, known as "teleprompters".
 ///
 /// Real DSPy optimizers like MIPROv2, BootstrapFinetune, and COPRO provide:
 /// - Multi-stage optimization (bootstrapping, proposal, search)
@@ -40,42 +41,50 @@ use anyhow::Result;
 /// @complexity high
 /// @since 2.0.0
 pub trait Teleprompter: Send + Sync {
-    /// Compile and optimize a DSPy program (matches real DSPy API)
+    /// Compiles and optimizes a DSPy program.
     async fn compile<M>(&mut self, program: M, trainset: Vec<Example>) -> Result<M>
     where
         M: Module + Clone;
 
-    /// Get optimizer name for logging and state management
+    /// Gets the name of the optimizer for logging and state management.
     fn name(&self) -> &str;
 
-    /// Serialize optimizer state for resumption
+    /// Serializes the optimizer's state for resumption.
     fn dump_state(&self) -> Result<serde_json::Value>;
 
-    /// Load optimizer state from previous session
+    /// Loads the optimizer's state from a previous session.
     fn load_state(&mut self, state: serde_json::Value) -> Result<()>;
 }
 
-/// Legacy optimizer trait for backwards compatibility
+/// A legacy optimizer trait for backward compatibility.
 #[allow(async_fn_in_trait)]
 pub trait Optimizer {
+    /// Compiles and optimizes a DSPy module.
     async fn compile<M>(&self, module: &mut M, trainset: Vec<Example>) -> Result<()>
     where
         M: Module + Optimizable + Evaluator;
 }
 
-/// Metric function type for evaluating program performance
+/// A type alias for a metric function used to evaluate program performance.
 pub type MetricFn = Box<dyn Fn(&Example, &Prediction) -> f64 + Send + Sync>;
 
-/// Optimization configuration matching real DSPy patterns
+/// Configuration for DSPy optimizers, matching real DSPy patterns.
 #[derive(Debug, Clone)]
 pub struct OptimizationConfig {
+    /// The maximum number of bootstrapped demonstrations to generate.
     pub max_bootstrapped_demos: usize,
+    /// The maximum number of labeled demonstrations to use.
     pub max_labeled_demos: usize,
+    /// The number of candidate programs to generate during optimization.
     pub num_candidate_programs: usize,
+    /// The number of threads to use for optimization.
     pub num_threads: usize,
+    /// The size of the minibatch for training.
     pub minibatch_size: usize,
+    /// The number of steps between full evaluations on the minibatch.
     pub minibatch_full_eval_steps: usize,
-    pub auto_mode: String, // "light", "medium", "heavy"
+    /// The automatic optimization mode ("light", "medium", or "heavy").
+    pub auto_mode: String,
 }
 
 impl Default for OptimizationConfig {

@@ -38,7 +38,6 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        // Create a default LM and adapter for settings
         use crate::config::MoonShineConfig;
         use crate::dspy::adapter::ChatAdapter;
 
@@ -59,7 +58,8 @@ impl Default for Settings {
 /// @mvp core
 /// @complexity low
 /// @since 1.0.0
-pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> = LazyLock::new(|| RwLock::new(None));
+pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> =
+    LazyLock::new(|| RwLock::new(None));
 
 /// Retrieves the globally configured Language Model (LM).
 ///
@@ -67,7 +67,9 @@ pub static GLOBAL_SETTINGS: LazyLock<RwLock<Option<Settings>>> = LazyLock::new(|
 /// via the `configure` function. It will panic if DSPy settings have not
 /// been configured yet.
 ///
-/// @returns The configured `LM` instance.
+/// # Returns
+///
+/// The configured `LM` instance.
 ///
 /// @category dspy-function
 /// @safe team
@@ -90,8 +92,10 @@ pub fn get_lm() -> LM {
 /// making them available for all DSPy operations. It should be called once at the
 /// application's startup.
 ///
-/// @param lm The Language Model (LM) instance to use.
-/// @param adapter The `Adapter` implementation for the LM.
+/// # Arguments
+///
+/// * `lm` - The Language Model (LM) instance to use.
+/// * `adapter` - The `Adapter` implementation for the LM.
 ///
 /// @category dspy-function
 /// @safe team

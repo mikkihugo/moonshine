@@ -17,7 +17,6 @@
 use anyhow::Result;
 use futures::future::join_all;
 use indexmap::IndexMap;
-// use kdam::tqdm; // Removed for WASM compatibility
 
 use crate::data::{Example, Prediction};
 use crate::dspy::core::MetaSignature;
@@ -40,8 +39,13 @@ pub trait Module: Send + Sync {
     /// This is the core logic of the module, taking an `Example` as input
     /// and producing a `Prediction` as output.
     ///
-    /// @param inputs The input `Example` for the forward pass.
-    /// @returns A `Result` containing a `Prediction` on success, or an `Error` on failure.
+    /// # Arguments
+    ///
+    /// * `inputs` - The input `Example` for the forward pass.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `Prediction` on success, or an `Error` on failure.
     ///
     /// @category dspy-method
     /// @safe team
@@ -56,17 +60,27 @@ pub trait Module: Send + Sync {
     /// up to a specified `max_concurrency`. It collects all predictions and provides
     /// optional progress display.
     ///
-    /// @param inputs A vector of `Example` inputs to process.
-    /// @param max_concurrency The maximum number of concurrent `forward` calls.
-    /// @param display_progress If `true`, progress messages will be printed.
-    /// @returns A `Result` containing a vector of `Prediction` on success, or an `Error` on failure.
+    /// # Arguments
+    ///
+    /// * `inputs` - A vector of `Example` inputs to process.
+    /// * `max_concurrency` - The maximum number of concurrent `forward` calls.
+    /// * `display_progress` - If `true`, progress messages will be printed.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `Prediction` on success, or an `Error` on failure.
     ///
     /// @category dspy-method
     /// @safe team
     /// @mvp core
     /// @complexity medium
     /// @since 1.0.0
-    async fn batch(&self, inputs: Vec<Example>, max_concurrency: usize, display_progress: bool) -> Result<Vec<Prediction>> {
+    async fn batch(
+        &self,
+        inputs: Vec<Example>,
+        max_concurrency: usize,
+        display_progress: bool,
+    ) -> Result<Vec<Prediction>> {
         let batches = inputs.chunks(max_concurrency).collect::<Vec<_>>();
         let mut predictions = Vec::new();
 
@@ -101,7 +115,9 @@ pub trait Optimizable {
     /// This signature defines the inputs and outputs of the module, and can be
     /// modified by optimizers to improve performance.
     ///
-    /// @returns A reference to the `MetaSignature` trait object.
+    /// # Returns
+    ///
+    /// A reference to the `MetaSignature` trait object.
     ///
     /// @category dspy-method
     /// @safe team
@@ -116,7 +132,9 @@ pub trait Optimizable {
     ///
     /// This allows optimizers to recursively traverse and modify nested modules.
     ///
-    /// @returns An `IndexMap` where keys are parameter names and values are mutable references to `Optimizable` trait objects.
+    /// # Returns
+    ///
+    /// An `IndexMap` where keys are parameter names and values are mutable references to `Optimizable` trait objects.
     ///
     /// @category dspy-method
     /// @safe team
@@ -130,8 +148,13 @@ pub trait Optimizable {
     /// This method is used by optimizers to refine the prompt or instruction
     /// given to the underlying language model.
     ///
-    /// @param instruction The new instruction string.
-    /// @returns A `Result` indicating success or an `Error` if the update fails.
+    /// # Arguments
+    ///
+    /// * `instruction` - The new instruction string.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an `Error` if the update fails.
     ///
     /// @category dspy-method
     /// @safe team
@@ -139,20 +162,18 @@ pub trait Optimizable {
     /// @complexity low
     /// @since 1.0.0
     fn update_signature_instruction(&mut self, instruction: String) -> anyhow::Result<()> {
-        // Default implementation: validate and process the instruction
         if instruction.trim().is_empty() {
             return Err(anyhow::anyhow!("Instruction cannot be empty"));
         }
 
-        // Store instruction length for validation (real functionality)
         let instruction_length = instruction.len();
         if instruction_length > 2_000_000 {
-            // ~2MB - accommodates full context windows
-            return Err(anyhow::anyhow!("Instruction too long: {} characters", instruction_length));
+            return Err(anyhow::anyhow!(
+                "Instruction too long: {} characters",
+                instruction_length
+            ));
         }
 
-        // Default behavior: accept valid instructions
-        // Concrete implementations will override to store the instruction
         Ok(())
     }
 
@@ -161,8 +182,13 @@ pub trait Optimizable {
     /// This method is used by optimizers to add a prefix to the prompt,
     /// often for few-shot learning or context injection.
     ///
-    /// @param prefix The new prefix string.
-    /// @returns A `Result` indicating success or an `Error` if the update fails.
+    /// # Arguments
+    ///
+    /// * `prefix` - The new prefix string.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an `Error` if the update fails.
     ///
     /// @category dspy-method
     /// @safe team
@@ -170,19 +196,22 @@ pub trait Optimizable {
     /// @complexity low
     /// @since 1.0.0
     fn update_signature_prefix(&mut self, prefix: String) -> anyhow::Result<()> {
-        // Default implementation: validate and process the prefix
         if prefix.len() > 1_000_000 {
-            // ~1MB - large context prefixes for AI models
-            return Err(anyhow::anyhow!("Prefix too long: {} characters", prefix.len()));
+            return Err(anyhow::anyhow!(
+                "Prefix too long: {} characters",
+                prefix.len()
+            ));
         }
 
-        // Validate prefix format (must be reasonable text)
-        if prefix.chars().any(|c| c.is_control() && c != '\n' && c != '\t') {
-            return Err(anyhow::anyhow!("Prefix contains invalid control characters"));
+        if prefix
+            .chars()
+            .any(|c| c.is_control() && c != '\n' && c != '\t')
+        {
+            return Err(anyhow::anyhow!(
+                "Prefix contains invalid control characters"
+            ));
         }
 
-        // Default behavior: accept valid prefix
-        // Concrete implementations will override to actually apply the prefix
         Ok(())
     }
 }

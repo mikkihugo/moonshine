@@ -8,78 +8,92 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Simple rule interface for our rulebase
+/// A simple rule interface for the rulebase.
 #[async_trait]
 pub trait Rule: Send + Sync {
-    /// Rule identifier
+    /// Returns the unique identifier for the rule.
     fn id(&self) -> &str;
 
-    /// Rule name
+    /// Returns the name of the rule.
     fn name(&self) -> &str;
 
-    /// Rule description
+    /// Returns a description of the rule's purpose.
     fn description(&self) -> &str;
 
-    /// Execute rule on code
+    /// Executes the rule on the given code.
     async fn execute(&self, context: &RuleContext) -> Result<RuleResult>;
 }
 
-/// Context for rule execution
+/// The context for a rule's execution.
 #[derive(Debug, Clone)]
 pub struct RuleContext {
-    /// Source code
+    /// The source code to be analyzed.
     pub code: String,
-    /// File path
+    /// The path of the file being analyzed.
     pub file_path: String,
-    /// Rule configuration
+    /// The configuration for the rule.
     pub config: HashMap<String, String>,
-    /// Shared context between rules
+    /// A shared context between rules.
     pub shared: HashMap<String, String>,
 }
 
-/// Rule execution result - single lint issue
+/// The result of a rule's execution, representing a single lint issue.
 #[derive(Debug, Clone, Default)]
 pub struct RuleResult {
-    /// Rule ID that generated this issue
+    /// The ID of the rule that generated this issue.
     pub rule_id: String,
-    /// Issue message
+    /// A message describing the issue.
     pub message: String,
-    /// Issue severity
+    /// The severity of the issue.
     pub severity: String,
-    /// Line number
+    /// The line number where the issue was found.
     pub line: u32,
-    /// Column number
+    /// The column number where the issue was found.
     pub column: u32,
-    /// Optional fix suggestion
+    /// An optional suggestion for fixing the issue.
     pub suggestion: Option<String>,
 }
 
-/// Rule categories
+/// The categories that a rule can belong to.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RuleCategory {
+    /// Rules related to security vulnerabilities.
     Security,
+    /// Rules related to performance issues.
     Performance,
+    /// Rules related to code quality and best practices.
     CodeQuality,
+    /// Rules specific to TypeScript.
     TypeScript,
+    /// Rules specific to JavaScript.
     JavaScript,
+    /// Rules specific to React.
     React,
+    /// Rules specific to NodeJS.
     NodeJS,
+    /// Rules related to testing.
     Testing,
+    /// Rules related to accessibility.
     Accessibility,
+    /// Any other type of rule.
     Other,
 }
 
-/// Rule severity
+/// The severity of a rule.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RuleSeverity {
+    /// An error that must be fixed.
     Error,
+    /// A warning that should be addressed.
     Warning,
+    /// An informational message.
     Info,
+    /// A style suggestion.
     Style,
 }
 
 impl RuleContext {
-    /// Create new rule context
+    /// Creates a new `RuleContext`.
     pub fn new(code: String, file_path: String) -> Self {
         Self {
             code,
@@ -89,13 +103,13 @@ impl RuleContext {
         }
     }
 
-    /// Add configuration
+    /// Adds a configuration key-value pair to the context.
     pub fn with_config(mut self, key: String, value: String) -> Self {
         self.config.insert(key, value);
         self
     }
 
-    /// Add shared data
+    /// Adds a shared data key-value pair to the context.
     pub fn with_shared(mut self, key: String, value: String) -> Self {
         self.shared.insert(key, value);
         self
@@ -103,7 +117,7 @@ impl RuleContext {
 }
 
 impl RuleResult {
-    /// Create new result
+    /// Creates a new `RuleResult`.
     pub fn new(rule_id: String, message: String) -> Self {
         Self {
             rule_id,
@@ -115,20 +129,20 @@ impl RuleResult {
         }
     }
 
-    /// Set severity
+    /// Sets the severity of the result.
     pub fn with_severity(mut self, severity: String) -> Self {
         self.severity = severity;
         self
     }
 
-    /// Set location
+    /// Sets the location of the result.
     pub fn with_location(mut self, line: u32, column: u32) -> Self {
         self.line = line;
         self.column = column;
         self
     }
 
-    /// Set suggestion
+    /// Sets the suggestion for the result.
     pub fn with_suggestion(mut self, suggestion: String) -> Self {
         self.suggestion = Some(suggestion);
         self

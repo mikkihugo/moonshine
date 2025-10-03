@@ -22,7 +22,8 @@ use crate::linter::{AiSuggestion, SuggestionSeverity, SuggestionCategory};
 use crate::workflow::{WorkflowEngine, WorkflowStep, WorkflowPhase};
 use crate::error::Result;
 
-/// Integration test for full analysis workflow with real components
+/// Tests the full analysis workflow, ensuring that all components integrate
+/// correctly. This includes configuration loading, file analysis, and result validation.
 #[tokio::test]
 async fn test_full_analysis_workflow_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -64,7 +65,8 @@ async fn test_full_analysis_workflow_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for the unified workflow engine
+/// Verifies the integration of the unified workflow engine, ensuring that all
+/// predefined workflow steps (OXC, AI, type-aware, etc.) are executed correctly.
 #[tokio::test]
 async fn test_unified_workflow_engine_integration() -> Result<()> {
     use crate::workflow::{WorkflowEngine, create_moonshine_oxc_workflow};
@@ -92,7 +94,8 @@ async fn test_unified_workflow_engine_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for configuration loading and validation
+/// Tests the integration of configuration loading from multiple sources,
+/// verifying that settings are merged correctly and that the final configuration is valid.
 #[tokio::test]
 async fn test_configuration_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -120,7 +123,9 @@ async fn test_configuration_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for error handling across components
+/// Verifies that errors are propagated correctly through the system. It tests
+/// various error scenarios, such as invalid file paths and unsupported languages,
+/// to ensure they are handled gracefully.
 #[tokio::test]
 async fn test_error_handling_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -166,7 +171,8 @@ async fn test_error_handling_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for workflow phases coordination
+/// Tests the coordination of workflow phases, ensuring that sequential and
+/// parallel phases are executed correctly and that dependencies between them are respected.
 #[tokio::test]
 async fn test_workflow_phases_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -292,7 +298,9 @@ async fn test_workflow_phases_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for performance monitoring across components
+/// Verifies that performance is monitored correctly across different components
+/// and operations. This test ensures that both individual operations and the
+/// overall process meet performance expectations.
 #[tokio::test]
 async fn test_performance_monitoring_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -345,7 +353,8 @@ async fn test_performance_monitoring_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for configuration validation with real constraints
+/// Tests the validation of various configuration scenarios, including valid,
+/// edge case, and performance-optimized setups, ensuring that constraints are enforced correctly.
 #[tokio::test]
 async fn test_configuration_validation_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -420,7 +429,8 @@ async fn test_configuration_validation_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for data flow between components
+/// Verifies the integrity of data as it flows through the various stages of
+/// the analysis pipeline, ensuring consistency and correctness.
 #[tokio::test]
 async fn test_data_flow_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -467,7 +477,8 @@ async fn test_data_flow_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for concurrent operations
+/// Tests the system's ability to handle concurrent analysis operations
+/// efficiently, verifying that parallel execution is faster than sequential processing.
 #[tokio::test]
 async fn test_concurrent_operations_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -527,7 +538,8 @@ async fn test_concurrent_operations_integration() -> Result<()> {
     Ok(())
 }
 
-/// Integration test for resource management and cleanup
+/// Verifies that resources are allocated and cleaned up properly during
+/// resource-intensive operations, ensuring that there are no memory leaks.
 #[tokio::test]
 async fn test_resource_management_integration() -> Result<()> {
     let ctx = TestContext::chicago();
@@ -558,7 +570,8 @@ async fn test_resource_management_integration() -> Result<()> {
 use crate::testing::e2e::{E2ETestEngine, E2EScenarios, E2EScenario, SetupStep, TeardownStep};
 use crate::testing::fixtures::TestDataBuilder;
 
-/// E2E test for complete analysis pipeline
+/// An end-to-end test for the complete analysis pipeline, ensuring that the
+/// entire workflow from input to output functions correctly and meets performance requirements.
 #[tokio::test]
 async fn test_e2e_full_analysis_pipeline() -> Result<()> {
     let mut engine = E2ETestEngine::new()?;
@@ -577,7 +590,8 @@ async fn test_e2e_full_analysis_pipeline() -> Result<()> {
     Ok(())
 }
 
-/// E2E test for configuration management workflow
+/// An end-to-end test for the configuration management workflow, verifying that
+/// configuration is loaded and applied correctly across the system.
 #[tokio::test]
 async fn test_e2e_configuration_management() -> Result<()> {
     let mut engine = E2ETestEngine::new()?;
@@ -595,7 +609,8 @@ async fn test_e2e_configuration_management() -> Result<()> {
     Ok(())
 }
 
-/// E2E test for error recovery mechanisms
+/// An end-to-end test for error recovery mechanisms, ensuring that the system
+/// can handle errors gracefully and recover without crashing.
 #[tokio::test]
 async fn test_e2e_error_recovery() -> Result<()> {
     let mut engine = E2ETestEngine::new()?;
@@ -613,7 +628,8 @@ async fn test_e2e_error_recovery() -> Result<()> {
     Ok(())
 }
 
-/// E2E test for performance optimization with large codebase
+/// An end-to-end test for performance optimization, verifying that the system
+/// meets performance requirements, especially when dealing with a large codebase.
 #[tokio::test]
 async fn test_e2e_performance_optimization() -> Result<()> {
     let mut engine = E2ETestEngine::new()?;
@@ -636,7 +652,9 @@ async fn test_e2e_performance_optimization() -> Result<()> {
     Ok(())
 }
 
-/// E2E test for custom workflow with complex setup
+/// An end-to-end test for a custom, complex workflow that includes multiple
+/// setup and teardown steps, ensuring that the E2E test engine can handle
+/// sophisticated testing scenarios.
 #[tokio::test]
 async fn test_e2e_custom_complex_workflow() -> Result<()> {
     let mut engine = E2ETestEngine::new()?;
@@ -723,7 +741,8 @@ async fn test_e2e_custom_complex_workflow() -> Result<()> {
     Ok(())
 }
 
-/// E2E test suite that runs all predefined scenarios
+/// An end-to-end test suite that runs all predefined scenarios, providing a
+/// comprehensive validation of the system's functionality.
 #[tokio::test]
 async fn test_e2e_complete_suite() -> Result<()> {
     let mut engine = E2ETestEngine::new()?;

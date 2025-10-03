@@ -26,25 +26,43 @@ extern "ExtismHost" {
     fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
 }
 
-/// Command execution input for Moon host
+/// Represents the input for executing a command on the Moon host.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExecCommandInput {
+    /// The command to execute.
     pub command: String,
+    /// A list of arguments for the command.
     pub args: Vec<String>,
+    /// A map of environment variables to set for the command.
     pub env: std::collections::HashMap<String, String>,
+    /// The working directory in which to execute the command.
     pub working_dir: Option<String>,
 }
 
-/// Command execution output from Moon host
+/// Represents the output of an executed command from the Moon host.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExecCommandOutput {
+    /// The exit code of the command.
     pub exit_code: i32,
+    /// The standard output of the command.
     pub stdout: String,
+    /// The standard error of the command.
     pub stderr: String,
 }
 
-/// Execute command via Moon host (wrapper for host function)
-pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box<dyn std::error::Error>> {
+/// Executes a command via the Moon host.
+///
+/// This function is a wrapper around the `exec_command` host function.
+///
+/// # Arguments
+///
+/// * `input` - An `ExecCommandInput` struct containing the command and its arguments.
+///
+/// # Returns
+///
+/// A `Result` containing an `ExecCommandOutput` on success, or an error if the
+/// command fails or if not in a WASM environment.
+pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box<dyn std.error::Error>> {
     #[cfg(feature = "wasm")]
     {
         match unsafe { exec_command(Json(input)) } {
@@ -59,7 +77,18 @@ pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box
     }
 }
 
-/// Read file content via Moon host (wrapper for host function)
+/// Reads the content of a file via the Moon host.
+///
+/// This function is a wrapper around the `read_file` host function.
+///
+/// # Arguments
+///
+/// * `path` - The path to the file to read.
+///
+/// # Returns
+///
+/// A `Result` containing the file content as a `String` on success, or an error
+/// if the file cannot be read or if not in a WASM environment.
 pub fn read_file_content(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
@@ -80,7 +109,18 @@ pub fn read_file_content(path: &str) -> Result<String, Box<dyn std::error::Error
     }
 }
 
-/// Check if file exists via Moon host (wrapper for host function)
+/// Checks if a file exists via the Moon host.
+///
+/// This function is a wrapper around the `file_exists` host function.
+///
+/// # Arguments
+///
+/// * `path` - The path to the file to check.
+///
+/// # Returns
+///
+/// A `Result` containing `true` if the file exists, `false` otherwise, or an error
+/// if not in a WASM environment.
 pub fn check_file_exists(path: &str) -> Result<bool, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
@@ -95,7 +135,18 @@ pub fn check_file_exists(path: &str) -> Result<bool, Box<dyn std::error::Error>>
     }
 }
 
-/// List directory contents via Moon host (wrapper for host function)
+/// Lists the contents of a directory via the Moon host.
+///
+/// This function is a wrapper around the `list_directory` host function.
+///
+/// # Arguments
+///
+/// * `path` - The path to the directory to list.
+///
+/// # Returns
+///
+/// A `Result` containing a `Vec<String>` of file and directory names on success,
+/// or an error if the directory cannot be listed or if not in a WASM environment.
 pub fn list_directory_contents(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
@@ -119,22 +170,36 @@ pub fn list_directory_contents(path: &str) -> Result<Vec<String>, Box<dyn std::e
     }
 }
 
-/// AI Linter configuration for Moon tasks
+/// Defines the configuration for the AI-powered linter when run as a Moon task.
+///
+/// This struct includes settings for enabling AI features, selecting models,
+/// and controlling concurrency and rate limiting.
 /// <!-- TODO: The `AiLinterConfig` has many fields. Consider grouping related fields into smaller structs (e.g., `RateLimitingConfig`, `ClaudeConfig`) to improve organization and readability. -->
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiLinterConfig {
+    /// Whether to enable Claude AI for fixing issues.
     pub enable_claude_ai: bool,
+    /// Whether to enable deterministic semantic checks before AI fixes.
     pub enable_semantic_checks: bool,
+    /// The Claude model to use for AI-powered fixes.
     pub claude_model: String,
+    /// The maximum processing time in seconds for a single file.
     pub max_processing_time: u32,
+    /// The quality threshold for AI suggestions.
     pub quality_threshold: f32,
 
     // Concurrency and rate limiting controls
+    /// The maximum number of concurrent requests to the AI model.
     pub max_concurrent_requests: u32,
+    /// The number of files to process in a single batch.
     pub batch_size: u32,
+    /// The maximum number of requests per minute to the AI model.
     pub rate_limit_per_minute: u32,
+    /// The maximum number of tokens per request to the AI model.
     pub max_tokens_per_request: u32,
+    /// The number of times to retry a failed request to the AI model.
     pub retry_attempts: u32,
+    /// The delay in milliseconds between retry attempts.
     pub retry_delay_ms: u32,
 }
 
@@ -158,35 +223,47 @@ impl Default for AiLinterConfig {
     }
 }
 
-/// Semantic warning from AI analysis
+/// Represents a semantic warning generated by AI analysis.
+///
+/// These warnings highlight potential issues that may not be caught by
+/// traditional linters but are identified by the AI model.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SemanticWarning {
+    /// The warning message.
     pub message: String,
+    /// The line number where the warning occurs.
     pub line: u32,
+    /// The column number where the warning occurs.
     pub column: u32,
+    /// The severity of the warning (e.g., "high", "medium", "low").
     pub severity: String,
+    /// The category of the warning (e.g., "performance", "security", "best-practice").
     pub category: String,
+    /// The AI's confidence score for this warning (0.0 to 1.0).
     pub ai_confidence: f32,
 }
 
-/// Configuration for Moon task execution
+/// Defines the configuration for a Moon task execution.
+///
+/// This struct specifies which tools to run (TypeScript, ESLint, Prettier, etc.)
+/// and how they should be configured.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoonTaskConfig {
-    /// Enable strictest TypeScript checking
+    /// Whether to enable the strictest TypeScript checking.
     pub enable_strict_typescript: bool,
-    /// Enable ESLint with existing config
+    /// Whether to enable ESLint with an existing configuration.
     pub enable_eslint: bool,
-    /// Enable Prettier formatting
+    /// Whether to enable Prettier for code formatting.
     pub enable_prettier: bool,
-    /// Enable TSDoc analysis and improvement
+    /// Whether to enable TSDoc analysis and improvement.
     pub enable_tsdoc: bool,
-    /// Enable Claude AI fixing
+    /// Whether to enable Claude AI for fixing issues.
     pub enable_claude_ai: bool,
-    /// Enable deterministic semantic checks before AI fixes
+    /// Whether to enable deterministic semantic checks before AI fixes.
     pub enable_semantic_checks: bool,
-    /// Claude prompt customization
+    /// A custom prompt template for Claude AI.
     pub claude_prompt_template: Option<String>,
-    /// Maximum processing time (seconds)
+    /// The maximum processing time in seconds for the task.
     pub max_processing_time: u32,
 }
 
@@ -216,171 +293,217 @@ impl MoonTaskConfig {
     }
 }
 
-/// JSON response from Moon tasks back to WASM
+/// Represents the JSON response sent from a Moon task back to the WASM extension.
+///
+/// This struct encapsulates the results of a task's execution, including success
+/// status, processing time, and task-specific data.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoonTaskResponse {
-    /// Session ID for correlation
+    /// A unique identifier for the session, used for correlating requests and responses.
     pub session_id: String,
-    /// Task that generated this response
+    /// The name of the task that generated this response.
     pub task_name: String,
-    /// Success status
+    /// Whether the task executed successfully.
     pub success: bool,
-    /// Error message if failed
+    /// An optional error message if the task failed.
     pub error: Option<String>,
-    /// Task-specific results
+    /// A struct containing the specific results of the task.
     pub results: MoonTaskResults,
-    /// Processing time in milliseconds
+    /// The time it took to process the task, in milliseconds.
     pub processing_time_ms: u64,
-    /// Timestamp of completion
+    /// The timestamp when the task completed, in RFC 3339 format.
     pub completed_at: String,
 }
 
-/// Task-specific results
+/// Contains the specific results from the various tools run within a Moon task.
+///
+/// Each field is optional, allowing tasks to run a subset of the available tools.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoonTaskResults {
-    /// TypeScript compilation results
+    /// The results of the TypeScript compilation.
     pub typescript: Option<TypeScriptResults>,
-    /// ESLint results
+    /// The results of the ESLint analysis.
     pub eslint: Option<ESLintResults>,
-    /// Prettier results
+    /// The results of the Prettier formatting.
     pub prettier: Option<PrettierResults>,
-    /// TSDoc analysis results
+    /// The results of the TSDoc analysis.
     pub tsdoc: Option<TSDocResults>,
-    /// Claude AI results
+    /// The results of the Claude AI processing.
     pub claude: Option<ClaudeResults>,
-    /// Deterministic semantic validation summary
+    /// A summary of the deterministic semantic validation.
     pub semantic_validation: Option<SemanticValidationResults>,
 }
 
-/// TypeScript compilation results
+/// Contains the results of a TypeScript compilation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptResults {
-    /// Compilation successful
+    /// Whether the compilation was successful.
     pub compilation_success: bool,
-    /// Compilation errors
+    /// A list of compilation errors.
     pub errors: Vec<TypeScriptError>,
-    /// Warnings
+    /// A list of compilation warnings.
     pub warnings: Vec<TypeScriptWarning>,
-    /// Configuration used
+    /// A list of the configuration flags used for the compilation.
     pub config_flags: Vec<String>,
 }
 
+/// Represents a single error from the TypeScript compiler.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptError {
+    /// The file where the error occurred.
     pub file: String,
+    /// The line number of the error.
     pub line: u32,
+    /// The column number of the error.
     pub column: u32,
+    /// The TypeScript error code (e.g., "TS2322").
     pub code: String,
+    /// The error message.
     pub message: String,
+    /// The severity of the error.
     pub severity: String,
 }
 
+/// Represents a single warning from the TypeScript compiler.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptWarning {
+    /// The file where the warning occurred.
     pub file: String,
+    /// The line number of the warning.
     pub line: u32,
+    /// The column number of the warning.
     pub column: u32,
+    /// The TypeScript warning code.
     pub code: String,
+    /// The warning message.
     pub message: String,
 }
 
-/// ESLint results
+/// Contains the results of an ESLint analysis.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ESLintResults {
-    /// ESLint execution successful
+    /// Whether the ESLint execution was successful.
     pub success: bool,
-    /// Files processed
+    /// A list of the files that were processed by ESLint.
     pub files_processed: Vec<String>,
-    /// Issues found
+    /// A list of the issues found by ESLint.
     pub issues: Vec<ESLintIssue>,
-    /// Auto-fixes applied
+    /// The number of auto-fixes that were applied.
     pub fixes_applied: u32,
-    /// Config file used
+    /// The path to the ESLint configuration file that was used.
     pub config_file: String,
 }
 
+/// Represents a single issue found by ESLint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ESLintIssue {
+    /// The file where the issue occurred.
     pub file: String,
+    /// The line number of the issue.
     pub line: u32,
+    /// The column number of the issue.
     pub column: u32,
+    /// The ID of the ESLint rule that was violated.
     pub rule_id: String,
+    /// The issue message.
     pub message: String,
+    /// The severity of the issue (e.g., "error", "warning").
     pub severity: String,
+    /// Whether the issue is fixable by ESLint's --fix option.
     pub fixable: bool,
 }
 
-/// Prettier results
+/// Contains the results of a Prettier formatting run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrettierResults {
-    /// Formatting successful
+    /// Whether the formatting was successful.
     pub success: bool,
-    /// Files formatted
+    /// A list of the files that were formatted.
     pub files_formatted: Vec<String>,
-    /// Changes made
+    /// Whether any changes were made to the files.
     pub changes_made: bool,
-    /// Config file used
+    /// The path to the Prettier configuration file that was used.
     pub config_file: Option<String>,
 }
 
-/// TSDoc analysis results
+/// Contains the results of a TSDoc analysis.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TSDocResults {
-    /// Analysis successful
+    /// Whether the analysis was successful.
     pub success: bool,
-    /// Total functions found
+    /// The total number of functions found.
     pub total_functions: u32,
-    /// Functions with documentation
+    /// The number of functions that have documentation.
     pub documented_functions: u32,
-    /// Coverage percentage
+    /// The documentation coverage percentage.
     pub coverage_percentage: f64,
-    /// Missing documentation
+    /// A list of items that are missing documentation.
     pub missing_docs: Vec<String>,
-    /// Improvements suggested
+    /// A list of suggested improvements for the documentation.
     pub improvements: Vec<String>,
 }
 
-/// Claude AI results
+/// Contains the results of processing by the Claude AI model.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeResults {
-    /// Claude processing successful
+    /// Whether the Claude AI processing was successful.
     pub success: bool,
-    /// Fixed file content
+    /// The content of the file after being fixed by the AI.
     pub fixed_content: Option<String>,
-    /// Improvements made
+    /// A list of improvements made by the AI.
     pub improvements: Vec<String>,
-    /// Issues resolved
+    /// The number of issues that were resolved by the AI.
     pub issues_resolved: u32,
-    /// Processing time
+    /// The time it took for the AI to process the request, in milliseconds.
     pub claude_processing_time_ms: u64,
-    /// Token usage
+    /// The token usage for the AI request.
     pub token_usage: Option<ClaudeTokenUsage>,
 }
 
+/// Contains the results of a semantic validation check.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SemanticValidationResults {
+    /// Whether the semantic validation passed.
     pub passed: bool,
+    /// The number of warnings that were checked.
     pub warnings_checked: u32,
+    /// A list of warnings that could not be resolved.
     pub unresolved_warnings: Vec<SemanticValidationWarning>,
 }
 
+/// Represents a single warning from the semantic validation process.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SemanticValidationWarning {
+    /// The warning code.
     pub code: String,
+    /// The warning message.
     pub message: String,
+    /// The severity of the warning.
     pub severity: Option<String>,
+    /// The pattern that triggered the warning.
     pub pattern: String,
 }
 
+/// Represents the token usage for a request to the Claude AI model.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeTokenUsage {
+    /// The number of input tokens used.
     pub input_tokens: u32,
+    /// The number of output tokens generated.
     pub output_tokens: u32,
+    /// The total cost of the request in USD.
     pub total_cost_usd: f64,
 }
 
-/// JSON communication helper functions
-/// Helper to get a configuration value from the Moon host.
+/// Gets a configuration value from the Moon host.
+///
+/// # Arguments
+///
+/// * `key` - The key of the configuration value to retrieve.
+///
+/// # Returns
+///
+/// An `Option<String>` containing the configuration value if it exists, or `None` otherwise.
 pub fn get_moon_config(key: &str) -> Option<String> {
     #[cfg(feature = "wasm")]
     {
@@ -402,7 +525,15 @@ pub fn get_moon_config(key: &str) -> Option<String> {
     }
 }
 
-/// Safe configuration getter with error handling
+/// A safe version of `get_moon_config` that returns a `Result` to handle errors.
+///
+/// # Arguments
+///
+/// * `key` - The key of the configuration value to retrieve.
+///
+/// # Returns
+///
+/// A `Result` containing an `Option<String>` with the configuration value, or an `Error` if something goes wrong.
 pub fn get_moon_config_safe(key: &str) -> crate::error::Result<Option<String>> {
     #[cfg(feature = "wasm")]
     {
@@ -435,14 +566,36 @@ pub fn get_moon_config_safe(key: &str) -> crate::error::Result<Option<String>> {
     }
 }
 
-/// Request atomic write via Moon host - Moon host handles temp file + rename
+/// Requests an atomic write operation via the Moon host.
+///
+/// The host is responsible for handling the temporary file and rename operation to ensure atomicity.
+///
+/// # Arguments
+///
+/// * `path` - The path to the file to write.
+/// * `content` - The content to write to the file.
+///
+/// # Returns
+///
+/// A `Result` that is empty on success, or an error if the write fails.
 pub fn write_file_atomic(path: &str, content: &str) -> Result<(), Box<dyn std::error::Error>> {
     // WASM requests atomic write - Moon host handles the actual temp file + rename operation
     // Moon host ensures atomicity by writing to .tmp file then renaming
     write_file_to_host(path, content)
 }
 
-/// Helper to write content to a file on the Moon host.
+/// Writes content to a file on the Moon host.
+///
+/// This function is a wrapper around the `write_file` host function.
+///
+/// # Arguments
+///
+/// * `path` - The path to the file to write.
+/// * `content` - The content to write to the file.
+///
+/// # Returns
+///
+/// A `Result` that is empty on success, or an error if the write fails.
 pub fn write_file_to_host(path: &str, content: &str) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
@@ -462,7 +615,18 @@ pub fn write_file_to_host(path: &str, content: &str) -> Result<(), Box<dyn std::
     }
 }
 
-/// Send storage update request to Moon host for atomic JSON updates
+/// Sends a storage update request to the Moon host for atomic JSON updates.
+///
+/// The host is responsible for handling the read-modify-write operation atomically.
+///
+/// # Arguments
+///
+/// * `storage_type` - The type of storage to update (e.g., "prompts", "training").
+/// * `updates` - A `serde_json::Value` containing the updates to apply.
+///
+/// # Returns
+///
+/// A `Result` that is empty on success, or an error if the update fails.
 pub fn request_storage_update(storage_type: &str, updates: &serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
     let storage_request = serde_json::json!({
         "operation": "update_storage",
@@ -478,17 +642,44 @@ pub fn request_storage_update(storage_type: &str, updates: &serde_json::Value) -
     write_file_to_host(&response_path, &request_json)
 }
 
-/// Request prompts.json update via Moon host
+/// Requests an update to the `prompts.json` file via the Moon host.
+///
+/// # Arguments
+///
+/// * `updates` - A `serde_json::Value` containing the updates to apply.
+///
+/// # Returns
+///
+/// A `Result` that is empty on success, or an error if the update fails.
 pub fn update_prompts_json(updates: &serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
     request_storage_update("prompts", updates)
 }
 
-/// Request training.json update via Moon host
+/// Requests an update to the `training.json` file via the Moon host.
+///
+/// # Arguments
+///
+/// * `updates` - A `serde_json::Value` containing the updates to apply.
+///
+/// # Returns
+///
+/// A `Result` that is empty on success, or an error if the update fails.
 pub fn update_training_json(updates: &serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
     request_storage_update("training", updates)
 }
 
-/// Generate Moon task execution command with session-based JSON communication
+/// Generates a Moon task execution command with session-based JSON communication.
+///
+/// Since the WASM extension cannot execute shell commands directly, this function
+/// returns a JSON protocol string for the Moon host to interpret.
+///
+/// # Arguments
+///
+/// * `request` - A `MoonTaskRequest` to be serialized into the command.
+///
+/// # Returns
+///
+/// A `Result` containing the JSON protocol string for the Moon host on success, or an error on failure.
 pub fn generate_moon_task_command(request: &MoonTaskRequest) -> Result<String, Box<dyn std::error::Error>> {
     // WASM cannot write files - Moon host handles request data via JSON protocol
     let _request_json = request.to_json()?;
@@ -505,21 +696,43 @@ pub fn generate_moon_task_command(request: &MoonTaskRequest) -> Result<String, B
         EXTENSION_VERSION, &request.session_id
     ))
 }
-/// Clean up old session directories (WASM cannot access filesystem)
+/// Requests the Moon host to clean up old session directories.
+///
+/// Since the WASM extension cannot access the filesystem, this function logs a
+/// request that the host can act upon.
+///
+/// # Arguments
+///
+/// * `max_age_hours` - The maximum age in hours for a session to be kept.
+///
+/// # Returns
+///
+/// A `Result` containing the number of cleaned sessions (always 0 in WASM), or an error.
 pub fn cleanup_old_sessions(max_age_hours: u32) -> Result<u32, std::io::Error> {
     // WASM cannot access filesystem - Moon host should handle cleanup
     info!("Session cleanup requested: {} hours max age", max_age_hours);
     Ok(0) // Return 0 cleaned as WASM cannot perform cleanup
 }
 
-/// List session directories (WASM cannot access filesystem)
+/// Requests a list of session directories from the Moon host.
+///
+/// Since the WASM extension cannot access the filesystem, this function returns
+/// an empty list and logs a request for the host.
+///
+/// # Returns
+///
+/// A `Result` containing a `Vec<String>` of session directories, or an error.
 pub fn list_session_directories() -> Result<Vec<String>, std::io::Error> {
     // WASM cannot access filesystem - Moon host should provide session info
     info!("Session directories requested");
     Ok(vec![]) // Return empty list as WASM cannot access filesystem
 }
 
-/// Generate embedded Moon task definitions for extension distribution
+/// Generates embedded Moon task definitions for distribution with the extension.
+///
+/// # Returns
+///
+/// A `String` containing the Moon task definitions in YAML format.
 pub fn generate_extension_task_definitions() -> String {
     // Extension version injected at compile time from Cargo.toml
     const EXTENSION_VERSION: &str = env!("CARGO_PKG_VERSION");

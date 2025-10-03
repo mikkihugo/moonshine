@@ -1,24 +1,26 @@
-use crate::dspy::{get_lm, Evaluator, Example, Module, Optimizable, Optimizer, Predict, Predictor, LM};
+use crate::dspy::{
+    get_lm, Evaluator, Example, Module, Optimizable, Optimizer, Predict, Predictor, LM,
+};
 use crate::signature;
 use anyhow::Result;
 use bon::Builder;
-// Complex manual MetaSignature implementations preserved (DSRs comment removed)
-// WASM-compatible async batch processing
 use extism_pdk::info;
 use futures::future::try_join_all;
 use std::collections::HashMap;
 
 const GLOBAL_OPTIMIZATION_THRESHOLD_FACTOR: f32 = 1.1;
 
-// Complex manual MetaSignature implementation with custom business logic
+/// A `MetaSignature` for generating a basic instruction.
 #[derive(Debug, Clone)]
 struct BasicGenerateInstruction {
-    /// You are an instruction optimizer for large language models. I will give you a ``signature`` of fields (inputs and outputs) in English. Your task is to propose an instruction that will lead a good language model to perform the task well. Don't be afraid to be creative.
+    /// The basic instruction to be optimized.
     pub basic_instruction: String,
+    /// The proposed, optimized instruction.
     pub proposed_instruction: String,
 }
 
 impl BasicGenerateInstruction {
+    /// Creates a new `BasicGenerateInstruction`.
     fn new() -> Self {
         Self {
             basic_instruction: String::new(),
@@ -26,22 +28,25 @@ impl BasicGenerateInstruction {
         }
     }
 
-    /// Get input field description for API documentation
+    /// Gets the description for the input field.
     pub fn get_input_description() -> &'static str {
         "The initial instructions before optimization"
     }
 
-    /// Get output field description for API documentation
+    /// Gets the description for the output field.
     pub fn get_output_description() -> &'static str {
         "The improved instructions for the language model"
     }
 
-    /// Get complete signature metadata for debugging and documentation
+    /// Gets the complete signature metadata for debugging and documentation.
     pub fn get_signature_metadata() -> (String, String) {
-        (Self::get_input_description().to_string(), Self::get_output_description().to_string())
+        (
+            Self::get_input_description().to_string(),
+            Self::get_output_description().to_string(),
+        )
     }
 
-    /// Validate signature fields using metadata
+    /// Validates the signature fields using metadata.
     pub fn validate_signature(&self) -> anyhow::Result<()> {
         let (input_desc, output_desc) = Self::get_signature_metadata();
 
@@ -122,17 +127,17 @@ impl crate::dspy::MetaSignature for BasicGenerateInstruction {
     }
 }
 
-// Complex manual MetaSignature implementation with custom business logic
+/// A `MetaSignature` for generating a new instruction based on previous attempts.
 #[derive(Debug, Clone)]
 struct GenerateInstructionGivenAttempts {
-    /// You are an instruction optimizer for large language models. I will give some task instructions I've tried, along with their corresponding validation scores. The instructions are arranged in increasing order based on their scores, where higher scores indicate better quality.
-    ///
-    /// Your task is to propose a new instruction that will lead a good language model to perform the task even better. Don't be afraid to be creative.
+    /// A list of previously attempted instructions and their scores.
     pub attempted_instructions: Vec<String>,
+    /// The new, improved instruction proposed by the optimizer.
     pub proposed_instruction: String,
 }
 
 impl GenerateInstructionGivenAttempts {
+    /// Creates a new `GenerateInstructionGivenAttempts`.
     fn new() -> Self {
         Self {
             attempted_instructions: Vec::new(),
@@ -215,30 +220,44 @@ impl crate::dspy::MetaSignature for GenerateInstructionGivenAttempts {
     }
 }
 
+/// Represents a candidate program with its score, instruction, and prefix.
 #[derive(Clone)]
 struct Candidate {
+    /// The score of the candidate program.
     pub score: f32,
+    /// The instruction for the candidate program.
     pub instruction: String,
+    /// The prefix for the candidate program.
     pub prefix: String,
 }
 
+/// Stores statistics about the optimization process.
 #[derive(Clone)]
 struct ProgramStats {
+    /// A map of the best results for each predictor.
     pub results_best: HashMap<String, Vec<f32>>,
+    /// A map of the latest results for each predictor.
     pub results_latest: HashMap<String, Vec<f32>>,
+    /// The total number of calls to the language model.
     pub total_calls: usize,
 }
 
+/// The Collaborative Prompt Optimization (COPRO) optimizer.
 #[derive(Builder)]
 pub struct COPRO {
+    /// The number of candidate programs to generate at each step.
     #[builder(default = 10)]
     pub breadth: usize,
+    /// The number of optimization steps to perform.
     #[builder(default = 3)]
     pub depth: usize,
+    /// The initial temperature for the language model.
     #[builder(default = 1.4)]
     pub init_temperature: f32,
+    /// If true, tracks statistics about the optimization process.
     #[builder(default = false)]
     pub track_stats: bool,
+    /// An optional language model to use for generating prompts.
     pub prompt_model: Option<LM>,
 }
 
@@ -258,13 +277,17 @@ fn get_refinement_generator() -> &'static Predict {
 }
 
 impl COPRO {
-    /// WASM-compatible batch processing for candidate generation
-    async fn generate_candidates_batch(&self, basic_instruction: &str, count: usize) -> Result<Vec<(String, String)>> {
+    /// Generates candidate programs in a batch, compatible with WASM.
+    async fn generate_candidates_batch(
+        &self,
+        basic_instruction: &str,
+        count: usize,
+    ) -> Result<Vec<(String, String)>> {
         let mut futures = Vec::new();
 
-        let base_lm_for_cloning = if let Some(lm) = &self.prompt_model { lm.clone() } else { get_lm().clone() };
+        let base_lm_for_cloning =
+            if let Some(lm) = &self.prompt_model { lm.clone() } else { get_lm().clone() };
 
-        // Create batch of futures for parallel processing in WASM
         for _ in 0..count {
             let inst = basic_instruction.to_string();
             let current_init_temperature = self.init_temperature;
@@ -276,14 +299,19 @@ impl COPRO {
                 let prediction = get_basic_generator()
                     .forward_with_config(
                         crate::example! {
-                          "basic_instruction": "input" => inst.clone()
+                            "basic_instruction": "input" => inst.clone()
                         },
                         &mut lm_for_future,
                     )
                     .await;
 
                 prediction.map(|p| {
-                    let instruction = p.data.get("proposed_instruction").and_then(|v| v.as_str()).unwrap_or(&inst).to_string();
+                    let instruction = p
+                        .data
+                        .get("proposed_instruction")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or(&inst)
+                        .to_string();
                     let prefix = p
                         .data
                         .get("proposed_prefix_for_output_field")
@@ -297,27 +325,29 @@ impl COPRO {
             futures.push(future);
         }
 
-        // Execute all futures concurrently in WASM-compatible way
         let results = try_join_all(futures).await?;
         Ok(results)
     }
 
-    /// Normalize LM responses to always return string arrays for consistent processing
-    fn normalize_lm_response(data: &std::collections::HashMap<String, serde_json::Value>, field_name: &str) -> Vec<String> {
+    /// Normalizes LM responses to always return a vector of strings for consistent processing.
+    fn normalize_lm_response(
+        data: &std::collections::HashMap<String, serde_json::Value>,
+        field_name: &str,
+    ) -> Vec<String> {
         if let Some(arr) = data.get(field_name).and_then(|v| v.as_array()) {
-            // Multiple completions - already an array
-            arr.iter().filter_map(|v| v.as_str()).map(|s| s.to_string()).collect()
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect()
         } else if let Some(single) = data.get(field_name).and_then(|v| v.as_str()) {
-            // Single completion - wrap in array
             vec![single.to_string()]
         } else {
-            // No completion found
             vec![]
         }
     }
 
+    /// Gets the prefix of the last output field.
     fn get_output_field_prefix(&self, predictor: &dyn Optimizable) -> String {
-        // Get the last output field's prefix/desc
         let output_fields = predictor.get_signature().output_fields();
         if let Some(obj) = output_fields.as_object() {
             if let Some((_, field)) = obj.iter().next_back() {
@@ -331,11 +361,19 @@ impl COPRO {
 }
 
 impl Optimizer for COPRO {
-    // TODO: This function uses `unwrap()` in multiple places when accessing hash maps
-    // with predictor names as keys. While the keys are expected to be present,
-    // for robustness, these `unwrap()` calls should be replaced with safer access
-    // methods like `get_mut` with proper handling of the `None` case.
-    async fn compile<M: Module + Optimizable + Evaluator>(&self, module: &mut M, trainset: Vec<Example>) -> Result<()> {
+    /// Compiles and optimizes a DSPy module using the COPRO algorithm.
+    ///
+    /// # TODO
+    ///
+    /// This function uses `unwrap()` in multiple places when accessing hash maps
+    /// with predictor names as keys. While the keys are expected to be present,
+    /// for robustness, these `unwrap()` calls should be replaced with safer access
+    /// methods like `get_mut` with proper handling of the `None` case.
+    async fn compile<M: Module + Optimizable + Evaluator>(
+        &self,
+        module: &mut M,
+        trainset: Vec<Example>,
+    ) -> Result<()> {
         if self.breadth <= 1 {
             return Err(anyhow::anyhow!("Breadth must be greater than 1"));
         }

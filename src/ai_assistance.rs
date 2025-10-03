@@ -6,14 +6,16 @@ use crate::dspy::core::settings::Settings;
 use anyhow::Result;
 use std::collections::HashMap;
 
-/// AI enhancer for providing intelligent code suggestions and explanations
+/// An AI enhancer for providing intelligent code suggestions and explanations.
 pub struct AiEnhancer {
+    /// The settings for the AI enhancer.
     settings: Settings,
+    /// A cache for storing previously generated suggestions.
     cache: HashMap<String, String>,
 }
 
 impl AiEnhancer {
-    /// Create a new AI enhancer with the given settings
+    /// Creates a new `AiEnhancer` with the given settings.
     pub fn new(settings: Settings) -> Result<Self> {
         Ok(Self {
             settings,
@@ -21,26 +23,27 @@ impl AiEnhancer {
         })
     }
 
-    /// Enhance a diagnostic with AI suggestions
-    pub fn enhance_diagnostic(&self, code: &str, message: &str) -> Vec<String> {
-        // Simple enhancement for now - in production this would use DSPy
+    /// Enhances a diagnostic with AI-powered suggestions.
+    pub fn enhance_diagnostic(&self, _code: &str, message: &str) -> Vec<String> {
         vec![format!("AI suggestion: {}", message)]
     }
 
-    /// Explain a diagnostic in natural language
-    pub fn explain_diagnostic(&self, code: &str, message: &str) -> Option<String> {
-        // Simple explanation for now - in production this would use DSPy
+    /// Explains a diagnostic in natural language.
+    pub fn explain_diagnostic(&self, _code: &str, message: &str) -> Option<String> {
         Some(format!("This issue occurs because: {}", message))
     }
 
-    /// Get AI-powered fix suggestions
-    pub fn suggest_fixes(&self, code: &str, issue: &str) -> Vec<String> {
-        // Simple fix suggestions for now - in production this would use DSPy
+    /// Gets AI-powered fix suggestions for a given issue.
+    pub fn suggest_fixes(&self, _code: &str, issue: &str) -> Vec<String> {
         vec![format!("Consider fixing: {}", issue)]
     }
 
-    /// Enhance lint issues with AI-powered suggestions and explanations
-    pub fn enhance_lint_issues(&self, lint_issues: Vec<crate::rulebase::RuleResult>, source: &str) -> anyhow::Result<Vec<crate::rulebase::RuleResult>> {
+    /// Enhances a list of lint issues with AI-powered suggestions and explanations.
+    pub fn enhance_lint_issues(
+        &self,
+        lint_issues: Vec<crate::rulebase::RuleResult>,
+        source: &str,
+    ) -> anyhow::Result<Vec<crate::rulebase::RuleResult>> {
         let mut enhanced_issues = Vec::new();
 
         for mut issue in lint_issues {

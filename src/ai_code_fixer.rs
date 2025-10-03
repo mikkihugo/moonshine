@@ -10,17 +10,22 @@ use crate::provider_router::{analyze_code_with_ai, fix_code_with_ai};
 use extism_pdk::info;
 use serde::{Deserialize, Serialize};
 
-// ClaudeFixerConfig moved to MoonShineConfig - all settings consolidated
-
-/// AI code fixing result with metrics and improvements
+/// The result of an AI code fixing operation, including metrics and improvements.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiCodeFixResult {
+    /// The path of the file that was fixed.
     pub file_path: String,
+    /// If true, the fixing operation was successful.
     pub success: bool,
+    /// The AI provider that was used for the fixing operation.
     pub ai_provider: String,
+    /// The TSDoc coverage of the fixed code.
     pub tsdoc_coverage: f32,
+    /// The fixed code content, if any.
     pub fixed_content: Option<String>,
+    /// The number of errors that were fixed.
     pub fixed_errors: u32,
+    /// A list of code relationships found in the fixed code.
     pub relationships: Vec<CodeRelationship>,
 }
 
@@ -38,30 +43,42 @@ impl Default for AiCodeFixResult {
     }
 }
 
-/// Code relationship for compatibility
+/// A relationship between two code elements, used for compatibility analysis.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodeRelationship {
+    /// The source of the relationship.
     pub source: String,
+    /// The target of the relationship.
     pub target: String,
+    /// The type of the relationship (e.g., "uses", "imports").
     pub relationship_type: String,
+    /// The confidence score of the relationship.
     pub confidence: f32,
 }
 
-/// Unified AI fixer for WASM extension
+/// A unified AI fixer for the WASM extension.
 #[derive(Debug)]
 pub struct ClaudeFixer {
-    config: crate::config::MoonShineConfig, // Use consolidated config
+    /// The configuration for the fixer.
+    config: crate::config::MoonShineConfig,
 }
 
 impl ClaudeFixer {
-    /// Create new AI fixer with intelligent provider routing
+    /// Creates a new `ClaudeFixer` with intelligent provider routing.
     pub fn new(config: crate::config::MoonShineConfig) -> Self {
         Self { config }
     }
 
-    /// Production AI CLI integration via intelligent provider routing
-    /// Automatically selects the best AI provider based on code fixing requirements
-    pub async fn fix_file_sync(&mut self, file_path: &str, content: &str, language: &str, session_id: String) -> Result<AiCodeFixResult> {
+    /// Performs a production-grade AI code fixing operation via intelligent provider routing.
+    ///
+    /// This method automatically selects the best AI provider based on the code fixing requirements.
+    pub async fn fix_file_sync(
+        &mut self,
+        file_path: &str,
+        content: &str,
+        language: &str,
+        session_id: String,
+    ) -> Result<AiCodeFixResult> {
         // Calculate initial TSDoc coverage for comparison
         let initial_tsdoc_coverage = if language == "typescript" || language == "javascript" {
             calculate_tsdoc_coverage(content) as f32
@@ -125,14 +142,19 @@ impl ClaudeFixer {
         })
     }
 
-    /// Production relationship analysis via intelligent AI provider routing
-    /// Automatically selects the best AI provider for code analysis tasks
-    pub async fn analyze_relationships(&self, content: &str, file_path: &str, session_id: &str) -> Result<Vec<CodeRelationship>> {
+    /// Performs a production-grade relationship analysis via intelligent AI provider routing.
+    ///
+    /// This method automatically selects the best AI provider for code analysis tasks.
+    pub async fn analyze_relationships(
+        &self,
+        content: &str,
+        file_path: &str,
+        session_id: &str,
+    ) -> Result<Vec<CodeRelationship>> {
         if !self.config.enable_relationship_analysis.unwrap_or(false) {
             return Ok(vec![]);
         }
 
-        // Build relationship analysis prompt
         let relationship_prompt = format!(
             "Analyze the code relationships and dependencies in this {} file. \
          Focus on imports, exports, function calls, and type dependencies. \
@@ -143,7 +165,6 @@ impl ClaudeFixer {
             content
         );
 
-        // Execute AI via intelligent router - automatically selects best provider for analysis
         let ai_response = analyze_code_with_ai(
             session_id.to_string(),
             content.to_string(),
@@ -152,11 +173,10 @@ impl ClaudeFixer {
         )
         .await?;
 
-        // Parse relationships from AI response
         self.parse_relationships_response(&ai_response.content)
     }
 
-    /// Build language-specific AI prompt for code fixing
+    /// Builds a language-specific AI prompt for code fixing.
     fn build_ai_prompt(&self, content: &str, language: &str, file_path: &str) -> Result<String> {
         let language_specific_instructions = match language {
             "typescript" => {
@@ -200,14 +220,15 @@ impl ClaudeFixer {
     // Note: AI execution is now handled by the unified ai_provider module
     // This eliminates Claude-specific hardcoding and enables multiple AI providers
 
-    /// Parse AI response and extract fixed code content
-    /// <!-- TODO: Add more robust parsing for AI responses, potentially supporting multiple markdown block styles or a more structured output format from the AI. -->
+    /// Parses the AI response and extracts the fixed code content.
+    ///
+    /// # TODO
+    ///
+    /// Add more robust parsing for AI responses, potentially supporting multiple
+    /// markdown block styles or a more structured output format from the AI.
     fn parse_ai_response(&self, response: &str) -> Result<String> {
-        // AI providers typically return code in markdown blocks or directly
-        // Extract code from markdown blocks if present
         if let Some(code_start) = response.find("```") {
             if let Some(code_end) = response[code_start + 3..].find("```") {
-                // Skip language identifier line if present
                 let code_block = &response[code_start + 3..code_start + 3 + code_end];
                 if let Some(newline) = code_block.find('\n') {
                     return Ok(code_block[newline + 1..].trim().to_string());
@@ -216,14 +237,16 @@ impl ClaudeFixer {
             }
         }
 
-        // If no markdown blocks, return the response directly (trimmed)
         Ok(response.trim().to_string())
     }
 
-    /// Count errors fixed by comparing original and fixed content
-    /// <!-- TODO: Explore more sophisticated diffing algorithms or AST-based comparisons to get a more precise count of fixed errors. -->
+    /// Counts the number of errors fixed by comparing the original and fixed content.
+    ///
+    /// # TODO
+    ///
+    /// Explore more sophisticated diffing algorithms or AST-based comparisons
+    /// to get a more precise count of fixed errors.
     fn count_fixed_errors(&self, original: &str, fixed: &str, language: &str) -> Result<u32> {
-        // Simple heuristic: count lines changed as proxy for fixes
         let original_lines: Vec<&str> = original.lines().collect();
         let fixed_lines: Vec<&str> = fixed.lines().collect();
 
@@ -236,10 +259,8 @@ impl ClaudeFixer {
             }
         }
 
-        // Add differences in line count
         changes += (original_lines.len() as i32 - fixed_lines.len() as i32).unsigned_abs() as usize;
 
-        // For TypeScript/JavaScript, also count TSDoc additions as improvements
         if language == "typescript" || language == "javascript" {
             let original_tsdoc_count = count_tsdoc_comments(original);
             let fixed_tsdoc_count = count_tsdoc_comments(fixed);
@@ -249,23 +270,25 @@ impl ClaudeFixer {
         Ok(changes as u32)
     }
 
-    /// Parse relationship analysis response from Claude
+    /// Parses the relationship analysis response from the AI.
     fn parse_relationships_response(&self, response: &str) -> Result<Vec<CodeRelationship>> {
-        // Try to parse JSON array from Claude response
         if let Some(json_start) = response.find('[') {
             if let Some(json_end) = response.rfind(']') {
                 let json_str = &response[json_start..=json_end];
-                if let Ok(relationships) = serde_json::from_str::<Vec<serde_json::Value>>(json_str) {
-                    return Ok(relationships.into_iter().filter_map(|rel| self.parse_single_relationship(&rel)).collect());
+                if let Ok(relationships) = serde_json::from_str::<Vec<serde_json::Value>>(json_str)
+                {
+                    return Ok(relationships
+                        .into_iter()
+                        .filter_map(|rel| self.parse_single_relationship(&rel))
+                        .collect());
                 }
             }
         }
 
-        // If JSON parsing fails, return empty relationships
         Ok(vec![])
     }
 
-    /// Parse a single relationship from JSON value
+    /// Parses a single relationship from a JSON value.
     fn parse_single_relationship(&self, value: &serde_json::Value) -> Option<CodeRelationship> {
         Some(CodeRelationship {
             source: value.get("source")?.as_str()?.to_string(),
@@ -275,8 +298,11 @@ impl ClaudeFixer {
         })
     }
 
-    /// Detect programming language from file path
-    /// <!-- TODO: Align this with the `analysis.rs::detect_language` function and ensure consistency. -->
+    /// Detects the programming language from a file path.
+    ///
+    /// # TODO
+    ///
+    /// Align this with the `analysis.rs::detect_language` function and ensure consistency.
     fn detect_language_from_path(&self, file_path: &str) -> &str {
         if file_path.ends_with(".ts") || file_path.ends_with(".tsx") {
             "typescript"
@@ -292,22 +318,29 @@ impl ClaudeFixer {
     }
 }
 
-/// Calculate TSDoc coverage percentage with proper error handling
-/// <!-- TODO: Consider using a proper parser (e.g., `tree-sitter` bindings if available in Rust WASM context) for more robust TSDoc parsing, especially for complex cases or different language syntaxes. -->
+/// Calculates the TSDoc coverage percentage with proper error handling.
+///
+/// # TODO
+///
+/// Consider using a proper parser (e.g., `tree-sitter` bindings if available
+/// in a Rust WASM context) for more robust TSDoc parsing, especially for
+/// complex cases or different language syntaxes.
 fn calculate_tsdoc_coverage(content: &str) -> f64 {
-    let function_regex = match regex::Regex::new(r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)") {
-        Ok(regex) => regex,
-        Err(_) => return 0.0, // Graceful fallback if regex compilation fails
-    };
+    let function_regex =
+        match regex::Regex::new(r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)") {
+            Ok(regex) => regex,
+            Err(_) => return 0.0,
+        };
 
-    let method_regex = match regex::Regex::new(r"(?m)^\s*(?:public\s+|private\s+|protected\s+)?(?:async\s+)?(\w+)\s*\(") {
-        Ok(regex) => regex,
-        Err(_) => return 0.0, // Graceful fallback if regex compilation fails
-    };
+    let method_regex =
+        match regex::Regex::new(r"(?m)^\s*(?:public\s+|private\s+|protected\s+)?(?:async\s+)?(\w+)\s*\(") {
+            Ok(regex) => regex,
+            Err(_) => return 0.0,
+        };
 
     let tsdoc_regex = match regex::Regex::new(r"(?m)^\s*/\*\*") {
         Ok(regex) => regex,
-        Err(_) => return 0.0, // Graceful fallback if regex compilation fails
+        Err(_) => return 0.0,
     };
 
     let functions = function_regex.find_iter(content).count();
@@ -322,11 +355,11 @@ fn calculate_tsdoc_coverage(content: &str) -> f64 {
     (tsdoc_comments as f64 / total as f64) * 100.0
 }
 
-/// Count TSDoc comments in code content
+/// Counts the number of TSDoc comments in the given code content.
 fn count_tsdoc_comments(content: &str) -> u32 {
     match regex::Regex::new(r"(?m)^\s*/\*\*") {
         Ok(regex) => regex.find_iter(content).count() as u32,
-        Err(_) => 0, // Graceful fallback if regex compilation fails
+        Err(_) => 0,
     }
 }
 

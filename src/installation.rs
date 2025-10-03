@@ -27,8 +27,10 @@ use serde_json;
 /// containing the installation request, which is then processed by Moon tasks
 /// on the host machine to create the actual files and directories.
 ///
-/// @returns An `anyhow::Result` containing a `serde_json::Value` representing the
-///          installation request on success, or an `Error` on failure.
+/// # Returns
+///
+/// An `anyhow::Result` containing a `serde_json::Value` representing the
+/// installation request on success, or an `Error` on failure.
 ///
 /// @category setup
 /// @safe program
@@ -71,8 +73,10 @@ pub fn install_moonshine_extension() -> anyhow::Result<serde_json::Value> {
 /// (report issues without fixing), making it easy for users to integrate `moon-shine`
 /// into their Moon-based projects.
 ///
-/// @returns An `anyhow::Result` containing a `serde_json::Value` representing the
-///          task templates on success, or an `Error` on failure.
+/// # Returns
+///
+/// An `anyhow::Result` containing a `serde_json::Value` representing the
+/// task templates on success, or an `Error` on failure.
 ///
 /// @category setup
 /// @safe team
@@ -115,7 +119,9 @@ fn create_task_templates() -> anyhow::Result<serde_json::Value> {
 /// This function queries Moon's configuration system to determine if `prompts.json`
 /// and `training.json` exist, indicating a previous successful installation.
 ///
-/// @returns `true` if `moon-shine` is considered installed, `false` otherwise.
+/// # Returns
+///
+/// `true` if `moon-shine` is considered installed, `false` otherwise.
 ///
 /// @category utility
 /// @safe team
@@ -135,8 +141,10 @@ pub fn check_moonshine_installed() -> bool {
 /// This file stores base prompt templates, optimized versions, and COPRO candidates.
 /// It is generated during the initial installation of the extension.
 ///
-/// @returns An `anyhow::Result` containing a `serde_json::Value` representing the
-///          initial `prompts.json` content on success, or an `Error` on failure.
+/// # Returns
+///
+/// An `anyhow::Result` containing a `serde_json::Value` representing the
+/// initial `prompts.json` content on success, or an `Error` on failure.
 ///
 /// @category setup
 /// @safe team
@@ -216,8 +224,10 @@ fn create_initial_prompts_file() -> anyhow::Result<serde_json::Value> {
 /// learned patterns, and AI effectiveness metrics. It is generated during the
 /// initial installation of the extension.
 ///
-/// @returns An `anyhow::Result` containing a `serde_json::Value` representing the
-///          initial `training.json` content on success, or an `Error` on failure.
+/// # Returns
+///
+/// An `anyhow::Result` containing a `serde_json::Value` representing the
+/// initial `training.json` content on success, or an `Error` on failure.
 ///
 /// @category setup
 /// @safe team
@@ -254,9 +264,14 @@ fn create_initial_training_file() -> anyhow::Result<serde_json::Value> {
 /// 2. Embedded default prompts.
 /// 3. Built-in fallback prompts.
 ///
-/// @param rule_type The type of rule for which to load the prompt (e.g., "no_unused_vars").
-/// @param config An optional reference to the `MoonShineConfig` for custom prompt overrides.
-/// @returns The loaded prompt template as a `String`.
+/// # Arguments
+///
+/// * `rule_type` - The type of rule for which to load the prompt (e.g., "no_unused_vars").
+/// * `config` - An optional reference to the `MoonShineConfig` for custom prompt overrides.
+///
+/// # Returns
+///
+/// The loaded prompt template as a `String`.
 ///
 /// @category utility
 /// @safe team
@@ -274,11 +289,13 @@ pub fn load_prompt_from_storage(rule_type: &str, config: Option<&MoonShineConfig
 /// confidence score, the number of training examples used, and its success rate.
 /// The update is persisted via a Moon host function.
 ///
-/// @param rule_type The type of rule for which the prompt was optimized.
-/// @param optimized_template The optimized prompt template string.
-/// @param confidence_score The confidence score of the optimized prompt.
-/// @param training_examples The number of training examples used for optimization.
-/// @param success_rate The success rate achieved by the optimized prompt.
+/// # Arguments
+///
+/// * `rule_type` - The type of rule for which the prompt was optimized.
+/// * `optimized_template` - The optimized prompt template string.
+/// * `confidence_score` - The confidence score of the optimized prompt.
+/// * `training_examples` - The number of training examples used for optimization.
+/// * `success_rate` - The success rate achieved by the optimized prompt.
 ///
 /// @category persistence
 /// @safe program
@@ -326,7 +343,9 @@ pub fn log_optimized_prompt(rule_type: &str, optimized_template: &str, confidenc
 /// This function provides comprehensive information about the installation
 /// capabilities and configuration of the moon-shine extension.
 ///
-/// @returns A `serde_json::Value` containing installation information.
+/// # Returns
+///
+/// A `serde_json::Value` containing installation information.
 ///
 /// @category utility
 /// @safe team
@@ -353,9 +372,11 @@ pub fn get_installation_info() -> serde_json::Value {
 /// This is a utility function for test purposes that handles
 /// optimized prompt updates with proper error handling.
 ///
-/// @param rule_type The type of rule being optimized.
-/// @param optimized_data The optimized prompt data as JSON.
-/// @param file_path The target file path for the update.
+/// # Arguments
+///
+/// * `rule_type` - The type of rule being optimized.
+/// * `optimized_data` - The optimized prompt data as JSON.
+/// * `file_path` - The target file path for the update.
 ///
 /// @category utility
 /// @safe team

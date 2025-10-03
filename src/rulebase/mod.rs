@@ -9,10 +9,14 @@
 //! @complexity medium
 //! @since 3.0.0
 
+/// A dynamic loader for rules defined in JSON.
 pub mod dynamic_rule_loader;
+/// The execution engine for running rules against code.
 pub mod execution_engine;
+/// The interface for defining and interacting with rules.
 pub mod rule_interface;
 
+/// The generated module containing the built-in rules.
 #[cfg(feature = "embedded_rulebase")]
 pub mod generated;
 
@@ -22,11 +26,16 @@ pub use execution_engine::{ExecutionPlan, RuleExecutor};
 pub use rule_interface::{Rule, RuleCategory, RuleContext, RuleResult, RuleSeverity};
 
 #[cfg(feature = "embedded_rulebase")]
-pub use generated::{Implementation as GeneratedImplementation, RuleDefinition as GeneratedRuleDefinition};
+pub use generated::{
+    Implementation as GeneratedImplementation, RuleDefinition as GeneratedRuleDefinition,
+};
 
-/// Total rules in our rulebase
+/// The total number of rules in the rulebase.
 pub const TOTAL_RULES: usize = 832;
 
+/// Returns an iterator over the built-in rules.
+///
+/// This function is only available when the `embedded_rulebase` feature is enabled.
 #[cfg(feature = "embedded_rulebase")]
 pub fn iter_builtin_rules() -> impl Iterator<Item = &'static GeneratedRuleDefinition> {
     generated::all_rules()

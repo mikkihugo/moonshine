@@ -73,8 +73,13 @@ pub struct ExtensionManifest {
 ///
 /// This is a convenience function to simplify error reporting within the extension.
 ///
-/// @param msg The error message.
-/// @returns An `extism_pdk::Error` instance.
+/// # Arguments
+///
+/// * `msg` - The error message.
+///
+/// # Returns
+///
+/// An `extism_pdk::Error` instance.
 ///
 /// @category utility
 /// @safe team
@@ -91,8 +96,13 @@ fn create_extension_error(msg: &str) -> Error {
 /// extracting operation modes, flags, and file patterns. It handles common
 /// argument formats and reports errors for unknown or missing arguments.
 ///
-/// @param args A slice of strings representing the command-line arguments.
-/// @returns A `Result` containing a `MoonShineArgs` struct on success, or a `String` error message on failure.
+/// # Arguments
+///
+/// * `args` - A slice of strings representing the command-line arguments.
+///
+/// # Returns
+///
+/// A `Result` containing a `MoonShineArgs` struct on success, or a `String` error message on failure.
 ///
 /// @category cli
 /// @safe team
@@ -162,8 +172,13 @@ fn parse_moon_args(args: &[String]) -> Result<MoonShineArgs, String> {
 /// 6. Initializes optimization and workflow configurations.
 /// 7. Delegates the multi-phase analysis workflow to native Moon tasks.
 ///
-/// @param input The `ExecuteExtensionInput` containing arguments and context from the Moon host.
-/// @returns A `FnResult` indicating success or failure of the execution.
+/// # Arguments
+///
+/// * `input` - The `ExecuteExtensionInput` containing arguments and context from the Moon host.
+///
+/// # Returns
+///
+/// A `FnResult` indicating success or failure of the execution.
 ///
 /// @category orchestration
 /// @safe program
@@ -367,8 +382,13 @@ pub fn execute_extension_logic(Json(input): Json<ExecuteExtensionInput>) -> FnRe
 /// This function collects rule types from both embedded defaults and any custom
 /// overrides provided in the `MoonShineConfig`.
 ///
-/// @param config An optional reference to the `MoonShineConfig` to check for custom prompts.
-/// @returns A `Vec<String>` containing the names of all available rules.
+/// # Arguments
+///
+/// * `config` - An optional reference to the `MoonShineConfig` to check for custom prompts.
+///
+/// # Returns
+///
+/// A `Vec<String>` containing the names of all available rules.
 ///
 /// @category utility
 /// @safe team
@@ -385,7 +405,9 @@ pub fn get_available_rules(config: Option<&MoonShineConfig>) -> Vec<String> {
 /// This function provides a fallback mechanism for prompt templates, ensuring
 /// that default prompts are always available even if external configuration fails.
 ///
-/// @returns A `serde_json::Value` representing the embedded default prompt templates.
+/// # Returns
+///
+/// A `serde_json::Value` representing the embedded default prompt templates.
 ///
 /// @category utility
 /// @safe team
@@ -402,7 +424,9 @@ pub fn get_embedded_defaults() -> serde_json::Value {
 /// This function extracts relevant optimization settings and formats them
 /// into a `serde_json::Value` for internal use.
 ///
-/// @returns A `serde_json::Value` representing the optimization configuration.
+/// # Returns
+///
+/// A `serde_json::Value` representing the optimization configuration.
 ///
 /// @category configuration
 /// @safe team
@@ -423,7 +447,9 @@ pub fn get_optimization_config() -> serde_json::Value {
 /// This function extracts relevant workflow settings and formats them
 /// into a `serde_json::Value` for internal use.
 ///
-/// @returns A `serde_json::Value` representing the workflow configuration.
+/// # Returns
+///
+/// A `serde_json::Value` representing the workflow configuration.
 ///
 /// @category configuration
 /// @safe team

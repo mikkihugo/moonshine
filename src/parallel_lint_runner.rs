@@ -10,26 +10,43 @@ use tokio::process::Command;
 use tokio::try_join;
 use tracing::{info, error};
 
+/// Represents a single linting issue found by either ESLint or OXC.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LintIssue {
-  pub rule_name: String,
-  pub message: String,
-  pub file_path: String,
-  pub line: u32,
-  pub column: u32,
-  pub severity: String,
-  pub fix_available: bool,
-  pub source: String,
+    /// The name of the linting rule that was violated.
+    pub rule_name: String,
+    /// The message describing the issue.
+    pub message: String,
+    /// The path to the file where the issue was found.
+    pub file_path: String,
+    /// The line number of the issue.
+    pub line: u32,
+    /// The column number of the issue.
+    pub column: u32,
+    /// The severity of the issue (e.g., "Error", "Warning").
+    pub severity: String,
+    /// Whether an automatic fix is available for this issue.
+    pub fix_available: bool,
+    /// The source of the lint issue (e.g., "eslint", "oxc").
+    pub source: String,
 }
+/// Contains performance metrics for the linting process.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct LintMetrics {
-  pub total_duration_ms: u128,
-  pub eslint_duration_ms: Option<u128>,
-  pub oxc_duration_ms: Option<u128>,
-  pub files_processed: usize,
-  pub errors: usize,
-  pub warnings: usize,
-  pub concurrency: usize,
+    /// The total duration of the parallel linting process in milliseconds.
+    pub total_duration_ms: u128,
+    /// The duration of the ESLint execution in milliseconds.
+    pub eslint_duration_ms: Option<u128>,
+    /// The duration of the OXC execution in milliseconds.
+    pub oxc_duration_ms: Option<u128>,
+    /// The number of files processed.
+    pub files_processed: usize,
+    /// The total number of errors found.
+    pub errors: usize,
+    /// The total number of warnings found.
+    pub warnings: usize,
+    /// The level of concurrency used for the linting process.
+    pub concurrency: usize,
 }
 
 impl LintMetrics {
@@ -47,19 +64,29 @@ impl LintMetrics {
   }
 }
 
+/// Represents the combined result of running linters in parallel.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ParallelLintResult {
-  pub issues: Vec<LintIssue>,
-  pub tool_status: Vec<(String, bool)>,
-  pub duration_ms: u128,
-  pub metrics: LintMetrics,
+    /// A list of all linting issues found, merged from all tools.
+    pub issues: Vec<LintIssue>,
+    /// The status of each linting tool, indicating whether it ran successfully.
+    pub tool_status: Vec<(String, bool)>,
+    /// The total duration of the parallel linting process in milliseconds.
+    pub duration_ms: u128,
+    /// Detailed performance metrics for the linting process.
+    pub metrics: LintMetrics,
 }
 
+/// Configuration for the parallel lint runner.
 pub struct ParallelLintConfig {
-  pub target: String,
-  pub eslint_path: String,
-  pub oxc_path: String,
-  pub concurrency: usize,
+    /// The target directory or file to lint.
+    pub target: String,
+    /// The path to the ESLint executable.
+    pub eslint_path: String,
+    /// The path to the OXC (oxlint) executable.
+    pub oxc_path: String,
+    /// The level of concurrency to use.
+    pub concurrency: usize,
 }
 
 impl Default for ParallelLintConfig {
@@ -73,8 +100,15 @@ impl Default for ParallelLintConfig {
   }
 }
 
-/// Run ESLint and OXC (oxlint) in parallel on the given target.
-/// Returns merged issues and tool status.
+/// Runs ESLint and OXC (oxlint) in parallel on a given target and merges the results.
+///
+/// # Arguments
+///
+/// * `config` - A `ParallelLintConfig` struct containing the configuration for the runner.
+///
+/// # Returns
+///
+/// A `ParallelLintResult` struct containing the merged linting issues, tool statuses, and performance metrics.
 pub async fn run_parallel_lint(config: ParallelLintConfig) -> ParallelLintResult {
   let start = Instant::now();
 
@@ -169,6 +203,16 @@ pub async fn run_parallel_lint(config: ParallelLintConfig) -> ParallelLintResult
   }
 }
 
+/// Executes ESLint as a subprocess and parses its JSON output into a `Vec<LintIssue>`.
+///
+/// # Arguments
+///
+/// * `eslint_path` - The path to the ESLint executable.
+/// * `target` - The target directory or file to lint.
+///
+/// # Returns
+///
+/// A `Result` containing a `Vec<LintIssue>` on success, or an error `String` on failure.
 async fn run_eslint(eslint_path: &str, target: &str) -> Result<Vec<LintIssue>, String> {
   let output = Command::new(eslint_path)
     .arg("--format")
@@ -215,6 +259,16 @@ async fn run_eslint(eslint_path: &str, target: &str) -> Result<Vec<LintIssue>, S
   Ok(issues)
 }
 
+/// Executes OXC (oxlint) as a subprocess and parses its JSON output into a `Vec<LintIssue>`.
+///
+/// # Arguments
+///
+/// * `oxc_path` - The path to the OXC (oxlint) executable.
+/// * `target` - The target directory or file to lint.
+///
+/// # Returns
+///
+/// A `Result` containing a `Vec<LintIssue>` on success, or an error `String` on failure.
 async fn run_oxc(oxc_path: &str, target: &str) -> Result<Vec<LintIssue>, String> {
   let output = Command::new(oxc_path)
     .arg("--format")

@@ -25,23 +25,50 @@ use std::collections::HashMap;
 /// @since 1.0.0
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct Example {
+    /// A map holding the raw data of the example.
     pub data: HashMap<String, Value>,
+    /// A vector of keys that are considered inputs.
     pub input_keys: Vec<String>,
+    /// A vector of keys that are considered outputs or labels.
     pub output_keys: Vec<String>,
 }
 
 impl Example {
-    /// Creates a new Example with the given data and key classifications.
+    /// Creates a new `Example`.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The raw data for the example.
+    /// * `input_keys`: Keys to be treated as inputs.
+    /// * `output_keys`: Keys to be treated as outputs.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `Example`.
     pub fn new(data: HashMap<String, Value>, input_keys: Vec<String>, output_keys: Vec<String>) -> Self {
         Self { data, input_keys, output_keys }
     }
 
     /// Gets a field value from the example.
+    ///
+    /// # Arguments
+    ///
+    /// * `field`: The name of the field to retrieve.
+    /// * `default`: An optional default value if the field is not found.
+    ///
+    /// # Returns
+    ///
+    /// The value of the field, or the default value if not found.
     pub fn get(&self, field: &str, default: Option<Value>) -> Value {
         self.data.get(field).cloned().unwrap_or_else(|| default.unwrap_or(Value::Null))
     }
 
     /// Sets a field value in the example.
+    ///
+    /// # Arguments
+    ///
+    /// * `field`: The name of the field to set.
+    /// * `value`: The value to set for the field.
     pub fn set(&mut self, field: String, value: Value) {
         self.data.insert(field, value);
     }
@@ -59,17 +86,37 @@ impl Example {
 /// @since 1.0.0
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Prediction {
+    /// A map holding the prediction data.
     pub data: HashMap<String, Value>,
+    /// Language model usage statistics for this prediction.
     pub lm_usage: LmUsage,
 }
 
 impl Prediction {
-    /// Creates a new Prediction with the given data and usage metrics.
+    /// Creates a new `Prediction`.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The prediction data.
+    /// * `lm_usage`: Language model usage statistics.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `Prediction`.
     pub fn new(data: HashMap<String, Value>, lm_usage: LmUsage) -> Self {
         Self { data, lm_usage }
     }
 
     /// Gets a field value from the prediction data.
+    ///
+    /// # Arguments
+    ///
+    /// * `field`: The name of the field to retrieve.
+    /// * `default`: An optional default value if the field is not found.
+    ///
+    /// # Returns
+    ///
+    /// The value of the field, or the default value if not found.
     pub fn get(&self, field: &str, default: Option<Value>) -> Value {
         self.data.get(field).cloned().unwrap_or_else(|| default.unwrap_or(Value::Null))
     }

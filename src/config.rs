@@ -1,4 +1,7 @@
-//! Configuration structures and schemas for Moon Shine extension
+//! Configuration structures and schemas for Moon Shine extension.
+//!
+//! This module defines the configuration structures used by the `moon-shine` extension,
+//! including command-line arguments and the main configuration loaded from `moon.yml`.
 
 use crate::error::{Error, Result};
 use crate::moon_pdk_interface::get_moon_config_safe;
@@ -7,237 +10,299 @@ use moon_pdk_api::config_struct;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// CLI arguments structure for Moon PDK integration
+/// Defines the command-line arguments accepted by the `moon-shine` extension.
+///
+/// These arguments are parsed from the command line when the extension is invoked
+/// and control its primary operation mode.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoonShineArgs {
-    /// Operation mode: fix, lint-only, or comprehensive
+    /// Specifies the operation mode. Can be "fix", "lint-only", or "comprehensive".
     pub mode: Option<String>,
-
-    /// Only report issues without fixing
+    /// If true, only reports issues without applying any fixes.
     pub lint_only: bool,
-
-    /// CI-friendly reporting mode (no interactive fixes)
+    /// If true, enables a CI-friendly reporting mode without interactive fixes.
     pub reporting_only: bool,
-
-    /// Force initialization of configuration files
+    /// If true, forces the initialization of configuration files.
     pub force_init: bool,
-
-    /// Install default prompts and configuration
+    /// If true, installs the default prompts and configuration.
     pub install_prompts: bool,
-
-    /// Files to process (supports glob patterns)
+    /// A list of files to process. Supports glob patterns.
     pub files: Vec<String>,
 }
 
 config_struct!(
+    /// Defines the main configuration for the `moon-shine` extension.
+    ///
+    /// This structure is loaded from the `toolchain.moonShine` section of `moon.yml`
+    /// and provides detailed control over the extension's behavior, including AI settings,
+    /// tool integrations, and workflow options.
+    ///
+    /// Note: This is a large configuration struct. Future refactoring may group
+    /// related fields into more focused structs (e.g., `CoproConfig`, `PatternDetectionConfig`).
     #[derive(Clone, Default, Serialize)]
     pub struct MoonShineConfig {
         // Core AI configuration
-        // <!-- TODO: The `MoonShineConfig` struct is quite large. Consider grouping related fields into smaller, more focused structs (e.g., `CoproConfig`, `PatternDetectionConfig`, `CodexConfig`) to improve organization and readability. -->
+        /// The primary AI model to use for code analysis (e.g., "sonnet", "opus").
         #[serde(rename = "aiModel")]
-        pub ai_model: Option<String>, // "sonnet", "opus", etc.
+        pub ai_model: Option<String>,
 
+        /// A list of available AI providers to route requests to.
         #[serde(rename = "aiProviders")]
-        pub ai_providers: Option<Vec<String>>, // List of available AI providers
+        pub ai_providers: Option<Vec<String>>,
 
-        // LM Parameters (consolidated from lm_config.rs)
+        // LM Parameters
+        /// Controls the creativity of the AI model. Ranges from 0.0 to 2.0.
         #[serde(rename = "temperature")]
-        pub temperature: Option<f32>, // Model creativity (0.0-2.0, default: 0.7)
+        pub temperature: Option<f32>,
 
+        /// The nucleus sampling probability. Ranges from 0.0 to 1.0.
         #[serde(rename = "topP")]
-        pub top_p: Option<f32>, // Nucleus sampling (0.0-1.0, default: 0.0)
+        pub top_p: Option<f32>,
 
+        /// The maximum number of tokens in a response.
         #[serde(rename = "maxTokens")]
-        pub max_tokens: Option<u32>, // Maximum tokens in response (default: 8192)
+        pub max_tokens: Option<u32>,
 
+        /// The maximum number of tokens to generate in a completion.
         #[serde(rename = "maxCompletionTokens")]
-        pub max_completion_tokens: Option<u32>, // Maximum completion tokens (default: 8192)
+        pub max_completion_tokens: Option<u32>,
 
+        /// Enables Collaborative Prompt Optimization (COPRO) for systematic prompt engineering.
         #[serde(rename = "enableCoproOptimization")]
-        pub enable_copro_optimization: Option<bool>, // Enable COPRO mathematical optimization
+        pub enable_copro_optimization: Option<bool>,
 
+        /// Enables AI-powered code pattern learning and detection.
         #[serde(rename = "enablePatternDetection")]
-        pub enable_pattern_detection: Option<bool>, // Enable AI code pattern learning
+        pub enable_pattern_detection: Option<bool>,
 
         // COPRO configuration
+        /// The number of prompt candidates to generate per optimization iteration.
         #[serde(rename = "coproBreadth")]
-        pub copro_breadth: Option<u32>, // Prompt candidates per iteration (default: 5)
+        pub copro_breadth: Option<u32>,
 
+        /// The number of optimization iterations to perform.
         #[serde(rename = "coproDepth")]
-        pub copro_depth: Option<u32>, // Optimization iterations (default: 3)
+        pub copro_depth: Option<u32>,
 
+        /// The creativity temperature for generating COPRO candidates.
         #[serde(rename = "coproTemperature")]
-        pub copro_temperature: Option<f32>, // Creativity in generation (default: 1.0)
+        pub copro_temperature: Option<f32>,
 
         // Pattern detection configuration
+        /// The learning rate for the pattern detection algorithm.
         #[serde(rename = "patternLearningRate")]
-        pub pattern_learning_rate: Option<f32>, // How quickly to learn patterns (default: 0.1)
+        pub pattern_learning_rate: Option<f32>,
 
+        /// The minimum frequency for a code pattern to be considered significant.
         #[serde(rename = "patternMinFrequency")]
-        pub pattern_min_frequency: Option<f32>, // Minimum frequency to consider pattern (default: 0.3)
+        pub pattern_min_frequency: Option<f32>,
 
-        // Configurable pattern rules for code analysis
+        /// Configurable rules for code pattern analysis.
         #[serde(rename = "patternRules")]
         pub pattern_rules: Option<crate::pattern_config::PatternConfig>,
 
         // Tool integration
+        /// Enables integration with ESLint for linting.
         #[serde(rename = "enableEslintIntegration")]
         pub enable_eslint_integration: Option<bool>,
 
+        /// Enables integration with the TypeScript compiler for type checking.
         #[serde(rename = "enableTypescriptIntegration")]
         pub enable_typescript_integration: Option<bool>,
 
+        /// Enables integration with Prettier for code formatting.
         #[serde(rename = "enablePrettierIntegration")]
         pub enable_prettier_integration: Option<bool>,
 
         // OpenAI Codex CLI integration
+        /// Enables integration with the OpenAI Codex CLI.
         #[serde(rename = "enableCodexIntegration")]
         pub enable_codex_integration: Option<bool>,
 
+        /// The Codex model to use (e.g., "gpt-5-codex").
         #[serde(rename = "codexModel")]
-        pub codex_model: Option<String>, // Default: "gpt-5-codex"
+        pub codex_model: Option<String>,
 
+        /// The command to execute the Codex CLI.
         #[serde(rename = "codexCommand")]
-        pub codex_command: Option<String>, // Default: "/home/mhugo/.npm-global/bin/codex"
+        pub codex_command: Option<String>,
 
+        /// The reasoning effort level for Codex to apply.
         #[serde(rename = "codexReasoningEffort")]
-        pub codex_reasoning_effort: Option<String>, // Default: "low"
+        pub codex_reasoning_effort: Option<String>,
 
+        /// Overrides the Moon task to run for every analysis invocation.
         #[serde(rename = "moonTaskName")]
         pub moon_task_name: Option<String>,
 
+        /// A mapping of languages to Moon tasks, overriding per-language execution.
         #[serde(rename = "moonTaskMapping")]
         pub moon_task_mapping: Option<HashMap<String, String>>,
 
+        /// The fallback language to use when language detection fails.
         #[serde(rename = "defaultLanguage")]
         pub default_language: Option<String>,
 
+        /// If true, treats the Claude CLI as OAuth-authenticated.
         #[serde(rename = "claudeUsesOauth")]
         pub claude_uses_oauth: Option<bool>,
 
+        /// The environment variable name for the Claude API key.
         #[serde(rename = "claudeApiKeyEnv")]
         pub claude_api_key_env: Option<String>,
 
+        /// If true, treats the Gemini CLI as OAuth-authenticated.
         #[serde(rename = "geminiUsesOauth")]
         pub gemini_uses_oauth: Option<bool>,
 
+        /// The environment variable name for the Gemini API key.
         #[serde(rename = "geminiApiKeyEnv")]
         pub gemini_api_key_env: Option<String>,
 
+        /// If true, treats the Codex CLI as OAuth-authenticated.
         #[serde(rename = "codexUsesOauth")]
         pub codex_uses_oauth: Option<bool>,
 
+        /// The environment variable name for the Codex API key.
         #[serde(rename = "codexApiKeyEnv")]
         pub codex_api_key_env: Option<String>,
 
         // OpenAI Codex capabilities configuration
+        /// The perceived rating of Codex's code analysis capabilities.
         #[serde(rename = "codexCodeAnalysisRating")]
-        pub codex_code_analysis_rating: Option<f32>, // Default: 0.88
+        pub codex_code_analysis_rating: Option<f32>,
 
+        /// The perceived rating of Codex's code generation capabilities.
         #[serde(rename = "codexCodeGenerationRating")]
-        pub codex_code_generation_rating: Option<f32>, // Default: 0.95
+        pub codex_code_generation_rating: Option<f32>,
 
+        /// The perceived rating of Codex's complex reasoning capabilities.
         #[serde(rename = "codexComplexReasoningRating")]
-        pub codex_complex_reasoning_rating: Option<f32>, // Default: 0.85
+        pub codex_complex_reasoning_rating: Option<f32>,
 
+        /// The perceived rating of Codex's speed.
         #[serde(rename = "codexSpeedRating")]
-        pub codex_speed_rating: Option<f32>, // Default: 0.85
+        pub codex_speed_rating: Option<f32>,
 
+        /// The context length supported by the Codex model.
         #[serde(rename = "codexContextLength")]
-        pub codex_context_length: Option<u32>, // Default: 200000
+        pub codex_context_length: Option<u32>,
 
+        /// Whether the Codex integration supports session-based interactions.
         #[serde(rename = "codexSupportsSession")]
-        pub codex_supports_sessions: Option<bool>, // Default: true
+        pub codex_supports_sessions: Option<bool>,
 
         // File processing
+        /// The maximum number of files to process in a single task.
         #[serde(rename = "maxFilesPerTask")]
         pub max_files_per_task: Option<u32>,
 
+        /// The complexity threshold above which files receive special handling.
         #[serde(rename = "complexityThreshold")]
         pub complexity_threshold: Option<f32>,
 
+        /// A list of glob patterns to include in the analysis.
         #[serde(rename = "includePatterns")]
         pub include_patterns: Option<Vec<String>>,
 
+        /// A list of glob patterns to exclude from the analysis.
         #[serde(rename = "excludePatterns")]
         pub exclude_patterns: Option<Vec<String>>,
 
         // Quality configuration
+        /// The minimum quality score for code to be considered acceptable.
         #[serde(rename = "qualityThreshold")]
         pub quality_threshold: Option<f32>,
 
+        /// If true, falls back to the "opus" model if the primary model fails.
         #[serde(rename = "enableOpusFallback")]
         pub enable_opus_fallback: Option<bool>,
 
-        /// Custom prompt overrides from workspace.yml configuration
+        /// Custom prompt overrides from `workspace.yml` configuration.
         #[serde(rename = "customPrompts")]
         pub custom_prompts: Option<std::collections::HashMap<String, String>>,
 
         // Concurrency and performance controls
+        /// The maximum number of concurrent requests to the AI provider.
         #[serde(rename = "maxConcurrentRequests")]
         pub max_concurrent_requests: Option<u32>,
 
+        /// The number of files to process in a single batch.
         #[serde(rename = "batchSize")]
         pub batch_size: Option<u32>,
 
+        /// The default operation mode for the extension ("fix", "lint-only", "comprehensive").
         #[serde(rename = "operationMode")]
         pub operation_mode: Option<String>,
 
-        // Analysis configuration (from AnalysisConfig)
+        // Analysis configuration
+        /// The maximum number of suggestions to generate per file.
         #[serde(rename = "maxSuggestions")]
         pub max_suggestions: Option<u32>,
 
+        /// The minimum confidence level for a suggestion to be considered.
         #[serde(rename = "minConfidence")]
         pub min_confidence: Option<f32>,
 
+        /// If true, automatically applies safe fixes.
         #[serde(rename = "enableAutoFix")]
         pub enable_auto_fix: Option<bool>,
 
+        /// If true, enables parallel analysis of files.
         #[serde(rename = "parallelAnalysis")]
         pub parallel_analysis: Option<bool>,
 
+        /// If true, includes performance metrics in the output.
         #[serde(rename = "includeMetrics")]
         pub include_metrics: Option<bool>,
 
+        /// The timeout in seconds for analysis operations.
         #[serde(rename = "timeoutSeconds")]
         pub timeout_seconds: Option<u64>,
 
-        // AI code fixer configuration (from ClaudeFixerConfig)
+        // AI code fixer configuration
+        /// Enables analysis of relationships between code elements.
         #[serde(rename = "enableRelationshipAnalysis")]
         pub enable_relationship_analysis: Option<bool>,
 
+        /// Enables AI-powered generation of TSDoc comments.
         #[serde(rename = "enableAiTsdoc")]
         pub enable_ai_tsdoc: Option<bool>,
 
+        /// The target TSDoc coverage percentage.
         #[serde(rename = "tsdocCoverageTarget")]
         pub tsdoc_coverage_target: Option<f64>,
 
-        // Optimization configuration (from OptimizationConfig)
+        // Optimization configuration
+        /// Enables the optimization workflow.
         #[serde(rename = "optimizationEnabled")]
         pub optimization_enabled: Option<bool>,
 
+        /// The maximum number of iterations for the optimization process.
         #[serde(rename = "maxOptimizationIterations")]
         pub max_optimization_iterations: Option<usize>,
 
+        /// The confidence threshold for accepting an optimization.
         #[serde(rename = "confidenceThreshold")]
         pub confidence_threshold: Option<f64>,
 
-        // Workflow configuration (from WorkflowConfig)
+        // Workflow configuration
+        /// Enables the multi-phase analysis workflow.
         #[serde(rename = "workflowEnabled")]
         pub workflow_enabled: Option<bool>,
 
+        /// Enables parallel processing within the workflow.
         #[serde(rename = "workflowParallelProcessing")]
         pub workflow_parallel_processing: Option<bool>,
 
+        /// The timeout in seconds for each workflow step.
         #[serde(rename = "workflowTimeoutSeconds")]
         pub workflow_timeout_seconds: Option<u64>,
     }
 );
 
-// Default implementation generated by config_struct! macro
-
 impl MoonShineConfig {
-    /// Get the appropriate model name based on provider type
+    /// Returns the appropriate AI model name based on the provider type.
     pub fn get_model_for_provider(&self, provider: &str) -> String {
         match provider.to_lowercase().as_str() {
             "claude" => "sonnet",
@@ -248,17 +313,24 @@ impl MoonShineConfig {
         .to_string()
     }
 
-    /// Get the actual model name, using provider defaults if not specified
+    /// Returns the configured AI model name, or a default if not specified.
     pub fn get_model(&self) -> String {
-        self.ai_model.clone().unwrap_or_else(|| "sonnet".to_string())
+        self.ai_model
+            .clone()
+            .unwrap_or_else(|| "sonnet".to_string())
     }
 
-    /// Update model for a specific provider
+    /// Updates the AI model to the default for a specific provider.
     pub fn set_model_for_provider(&mut self, provider: &str) {
         self.ai_model = Some(self.get_model_for_provider(provider));
     }
 
-    /// Resolve the Moon task name for a detected language.
+    /// Resolves the Moon task name for a given language.
+    ///
+    /// The task name is determined in the following order of precedence:
+    /// 1. `moon_task_name` field if explicitly set.
+    /// 2. `moon_task_mapping` for the given language.
+    /// 3. A default based on the language.
     pub fn resolve_task_name(&self, language: &str) -> String {
         if let Some(explicit) = self.moon_task_name.as_ref() {
             return explicit.clone();
@@ -281,13 +353,16 @@ impl MoonShineConfig {
         }
     }
 
-    /// Optional default language when detection fails.
+    /// Returns the optional default language for when detection fails.
     pub fn default_language(&self) -> Option<&str> {
         self.default_language.as_deref()
     }
 }
 
-/// Create configuration schema for Moon workspace.yml integration
+/// Creates the JSON schema for the `moon-shine` extension configuration.
+///
+/// This schema is used by Moon to validate the configuration in `moon.yml`
+/// and provide autocompletion in supported editors.
 pub fn create_config_schema() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
@@ -401,17 +476,16 @@ pub fn create_config_schema() -> serde_json::Value {
 }
 
 impl MoonShineConfig {
-    /// Load configuration from Moon workspace with robust error handling
+    /// Loads the `moon-shine` configuration from the Moon workspace.
+    ///
+    /// This function uses the Moon PDK to safely access the extension's configuration,
+    /// applies any necessary overrides, validates the settings, and loads custom prompts.
     pub fn from_moon_workspace() -> Result<Self> {
-        // Use the proper Moon PDK approach to get extension configuration
-        // PDK handles both configuration values and environment variables
         let mut config = get_extension_config::<Self>().unwrap_or_default();
 
-        // Apply WASM-compatible overrides and validation
         config.apply_overrides()?;
         config.validate_and_fix()?;
 
-        // Load custom prompts (WASM-compatible defaults)
         if let Ok(Some(prompts)) = Self::load_custom_prompts() {
             config.custom_prompts = Some(prompts);
         }
@@ -419,43 +493,40 @@ impl MoonShineConfig {
         Ok(config)
     }
 
-    /// Get configured pattern rules or defaults
+    /// Returns the configured pattern rules, or a default set if not specified.
     pub fn get_pattern_rules(&self) -> crate::pattern_config::PatternConfig {
         self.pattern_rules.clone().unwrap_or_default()
     }
 
-    /// Get the extension version from Cargo.toml at compile time
+    /// Returns the version of the `moon-shine` extension from `Cargo.toml`.
     pub fn version() -> &'static str {
         env!("CARGO_PKG_VERSION")
     }
 
-    /// Get moonshine directory path - WASM-compatible with Moon PDK integration
+    /// Returns the path to the `moonshine` data directory within the `.moon` directory.
+    ///
+    /// This function safely determines the directory path in a WASM-compatible way
+    /// by checking Moon configuration and environment variables via the PDK.
     pub fn moonshine_directory() -> String {
-        // Production implementation: Get directory through Moon PDK configuration
-        // Priority: Moon config > Host env vars > Default fallback
-
-        // 1. Try Moon workspace configuration first
         if let Ok(Some(moon_dir)) = get_moon_config_safe("moonshine_directory") {
             return moon_dir;
         }
 
-        // 2. Try Moon extension configuration
         if let Ok(Some(ext_dir)) = get_moon_config_safe("extension.moonshine.data_directory") {
             return ext_dir;
         }
 
-        // 3. Try host environment variable through Moon PDK
         if let Ok(Some(env_dir)) = get_moon_config_safe("env.MOONSHINE_DIR") {
             return env_dir;
         }
 
-        // 4. Production fallback: Standard Moon extension directory
         ".moon/moonshine".to_string()
     }
 
-    /// Validate configuration values and return errors for invalid settings
+    /// Validates the current configuration values.
+    ///
+    /// Returns an error if any configuration setting is invalid.
     pub fn validate(&self) -> Result<()> {
-        // Validate AI model
         if let Some(ref model) = self.ai_model {
             match model.as_str() {
                 "sonnet" | "opus" | "gemini-2.5-pro" | "gemini-2.5-flash" | "gpt5-codex" => {}
@@ -463,68 +534,96 @@ impl MoonShineConfig {
             }
         }
 
-        // Validate numeric ranges
         if let Some(breadth) = self.copro_breadth {
             if !(1..=20).contains(&breadth) {
-                return Err(Error::config(format!("copro_breadth must be between 1 and 20, got {}", breadth)));
+                return Err(Error::config(format!(
+                    "copro_breadth must be between 1 and 20, got {}",
+                    breadth
+                )));
             }
         }
 
         if let Some(depth) = self.copro_depth {
             if !(1..=10).contains(&depth) {
-                return Err(Error::config(format!("copro_depth must be between 1 and 10, got {}", depth)));
+                return Err(Error::config(format!(
+                    "copro_depth must be between 1 and 10, got {}",
+                    depth
+                )));
             }
         }
 
         if let Some(temp) = self.copro_temperature {
             if !(0.0..=2.0).contains(&temp) {
-                return Err(Error::config(format!("copro_temperature must be between 0.0 and 2.0, got {}", temp)));
+                return Err(Error::config(format!(
+                    "copro_temperature must be between 0.0 and 2.0, got {}",
+                    temp
+                )));
             }
         }
 
         if let Some(rate) = self.pattern_learning_rate {
             if !(0.0..=1.0).contains(&rate) {
-                return Err(Error::config(format!("pattern_learning_rate must be between 0.0 and 1.0, got {}", rate)));
+                return Err(Error::config(format!(
+                    "pattern_learning_rate must be between 0.0 and 1.0, got {}",
+                    rate
+                )));
             }
         }
 
         if let Some(freq) = self.pattern_min_frequency {
             if !(0.0..=1.0).contains(&freq) {
-                return Err(Error::config(format!("pattern_min_frequency must be between 0.0 and 1.0, got {}", freq)));
+                return Err(Error::config(format!(
+                    "pattern_min_frequency must be between 0.0 and 1.0, got {}",
+                    freq
+                )));
             }
         }
 
         if let Some(files) = self.max_files_per_task {
             if !(1..=100).contains(&files) {
-                return Err(Error::config(format!("max_files_per_task must be between 1 and 100, got {}", files)));
+                return Err(Error::config(format!(
+                    "max_files_per_task must be between 1 and 100, got {}",
+                    files
+                )));
             }
         }
 
         if let Some(complexity) = self.complexity_threshold {
             if !(1.0..=100.0).contains(&complexity) {
-                return Err(Error::config(format!("complexity_threshold must be between 1.0 and 100.0, got {}", complexity)));
+                return Err(Error::config(format!(
+                    "complexity_threshold must be between 1.0 and 100.0, got {}",
+                    complexity
+                )));
             }
         }
 
         if let Some(quality) = self.quality_threshold {
             if !(0.0..=1.0).contains(&quality) {
-                return Err(Error::config(format!("quality_threshold must be between 0.0 and 1.0, got {}", quality)));
+                return Err(Error::config(format!(
+                    "quality_threshold must be between 0.0 and 1.0, got {}",
+                    quality
+                )));
             }
         }
 
         if let Some(concurrent) = self.max_concurrent_requests {
             if !(1..=10).contains(&concurrent) {
-                return Err(Error::config(format!("max_concurrent_requests must be between 1 and 10, got {}", concurrent)));
+                return Err(Error::config(format!(
+                    "max_concurrent_requests must be between 1 and 10, got {}",
+                    concurrent
+                )));
             }
         }
 
         if let Some(batch) = self.batch_size {
             if !(1..=50).contains(&batch) {
-                return Err(Error::config(format!("batch_size must be between 1 and 50, got {}", batch)));
+                return Err(Error::config(format!(
+                    "batch_size must be between 1 and 50, got {}",
+                    batch
+                )));
             }
         }
 
-        // Validate operation mode
         if let Some(ref mode) = self.operation_mode {
             match mode.as_str() {
                 "fix" | "lint-only" | "comprehensive" => {}
@@ -535,7 +634,7 @@ impl MoonShineConfig {
         Ok(())
     }
 
-    // Enhanced helper parsing methods for production configuration validation
+    /// Parses a string into a boolean with flexible matching.
     pub fn parse_bool(s: &str) -> Result<bool> {
         match s.to_lowercase().trim() {
             "true" | "1" | "yes" | "on" | "enabled" => Ok(true),
@@ -547,82 +646,86 @@ impl MoonShineConfig {
         }
     }
 
+    /// Parses a string into a `u32`.
     pub fn parse_u32(s: &str) -> Result<u32> {
-        s.trim().parse::<u32>().map_err(|_| Error::config(format!("Invalid unsigned integer: '{}'", s)))
+        s.trim()
+            .parse::<u32>()
+            .map_err(|_| Error::config(format!("Invalid unsigned integer: '{}'", s)))
     }
 
+    /// Parses a string into an `f32`.
     pub fn parse_f32(s: &str) -> Result<f32> {
-        s.trim().parse::<f32>().map_err(|_| Error::config(format!("Invalid float value: '{}'", s)))
+        s.trim()
+            .parse::<f32>()
+            .map_err(|_| Error::config(format!("Invalid float value: '{}'", s)))
     }
 
-    /// Validate configuration values and fix any out-of-range settings
+    /// Validates configuration values and corrects any out-of-range settings to their defaults.
     pub fn validate_and_fix(&mut self) -> Result<()> {
-        // Validate temperature range
         if let Some(temp) = self.temperature {
             if !(0.0..=2.0).contains(&temp) {
-                self.temperature = Some(0.7); // Reset to default
+                self.temperature = Some(0.7);
             }
         }
 
-        // Validate top_p range
         if let Some(top_p) = self.top_p {
             if !(0.0..=1.0).contains(&top_p) {
-                self.top_p = Some(0.9); // Reset to default
+                self.top_p = Some(0.9);
             }
         }
 
-        // Validate max_tokens
         if let Some(tokens) = self.max_tokens {
             if !(100..=32000).contains(&tokens) {
-                self.max_tokens = Some(8192); // Reset to default
+                self.max_tokens = Some(8192);
             }
         }
 
-        // Validate COPRO parameters
         if let Some(breadth) = self.copro_breadth {
             if !(1..=50).contains(&breadth) {
-                self.copro_breadth = Some(10); // Reset to default
+                self.copro_breadth = Some(10);
             }
         }
 
         if let Some(depth) = self.copro_depth {
             if !(1..=20).contains(&depth) {
-                self.copro_depth = Some(5); // Reset to default
+                self.copro_depth = Some(5);
             }
         }
 
         Ok(())
     }
 
-    /// Apply configuration overrides (WASM-compatible)
+    /// Applies configuration overrides in a WASM-compatible manner.
+    ///
+    /// In a WASM environment, all configuration must come through the Moon PDK.
+    /// This function ensures that the loaded configuration is validated and fixed.
     pub fn apply_overrides(&mut self) -> Result<()> {
-        // In WASM, we can only get configuration through Moon PDK
-        // Environment variables and file system are not available
-        // All configuration must come through the Moon extension config
-
-        // Validate and fix any invalid values
         self.validate_and_fix()?;
-
         Ok(())
     }
 
+    /// Parses a delimited string into a vector of strings.
+    ///
+    /// Supports multiple delimiters: comma, semicolon, pipe, and newline.
     pub fn parse_string_list(s: &str) -> Vec<String> {
         if s.trim().is_empty() {
             return Vec::new();
         }
 
-        // Support multiple delimiters: comma, semicolon, pipe, newline
         let delimiters = [',', ';', '|', '\n'];
         let mut result = Vec::new();
 
         for delimiter in delimiters {
             if s.contains(delimiter) {
-                result = s.split(delimiter).map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                result = s
+                    .split(delimiter)
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
                 break;
             }
         }
 
-        // If no delimiters found, treat as single item
         if result.is_empty() {
             result.push(s.trim().to_string());
         }
@@ -630,17 +733,12 @@ impl MoonShineConfig {
         result
     }
 
-    /// Apply environment variable overrides through Moon PDK for WASM compatibility
+    /// Applies environment variable overrides through the Moon PDK for WASM compatibility.
     pub fn apply_env_overrides(&mut self) -> Result<()> {
-        // Production implementation: Get environment variables through Moon PDK
-        // WASM-compatible environment variable access through Moon configuration system
-
-        // AI Model configuration
         if let Ok(Some(model)) = get_moon_config_safe("env.MOONSHINE_AI_MODEL") {
             self.ai_model = Some(model);
         }
 
-        // Temperature configuration
         if let Ok(Some(temp_str)) = get_moon_config_safe("env.MOONSHINE_TEMPERATURE") {
             if let Ok(temp) = temp_str.parse::<f32>() {
                 if (0.0..=2.0).contains(&temp) {
@@ -649,7 +747,6 @@ impl MoonShineConfig {
             }
         }
 
-        // Top-P configuration
         if let Ok(Some(top_p_str)) = get_moon_config_safe("env.MOONSHINE_TOP_P") {
             if let Ok(top_p) = top_p_str.parse::<f32>() {
                 if (0.0..=1.0).contains(&top_p) {
@@ -658,7 +755,6 @@ impl MoonShineConfig {
             }
         }
 
-        // Max tokens configuration
         if let Ok(Some(tokens_str)) = get_moon_config_safe("env.MOONSHINE_MAX_TOKENS") {
             if let Ok(tokens) = tokens_str.parse::<u32>() {
                 if tokens > 0 && tokens <= 200000 {
@@ -667,12 +763,13 @@ impl MoonShineConfig {
             }
         }
 
-        // Enable/disable features via environment
         if let Ok(Some(copro_str)) = get_moon_config_safe("env.MOONSHINE_ENABLE_COPRO") {
             self.enable_copro_optimization = Some(copro_str.to_lowercase() == "true");
         }
 
-        if let Ok(Some(pattern_str)) = get_moon_config_safe("env.MOONSHINE_ENABLE_PATTERN_DETECTION") {
+        if let Ok(Some(pattern_str)) =
+            get_moon_config_safe("env.MOONSHINE_ENABLE_PATTERN_DETECTION")
+        {
             self.enable_pattern_detection = Some(pattern_str.to_lowercase() == "true");
         }
 
@@ -688,15 +785,16 @@ impl MoonShineConfig {
             self.enable_typescript_integration = Some(ts_str.to_lowercase() == "true");
         }
 
-        // Note: parallel_threads configuration handled through Moon's task system
-
         Ok(())
     }
 
+    /// Loads custom prompts from various sources within the Moon workspace.
+    ///
+    /// This function aggregates prompts from default templates, Moon extension configuration,
+    /// DSPy optimized prompts, project-specific configuration, and language-specific settings.
     fn load_custom_prompts() -> Result<Option<HashMap<String, String>>> {
         let mut prompts = HashMap::new();
 
-        // Load default prompt templates first
         prompts.insert(
             "compilation_critical".to_string(),
             "Focus on compilation errors, syntax issues, and critical TypeScript problems that prevent code execution.".to_string(),
@@ -722,59 +820,46 @@ impl MoonShineConfig {
             "Identify security vulnerabilities, sanitize inputs, and implement secure coding practices.".to_string(),
         );
 
-        // Load custom prompts from Moon extension configuration (WASM-compatible)
-        if let Ok(Some(custom_prompts_json)) = get_moon_config_safe("extension.moonshine.custom_prompts") {
-            match serde_json::from_str::<HashMap<String, String>>(&custom_prompts_json) {
-                Ok(custom_prompts) => {
-                    // Validate custom prompts before merging
-                    for (key, value) in custom_prompts {
-                        if !key.trim().is_empty() && !value.trim().is_empty() && value.len() <= 5000 {
-                            prompts.insert(key, value);
-                        }
+        if let Ok(Some(custom_prompts_json)) =
+            get_moon_config_safe("extension.moonshine.custom_prompts")
+        {
+            if let Ok(custom_prompts) =
+                serde_json::from_str::<HashMap<String, String>>(&custom_prompts_json)
+            {
+                for (key, value) in custom_prompts {
+                    if !key.trim().is_empty() && !value.trim().is_empty() && value.len() <= 5000 {
+                        prompts.insert(key, value);
                     }
-                }
-                Err(e) => {
-                    // Log parsing error but continue with defaults
-                    eprintln!("Warning: Failed to parse custom prompts from Moon config: {}", e);
                 }
             }
         }
 
-        // Load prompts from Moon task communication for DSPy optimized prompts
-        if let Ok(Some(optimized_prompts_json)) = get_moon_config_safe("extension.moonshine.optimized_prompts") {
-            match serde_json::from_str::<HashMap<String, String>>(&optimized_prompts_json) {
-                Ok(optimized_prompts) => {
-                    // Optimized prompts override defaults and customs
-                    for (key, value) in optimized_prompts {
-                        if !key.trim().is_empty() && !value.trim().is_empty() && value.len() <= 10000 {
-                            prompts.insert(format!("optimized_{}", key), value);
-                        }
+        if let Ok(Some(optimized_prompts_json)) =
+            get_moon_config_safe("extension.moonshine.optimized_prompts")
+        {
+            if let Ok(optimized_prompts) =
+                serde_json::from_str::<HashMap<String, String>>(&optimized_prompts_json)
+            {
+                for (key, value) in optimized_prompts {
+                    if !key.trim().is_empty() && !value.trim().is_empty() && value.len() <= 10000 {
+                        prompts.insert(format!("optimized_{}", key), value);
                     }
-                }
-                Err(e) => {
-                    eprintln!("Warning: Failed to parse optimized prompts from Moon config: {}", e);
                 }
             }
         }
 
-        // Load project-specific prompts from Moon project configuration
         if let Ok(Some(project_prompts_json)) = get_moon_config_safe("project.moonshine.prompts") {
-            match serde_json::from_str::<HashMap<String, String>>(&project_prompts_json) {
-                Ok(project_prompts) => {
-                    // Project prompts have highest priority
-                    for (key, value) in project_prompts {
-                        if !key.trim().is_empty() && !value.trim().is_empty() && value.len() <= 15000 {
-                            prompts.insert(format!("project_{}", key), value);
-                        }
+            if let Ok(project_prompts) =
+                serde_json::from_str::<HashMap<String, String>>(&project_prompts_json)
+            {
+                for (key, value) in project_prompts {
+                    if !key.trim().is_empty() && !value.trim().is_empty() && value.len() <= 15000 {
+                        prompts.insert(format!("project_{}", key), value);
                     }
-                }
-                Err(e) => {
-                    eprintln!("Warning: Failed to parse project prompts from Moon config: {}", e);
                 }
             }
         }
 
-        // Load language-specific prompts
         let languages = ["typescript", "javascript", "rust", "python", "go", "java"];
         for lang in &languages {
             let config_key = format!("extension.moonshine.prompts.{}", lang);
@@ -786,63 +871,72 @@ impl MoonShineConfig {
         }
 
         if prompts.is_empty() {
-            return Ok(None);
+            Ok(None)
+        } else {
+            Ok(Some(prompts))
         }
-
-        Ok(Some(prompts))
     }
 
-    /// Save optimized prompts back to workspace (WASM-compatible via Moon tasks)
+    /// Saves optimized prompts back to the workspace via Moon tasks.
+    ///
+    /// This function validates the prompts, serializes them to JSON, and communicates
+    /// with a Moon task to handle the actual file writing, ensuring WASM compatibility.
     pub fn save_optimized_prompts(prompts: &HashMap<String, String>) -> Result<()> {
-        // Validate prompts before saving
         if prompts.is_empty() {
-            return Err(Error::config("Cannot save empty prompts collection".to_string()));
+            return Err(Error::config(
+                "Cannot save empty prompts collection".to_string(),
+            ));
         }
 
-        // Validate individual prompts
         for (key, value) in prompts {
             if key.trim().is_empty() {
                 return Err(Error::config("Prompt key cannot be empty".to_string()));
             }
             if value.trim().is_empty() {
-                return Err(Error::config(format!("Prompt value for '{}' cannot be empty", key)));
+                return Err(Error::config(format!(
+                    "Prompt value for '{}' cannot be empty",
+                    key
+                )));
             }
             if value.len() > 50000 {
-                return Err(Error::config(format!("Prompt '{}' exceeds maximum length of 50KB", key)));
+                return Err(Error::config(format!(
+                    "Prompt '{}' exceeds maximum length of 50KB",
+                    key
+                )));
             }
-            // Validate prompt contains reasonable text (no binary data)
-            if value.chars().any(|c| c.is_control() && c != '\n' && c != '\t' && c != '\r') {
-                return Err(Error::config(format!("Prompt '{}' contains invalid control characters", key)));
+            if value
+                .chars()
+                .any(|c| c.is_control() && c != '\n' && c != '\t' && c != '\r')
+            {
+                return Err(Error::config(format!(
+                    "Prompt '{}' contains invalid control characters",
+                    key
+                )));
             }
         }
 
-        // Serialize prompts to JSON for Moon task communication
-        let json = serde_json::to_string_pretty(prompts).map_err(|e| Error::config(format!("Failed to serialize prompts: {}", e)))?;
+        let json = serde_json::to_string_pretty(prompts)
+            .map_err(|e| Error::config(format!("Failed to serialize prompts: {}", e)))?;
 
-        // Create metadata for Moon task communication
         let save_metadata = serde_json::json!({
-          "action": "save_optimized_prompts",
-          "timestamp": chrono::Utc::now().to_rfc3339(),
-          "prompt_count": prompts.len(),
-          "total_size_bytes": json.len(),
-          "data": prompts
+            "action": "save_optimized_prompts",
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "prompt_count": prompts.len(),
+            "total_size_bytes": json.len(),
+            "data": prompts
         });
 
-        let _metadata_json = serde_json::to_string(&save_metadata).map_err(|e| Error::config(format!("Failed to serialize save metadata: {}", e)))?;
+        let json_value: serde_json::Value = serde_json::from_str(&json)
+            .map_err(|e| Error::config(format!("Failed to parse JSON for Moon PDK: {}", e)))?;
 
-        // WASM-compatible: Communicate with Moon task through PDK
-        // Moon task will handle actual file writing to .moon/moonshine-prompts.json
-        // WASM-compatible: Use file writing via Moon PDK instead of config setting
-        use crate::moon_pdk_interface::update_prompts_json;
-
-        // Convert strings to serde_json::Value for Moon PDK functions
-        let json_value: serde_json::Value = serde_json::from_str(&json).map_err(|e| Error::config(format!("Failed to parse JSON for Moon PDK: {}", e)))?;
-
-        if let Err(e) = update_prompts_json(&json_value) {
-            eprintln!("Warning: Failed to save optimized prompts via Moon PDK: {}", e);
-
-            // Fallback: Try to use Moon request storage
-            if let Err(e2) = crate::moon_pdk_interface::request_storage_update("prompts", &save_metadata) {
+        if let Err(e) = crate::moon_pdk_interface::update_prompts_json(&json_value) {
+            eprintln!(
+                "Warning: Failed to save optimized prompts via Moon PDK: {}",
+                e
+            );
+            if let Err(e2) =
+                crate::moon_pdk_interface::request_storage_update("prompts", &save_metadata)
+            {
                 return Err(Error::config(format!(
                     "Failed to save prompts: Primary save failed ({}), Fallback failed ({})",
                     e, e2
@@ -850,15 +944,16 @@ impl MoonShineConfig {
             }
         }
 
-        // Set success indicator for Moon task to process
         let success_indicator = serde_json::json!({
-          "saved_at": chrono::Utc::now().to_rfc3339(),
-          "prompt_keys": prompts.keys().collect::<Vec<_>>(),
-          "status": "ready_for_persistence"
+            "saved_at": chrono::Utc::now().to_rfc3339(),
+            "prompt_keys": prompts.keys().collect::<Vec<_>>(),
+            "status": "ready_for_persistence"
         });
 
-        // Use request storage to signal completion status
-        let _ = crate::moon_pdk_interface::request_storage_update("prompt_save_status", &success_indicator);
+        let _ = crate::moon_pdk_interface::request_storage_update(
+            "prompt_save_status",
+            &success_indicator,
+        );
 
         Ok(())
     }
@@ -887,20 +982,18 @@ mod tests {
     fn test_config_validation_ranges() {
         let mut config = MoonShineConfig::default();
 
-        // Test invalid copro_breadth
         config.copro_breadth = Some(0);
         assert!(config.validate().is_err());
         config.copro_breadth = Some(25);
         assert!(config.validate().is_err());
-        config.copro_breadth = Some(5); // Valid
+        config.copro_breadth = Some(5);
         assert!(config.validate().is_ok());
 
-        // Test invalid temperature
         config.copro_temperature = Some(-1.0);
         assert!(config.validate().is_err());
         config.copro_temperature = Some(3.0);
         assert!(config.validate().is_err());
-        config.copro_temperature = Some(1.0); // Valid
+        config.copro_temperature = Some(1.0);
         assert!(config.validate().is_ok());
     }
 
@@ -931,14 +1024,11 @@ mod tests {
     fn test_version() {
         let version = MoonShineConfig::version();
         assert!(!version.is_empty());
-        // Version should be from Cargo.toml
         assert!(version.chars().next().unwrap().is_ascii_digit());
     }
 
     #[test]
     fn test_moonshine_directory() {
-        // In WASM environment, always returns the default directory
-        // Environment variables are not accessible in WASM
         assert_eq!(MoonShineConfig::moonshine_directory(), ".moon/moonshine");
     }
 }

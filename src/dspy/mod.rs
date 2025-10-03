@@ -1,12 +1,21 @@
+/// Adapters for various AI providers and models.
 pub mod adapter;
+/// Core components of the DSPy framework, including signatures, modules, and settings.
 pub mod core;
+/// Tools for evaluating the performance of DSPy programs.
 pub mod evaluate;
+/// Optimizers for improving DSPy programs.
 pub mod optimizer;
+/// Predictors for making predictions with language models.
 pub mod predictors;
+/// A demonstration of how to use signatures.
 pub mod signature_demo;
+/// The macro for defining signatures.
 pub mod signature_macro;
+/// Utility functions for the DSPy module.
 pub mod utils;
 
+/// Tests for the DSPy module.
 #[cfg(test)]
 pub mod tests;
 
@@ -21,11 +30,20 @@ pub use predictors::*;
 pub use signature_macro::*;
 pub use utils::*;
 
-// pub use dsrs_macros::*;  // WASM: Disabled dependency
-
+/// Creates an `Example` instance with specified input and output fields.
+///
+/// # Usage
+///
+/// ```
+/// use moon_shine::dspy::example;
+///
+/// let ex = example! {
+///     "question": "input" => "What is the capital of France?",
+///     "answer": "output" => "Paris"
+/// };
+/// ```
 #[macro_export]
 macro_rules! example {
-    // Pattern: { "key": <__dsrs_field_type>: "value", ... }
     { $($key:literal : $field_type:literal => $value:expr),* $(,)? } => {{
         use std::collections::HashMap;
         use $crate::data::Example;

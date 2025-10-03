@@ -33,139 +33,211 @@ use thiserror::Error;
 // @since 1.0.0
 #[derive(Error, Debug)]
 pub enum Error {
-    /// Error specifically related to Claude CLI execution.
+    /// An error that occurred during the execution of the Claude CLI.
     #[error("Claude CLI execution failed: {message}")]
     ClaudeCli {
+        /// The error message.
         message: String,
+        /// The underlying source of the error.
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
-    /// Error during AI provider execution (general AI interaction).
+    /// An error that occurred during a general AI provider execution.
     #[error("AI provider '{provider}' execution failed: {message}")]
     AIExecution {
+        /// The name of the AI provider.
         provider: String,
+        /// The error message.
         message: String,
+        /// The underlying source of the error.
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
-    /// Error during JSON serialization or deserialization.
+    /// An error that occurred during JSON serialization or deserialization.
     #[error("JSON serialization/deserialization failed")]
     Serialization {
+        /// The underlying serialization error.
         #[from]
         source: serde_json::Error,
     },
 
-    /// Error during file system I/O operations.
+    /// An error that occurred during a file system I/O operation.
     #[error("File system operation failed: {path}")]
     Io {
+        /// The path of the file involved in the I/O operation.
         path: String,
+        /// The underlying I/O error.
         #[source]
         source: std::io::Error,
     },
 
-    /// Error from standard library error types.
+    /// A general error from the standard library.
     #[error("Standard library error: {message}")]
     StdError {
+        /// The error message.
         message: String,
+        /// The underlying source of the error.
         #[source]
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
-    /// Error originating from the Extism PDK (WASM plugin development kit).
+    /// An error originating from the Extism PDK (WASM plugin development kit).
     #[error("Extism PDK operation failed")]
     ExtismPdk {
+        /// The underlying Extism PDK error.
         #[from]
         source: extism_pdk::Error,
     },
 
-    /// Configuration-related error.
+    /// A configuration-related error.
     #[error("Configuration error: {message}")]
     Config {
+        /// The error message.
         message: String,
+        /// The name of the configuration field that caused the error.
         field: Option<String>,
+        /// The invalid value that caused the error.
         value: Option<String>,
     },
 
-    /// Error during code analysis operations.
+    /// An error that occurred during a code analysis operation.
     #[error("Code analysis failed: {operation}")]
     Analysis {
+        /// The analysis operation that failed.
         operation: String,
+        /// The path of the file being analyzed.
         file_path: Option<String>,
+        /// The underlying source of the error.
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
-    /// General WASM runtime error.
+    /// A general WASM runtime error.
     #[error("WASM runtime error: {operation}")]
-    Wasm { operation: String, context: Option<String> },
+    Wasm {
+        /// The WASM operation that failed.
+        operation: String,
+        /// Additional context about the error.
+        context: Option<String>,
+    },
 
-    /// Error during Moon PDK host function calls.
+    /// An error that occurred during a Moon PDK host function call.
     #[error("Moon PDK host function call failed: {function}")]
     MoonPdk {
+        /// The name of the Moon PDK host function that failed.
         function: String,
+        /// The underlying source of the error.
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
-    /// Error during pattern detection.
+    /// An error that occurred during pattern detection.
     #[error("Pattern detection failed: {pattern_type}")]
     PatternDetection {
+        /// The type of pattern being detected.
         pattern_type: String,
+        /// The confidence score of the pattern detection.
         confidence: Option<f32>,
+        /// The underlying source of the error.
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
-    /// Error during COPRO optimization.
+    /// An error that occurred during COPRO optimization.
     #[error("COPRO optimization failed: {stage}")]
     CoproOptimization {
+        /// The stage of the COPRO optimization that failed.
         stage: String,
+        /// The iteration number of the optimization.
         iteration: Option<u32>,
+        /// The underlying source of the error.
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
-    /// Task execution timed out.
+    /// An error indicating that a task execution has timed out.
     #[error("Task execution timeout: {task_name}")]
-    Timeout { task_name: String, duration_ms: u64 },
+    Timeout {
+        /// The name of the task that timed out.
+        task_name: String,
+        /// The duration in milliseconds after which the task timed out.
+        duration_ms: u64,
+    },
 
-    /// Validation error (e.g., invalid input data).
+    /// A validation error, typically for invalid input data.
     #[error("Validation failed: {field}")]
-    Validation { field: String, expected: String, actual: String },
+    Validation {
+        /// The name of the field that failed validation.
+        field: String,
+        /// A description of the expected value or format.
+        expected: String,
+        /// The actual value that was received.
+        actual: String,
+    },
 
-    /// Container for multiple errors, typically from batch operations.
+    /// A container for multiple errors, typically from batch operations.
     #[error("Multiple errors occurred during batch processing")]
-    Multiple { errors: Vec<Error>, successful_count: usize },
+    Multiple {
+        /// A vector of the errors that occurred.
+        errors: Vec<Error>,
+        /// The number of successful operations in the batch.
+        successful_count: usize,
+    },
 
-    /// Error during data access operations (e.g., reading/writing data stores).
+    /// An error that occurred during a data access operation (e.g., reading/writing data stores).
     #[error("Data access error: {message}")]
-    DataAccess { message: String, path: Option<String> },
+    DataAccess {
+        /// The error message.
+        message: String,
+        /// The path related to the data access operation.
+        path: Option<String>,
+    },
 
-    /// Error during data processing operations.
+    /// An error that occurred during a data processing operation.
     #[error("Data processing error: {message}")]
-    Processing { message: String },
+    Processing {
+        /// The error message.
+        message: String,
+    },
 
-    /// Error during workflow execution.
+    /// An error that occurred during workflow execution.
     #[error("Workflow execution error: {message}")]
-    WorkflowError { message: String },
+    WorkflowError {
+        /// The error message.
+        message: String,
+    },
 
-    /// Error during storage operations.
+    /// An error that occurred during a storage operation.
     #[error("Storage error: {message}")]
-    Storage { message: String },
+    Storage {
+        /// The error message.
+        message: String,
+    },
 
-    /// Error during data parsing.
+    /// An error that occurred during data parsing.
     #[error("Data parsing error: {message}")]
-    DataParsing { message: String, line_number: Option<usize> },
+    DataParsing {
+        /// The error message.
+        message: String,
+        /// The line number where the parsing error occurred.
+        line_number: Option<usize>,
+    },
 
-    /// Error during data serialization.
+    /// An error that occurred during data serialization.
     #[error("Data serialization error: {message}")]
-    DataSerialization { message: String },
+    DataSerialization {
+        /// The error message.
+        message: String,
+    },
 
-    /// Error during data validation.
+    /// An error that occurred during data validation.
     #[error("Data validation error: {message}")]
-    DataValidation { message: String },
+    DataValidation {
+        /// The error message.
+        message: String,
+    },
 }
 
 impl Error {
@@ -827,7 +899,7 @@ impl Error {
         }
     }
 }
-/// Implementation of From traits for common error types
+/// Converts a `std::io::Error` into an `Error::Io`.
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         Self::Io {
@@ -837,6 +909,7 @@ impl From<std::io::Error> for Error {
     }
 }
 
+/// Converts a boxed `std::error::Error` into an `Error::StdError`.
 impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
     fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         Self::StdError {
@@ -846,18 +919,18 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
     }
 }
 
-/// Result type alias for moon-shine operations
+/// A type alias for `std::result::Result` with the error type set to `crate::error::Error`.
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Error severity levels for logging and monitoring
+/// Represents the severity level of an error, used for logging and monitoring.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorSeverity {
-    /// Informational level for debugging
+    /// For informational purposes and debugging.
     Info,
-    /// Warning level for non-critical issues
+    /// For non-critical issues that do not prevent the current operation from completing.
     Warning,
-    /// Error level for operation failures
+    /// For failures that prevent the current operation from completing.
     Error,
-    /// Critical level for system-wide failures
+    /// For system-wide failures that may require manual intervention.
     Critical,
 }

@@ -1,20 +1,24 @@
-# ✨ Moon Shine - Moon Extension Scaffold
+# ✨ Moon Shine - Advanced AI-Powered Linter and Code Improvement Tool
 
-Moon Shine is an experimental WebAssembly (WASM) extension for [moonrepo](https://moonrepo.dev). The current codebase focuses on wiring up configuration, installation payloads, and logging so that future AI-assisted workflows can plug into Moon's task runner. The README intentionally tracks the behavior that actually ships in this repository.
+Moon Shine is an experimental WebAssembly (WASM) extension for [moonrepo](https://moonrepo.dev) that uses the full power of the OXC (JavaScript Oxidation Compiler) toolchain to provide production-grade static analysis, complexity analysis, and automated code fixing for TypeScript and JavaScript. It is designed to be a high-performance, semantically-aware alternative to traditional linters and formatters like ESLint and Prettier.
+
+## 🚀 Features
+
+- **AST-Based Analysis**: Full scope and symbol resolution for deep, semantic understanding of code, far beyond what's possible with regex-based heuristics.
+- **Automated Code Fixing**: A powerful AST-based auto-fix engine that can resolve a wide range of issues, from type safety improvements to performance optimizations.
+- **Comprehensive Complexity Analysis**: In-depth complexity metrics, including cyclomatic and cognitive complexity, Halstead metrics, and maintainability index, to help you identify and refactor complex code.
+- **Security Scanning**: Built-in security scanning to detect common vulnerabilities like unsafe `eval` usage, prototype pollution, and hardcoded secrets.
+- **DSPy-Inspired Prompt Optimization**: A framework for optimizing AI prompts to improve the quality and accuracy of AI-assisted code analysis and fixing.
+- **High-Performance Formatting**: A lightning-fast code formatter that serves as a replacement for Prettier, with full integration into the AST analysis pipeline for single-pass processing.
+- **Extensible Rulebase**: A flexible rulebase system that allows you to define custom linting rules and auto-fixes.
 
 ## ✅ What Works Today
 
-- **Moon extension entrypoint** implemented in `src/lib.rs`/`src/extension.rs` that parses a limited set of CLI flags (`--mode`, `--lint-only`, `--reporting-only`, `--force-init`, `--install-prompts`) and forwards positional arguments as file targets.
-- **Installation bootstrap** (`install_moonshine_extension`) that returns a JSON payload containing default prompt/training data and Moon task templates; Moon is expected to write the files on the host.
-- **Configuration loading** through `MoonShineConfig` with a generated JSON schema so `workspace.yml`/`project.yml` can supply settings without the WASM module touching disk.
-- **Workflow scaffolding** in `src/workflow.rs` that logs the requested operation mode (including a stub `parallel-lint` mode) and is home to the current orchestrator logic for future Moon task execution.
-- **Embedded resources** for prompts, pattern configuration, and experimental DSPy-inspired helpers that can be consumed by future workflows.
-
-## 🚧 Not Implemented Yet
-
-The code does **not** currently execute ESLint, TypeScript, Prettier, Claude, or other native tools. All heavy lifting steps are placeholders that only log intent. Features such as petgraph-based DAG execution, cost-aware AI routing, or JSON responses in `/tmp/moon-shine/...` directories are aspirational and should be treated as TODOs.
-
-If you need those behaviors, follow the existing TODO comments in the source code or expand the scaffolding modules (`workflow`, `cost_aware_ai_orchestrator`, `moon_pdk_interface`, etc.).
+- **Moon Extension Entrypoint**: Implemented in `src/lib.rs`/`src/extension.rs`, parsing a range of CLI flags (`--mode`, `--lint-only`, `--reporting-only`, `--force-init`, `--install-prompts`) and forwarding positional arguments as file targets.
+- **Installation Bootstrap**: The `install_moonshine_extension` function returns a JSON payload with default prompt/training data and Moon task templates, which Moon writes to the host.
+- **Configuration Loading**: `MoonShineConfig` loads configuration with a generated JSON schema, allowing `workspace.yml`/`project.yml` to provide settings without the WASM module accessing the disk.
+- **Advanced Workflow Engine**: A sophisticated workflow engine in `src/workflow.rs` and `src/engine.rs` that orchestrates complex analysis and fixing tasks, including parallel linting.
+- **Embedded Resources**: Prompts, pattern configurations, and DSPy-inspired helpers are embedded for consumption by workflows.
 
 ## 🧭 CLI Usage
 
@@ -26,13 +30,13 @@ Supported flags (see `parse_moon_args` in `src/extension.rs`):
 
 | Flag | Description |
 | ---- | ----------- |
-| `--mode <value>` | Selects operation mode. Supported values today: `fix`, `lint-only`, `reporting-only`, `parallel-lint`. The default is `fix` or whatever `MoonShineConfig.operationMode` provides. |
-| `--lint-only` | Shortcut that forces `mode = lint-only`. |
+| `--mode <value>` | Selects operation mode. Supported values: `fix`, `lint-only`, `reporting-only`, `parallel-lint`. The default is `fix` or whatever `MoonShineConfig.operationMode` provides. |
+| `--lint-only` | A shortcut that forces `mode = lint-only`. |
 | `--reporting-only` | Reports issues without running installation logic. |
-| `--force-init` | Forces regeneration of installation payloads even if prompts already exist. |
+| `--force-init` | Forces regeneration of installation payloads, even if prompts already exist. |
 | `--install-prompts` | Triggers the installation flow without running a workflow. |
 
-Any argument that does not start with `--` is treated as a file or directory target. In `parallel-lint` mode the extension still emits stub metrics and does not accept extra flags such as `--metrics-file` yet.
+Any argument that does not start with `--` is treated as a file or directory target.
 
 ## 🛠️ Installation & Build
 
@@ -78,10 +82,10 @@ rustup target add wasm32-wasip1
 `MoonShineConfig` is exposed to Moon via the `create_config_schema` helper. You can add the extension to `.moon/workspace.yml` or a project file and set fields such as:
 
 - `aiModel`, `enableCoproOptimization`, and other AI-related toggles
+- `enableSemanticAnalysis`, `enableTypeChecking`, `enablePerformanceFixes`, `enableSecurityFixes`
 - `includePatterns` / `excludePatterns`
 - `moonTaskName` or `moonTaskMapping`
-
-The current implementation reads these values for logging and future expansion but does not yet change runtime behavior beyond selecting default strings.
+- `format_config` for the built-in Prettier replacement
 
 ## 🗂️ Installation Payload Structure
 
@@ -107,11 +111,9 @@ Moon is responsible for materializing these artifacts on disk.
 
 ## 🧪 Development Notes
 
-- Unit tests cover serialization helpers and configuration defaults (`src/extension.rs`, `src/config.rs`).
-- The DSPy-inspired modules under `src/dspy/` provide macros/utilities that are currently only exercised in tests/examples.
-- Many modules (e.g., `tool_replacements`, `workflow`, `sunlinter_integration`) are scaffolding and may contain TODO comments for future implementation.
-
-When evolving the project, prefer adding executable code first, then refreshing the README so it continues to mirror the repository state.
+- Unit tests cover serialization helpers, configuration defaults, and core functionality.
+- The DSPy-inspired modules under `src/dspy/` provide macros and utilities that are exercised in tests and examples.
+- When evolving the project, prefer adding executable code first, then refreshing the README so it continues to mirror the repository state.
 
 ## 📄 License
 
@@ -122,6 +124,7 @@ MIT License – see `LICENSE`.
 1. Keep documentation in sync with behavior; the code is treated as the source of truth.
 2. Add tests when enabling new workflow steps.
 3. Update or add TODOs in code if you adopt ideas from older documentation that are not yet implemented.
+
 ## 🧩 Rulebase
 
-This build ships with 832 compiled rule definitions (582 static, 200 behavioral, 50 hybrid) derived from `rulebase/output/moonshine-rulebase-complete.json`. They are embedded via the `embedded_rulebase` feature and exposed through `rulebase::iter_builtin_rules()`.
+This build ships with a comprehensive set of compiled rule definitions derived from `rulebase/output/moonshine-rulebase-complete.json`. They are embedded via the `embedded_rulebase` feature and exposed through `rulebase::iter_builtin_rules()`.

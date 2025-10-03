@@ -10,105 +10,147 @@ use std::collections::HashMap;
 #[cfg(feature = "embedded_rulebase")]
 use crate::rulebase::iter_builtin_rules;
 
-/// Rule loader that reads from generated JSON
+/// A rule loader that reads rule definitions from a generated JSON file.
 #[derive(Debug)]
 pub struct RuleLoader {
-    /// Rule definitions cache
+    /// A cache of rule definitions, indexed by rule ID.
     definitions: HashMap<String, RuleDefinition>,
-    /// Metadata about loaded rules
+    /// Metadata about the loaded rulebase.
     metadata: RulebaseMetadata,
 }
 
-/// External rule definition (from JSON/YAML)
+/// An external rule definition, typically loaded from a JSON or YAML file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuleDefinition {
-    /// Rule ID
+    /// The unique identifier for the rule.
     pub id: String,
-    /// Rule name
+    /// The name of the rule.
     pub name: String,
-    /// Rule description
+    /// A description of the rule's purpose.
     pub description: String,
-    /// Rule category
+    /// The category that the rule belongs to.
     pub category: String,
-    /// Rule severity
+    /// The severity of the rule.
     pub severity: String,
-    /// Rule implementation type
+    /// The implementation type of the rule.
     pub implementation: RuleImplementation,
-    /// Execution cost estimate
+    /// An estimate of the execution cost of the rule.
     pub cost: u32,
-    /// Whether rule supports autofix
+    /// If true, the rule supports automatic fixing.
     pub autofix: bool,
-    /// Whether rule is AI enhanced
+    /// If true, the rule is enhanced with AI capabilities.
     pub ai_enhanced: bool,
-    /// Rule tags
+    /// A list of tags associated with the rule.
     pub tags: Vec<String>,
-    /// Rule dependencies
+    /// A list of rule IDs that this rule depends on.
     pub dependencies: Vec<String>,
-    /// Rule configuration schema
+    /// An optional JSON schema for configuring the rule.
     pub config_schema: Option<serde_json::Value>,
 }
 
-/// Rule implementation types
+/// The possible implementation types for a rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum RuleImplementation {
-    /// Static analysis rule
-    StaticAnalysis { rule_name: String },
-    /// AI behavioral pattern
-    AiBehavioral { pattern_type: String },
-    /// Custom JavaScript implementation
-    JavaScript { code: String },
-    /// External tool execution
-    ExternalTool { command: String, args: Vec<String> },
-    /// Hybrid rule combining multiple approaches
-    Hybrid { implementations: Vec<RuleImplementation> },
-    /// RegEx-based rule
-    Regex { pattern: String, flags: String },
-    /// AST-based rule with query
-    AstQuery { query: String, language: String },
+    /// A static analysis rule.
+    StaticAnalysis {
+        /// The name of the static analysis rule.
+        rule_name: String,
+    },
+    /// An AI-powered behavioral pattern.
+    AiBehavioral {
+        /// The type of the behavioral pattern.
+        pattern_type: String,
+    },
+    /// A custom rule implemented in JavaScript.
+    JavaScript {
+        /// The JavaScript code for the rule.
+        code: String,
+    },
+    /// A rule that executes an external tool.
+    ExternalTool {
+        /// The command to execute.
+        command: String,
+        /// A list of arguments to pass to the command.
+        args: Vec<String>,
+    },
+    /// A hybrid rule that combines multiple implementation approaches.
+    Hybrid {
+        /// A list of sub-implementations.
+        implementations: Vec<RuleImplementation>,
+    },
+    /// A rule based on a regular expression.
+    Regex {
+        /// The regular expression pattern.
+        pattern: String,
+        /// The flags for the regular expression.
+        flags: String,
+    },
+    /// An AST-based rule with a query.
+    AstQuery {
+        /// The query to execute against the AST.
+        query: String,
+        /// The language of the AST.
+        language: String,
+    },
 }
 
-/// Complete rulebase structure
+/// The complete structure of the rulebase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rulebase {
+    /// The content of the rulebase.
     pub rulebase: RulebaseContent,
 }
 
+/// The content of the rulebase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RulebaseContent {
+    /// The version of the rulebase.
     pub version: String,
+    /// Metadata about the rulebase.
     pub metadata: RulebaseMetadata,
+    /// Global settings for the rulebase.
     pub settings: RulebaseSettings,
+    /// A list of static analysis rules.
     pub static_rules: Vec<RuleDefinition>,
+    /// A list of behavioral rules.
     pub behavioral_rules: Vec<RuleDefinition>,
+    /// A list of hybrid rules.
     pub hybrid_rules: Vec<RuleDefinition>,
 }
 
+/// Metadata about the rulebase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RulebaseMetadata {
+    /// The total number of rules in the rulebase.
     pub total_rules: usize,
+    /// The number of static analysis rules.
     pub static_rules: usize,
+    /// The number of behavioral rules.
     pub behavioral_rules: usize,
+    /// The number of hybrid rules.
     pub hybrid_rules: usize,
+    /// The timestamp when the rulebase was generated.
     pub generated_at: String,
+    /// The name of the generator that created the rulebase.
     pub generator: String,
 }
 
-/// Global rulebase settings
+/// Global settings for the rulebase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RulebaseSettings {
-    /// Whether to enable AI enhancements
+    /// If true, AI enhancements are enabled.
     pub ai_enabled: bool,
-    /// Default execution timeout
+    /// The default timeout for rule execution in milliseconds.
     pub default_timeout_ms: u64,
-    /// Maximum parallel rules
+    /// The maximum number of rules to execute in parallel.
     pub max_parallel: usize,
-    /// Cache configuration
+    /// If true, caching is enabled for rule execution.
     pub cache_enabled: bool,
 }
 
 impl RuleLoader {
-    /// Create new rule loader and load rules from JSON
+    /// Creates a new `RuleLoader` and loads the rules from the embedded JSON file.
     pub fn new() -> Result<Self> {
         let mut loader = Self {
             definitions: HashMap::new(),
@@ -125,7 +167,7 @@ impl RuleLoader {
         Ok(loader)
     }
 
-    /// Load rules from embedded JSON file
+    /// Loads rules from the embedded JSON file.
     #[cfg(feature = "embedded_rulebase")]
     fn load_from_embedded_json(&mut self) -> Result<()> {
         self.load_from_compiled_rules()
@@ -134,7 +176,8 @@ impl RuleLoader {
     #[cfg(not(feature = "embedded_rulebase"))]
     fn load_from_embedded_json(&mut self) -> Result<()> {
         let bundled_json = include_str!("../../rulebase/output/moonshine-rulebase-complete.json");
-        let rulebase: Rulebase = serde_json::from_str(bundled_json).map_err(|e| Error::Configuration(format!("Invalid bundled rulebase: {}", e)))?;
+        let rulebase: Rulebase = serde_json::from_str(bundled_json)
+            .map_err(|e| Error::Configuration(format!("Invalid bundled rulebase: {}", e)))?;
         self.load_from_rulebase(rulebase.rulebase)?;
         Ok(())
     }
@@ -155,7 +198,9 @@ impl RuleLoader {
                 }
                 "AiBehavioral" => {
                     let pattern = def.implementation.rule_name.clone().unwrap_or_default();
-                    RuleImplementation::AiBehavioral { pattern_type: pattern }
+                    RuleImplementation::AiBehavioral {
+                        pattern_type: pattern,
+                    }
                 }
                 "JavaScript" => RuleImplementation::JavaScript {
                     code: def.implementation.code.clone().unwrap_or_default(),
@@ -164,14 +209,20 @@ impl RuleLoader {
                     command: def.implementation.command.clone().unwrap_or_default(),
                     args: def.implementation.args.clone().unwrap_or_default(),
                 },
-                "Hybrid" => RuleImplementation::Hybrid { implementations: Vec::new() },
+                "Hybrid" => RuleImplementation::Hybrid {
+                    implementations: Vec::new(),
+                },
                 "Regex" => RuleImplementation::Regex {
                     pattern: def.implementation.rule_name.clone().unwrap_or_default(),
                     flags: def.implementation.code.clone().unwrap_or_default(),
                 },
                 "AstQuery" => RuleImplementation::AstQuery {
                     query: def.implementation.rule_name.clone().unwrap_or_default(),
-                    language: def.implementation.code.clone().unwrap_or_else(|| "typescript".to_string()),
+                    language: def
+                        .implementation
+                        .code
+                        .clone()
+                        .unwrap_or_else(|| "typescript".to_string()),
                 },
                 other => {
                     return Err(Error::Config {
@@ -219,14 +270,12 @@ impl RuleLoader {
         Ok(())
     }
 
-    /// Load rules from rulebase content
+    /// Loads rules from the given `RulebaseContent`.
     fn load_from_rulebase(&mut self, content: RulebaseContent) -> Result<()> {
         println!("📦 Loading rules from rulebase...");
 
-        // Store metadata
         self.metadata = content.metadata.clone();
 
-        // Load all rules into definitions
         for rule_def in content.static_rules {
             self.definitions.insert(rule_def.id.clone(), rule_def);
         }
@@ -243,32 +292,35 @@ impl RuleLoader {
         Ok(())
     }
 
-    /// Get rule by ID
+    /// Gets a rule by its ID.
     pub fn get_rule(&self, rule_id: &str) -> Option<&RuleDefinition> {
         self.definitions.get(rule_id)
     }
 
-    /// Check if rule exists
+    /// Checks if a rule exists by its ID.
     pub fn has_rule(&self, rule_id: &str) -> bool {
         self.definitions.contains_key(rule_id)
     }
 
-    /// Get all rule definitions
+    /// Gets all rule definitions.
     pub fn get_all_rules(&self) -> &HashMap<String, RuleDefinition> {
         &self.definitions
     }
 
-    /// Get metadata
+    /// Gets the metadata for the rulebase.
     pub fn get_metadata(&self) -> &RulebaseMetadata {
         &self.metadata
     }
 
-    /// Filter rules by category
+    /// Filters rules by category.
     pub fn filter_rules_by_category(&self, category: &str) -> Vec<&RuleDefinition> {
-        self.definitions.values().filter(|rule| rule.category == category).collect()
+        self.definitions
+            .values()
+            .filter(|rule| rule.category == category)
+            .collect()
     }
 
-    /// Filter rules by tags
+    /// Filters rules by tags.
     pub fn filter_rules_by_tags(&self, tags: &[String]) -> Vec<&RuleDefinition> {
         self.definitions
             .values()
@@ -276,24 +328,26 @@ impl RuleLoader {
             .collect()
     }
 
-    /// Filter rules by AI enhancement status
+    /// Filters rules by their AI enhancement status.
     pub fn filter_ai_enhanced_rules(&self, ai_enhanced: bool) -> Vec<&RuleDefinition> {
-        self.definitions.values().filter(|rule| rule.ai_enhanced == ai_enhanced).collect()
+        self.definitions
+            .values()
+            .filter(|rule| rule.ai_enhanced == ai_enhanced)
+            .collect()
     }
 
-    /// Get count of rules by category
+    /// Counts the number of rules in a given category.
     pub fn count_rules_by_category(&self, category: &str) -> usize {
-        self.definitions.values().filter(|rule| rule.category == category).count()
+        self.definitions
+            .values()
+            .filter(|rule| rule.category == category)
+            .count()
     }
 
-    /// Check if rule exists by ID
-    pub fn has_rule(&self, rule_id: &str) -> bool {
-        self.definitions.contains_key(rule_id)
-    }
-
-    /// Get all available rule categories
+    /// Gets all available rule categories.
     pub fn get_all_categories(&self) -> Vec<String> {
-        let mut categories: Vec<String> = self.definitions.values().map(|rule| rule.category.clone()).collect();
+        let mut categories: Vec<String> =
+            self.definitions.values().map(|rule| rule.category.clone()).collect();
         categories.sort();
         categories.dedup();
         categories

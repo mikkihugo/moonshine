@@ -83,147 +83,187 @@ use tokio::sync::RwLock;
 use tokio_stream::{self as stream, StreamExt};
 use tokio_util::sync::CancellationToken;
 
-/// Workflow step definition
+/// Represents a single step in a workflow, defining its properties and behavior.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowStep {
-    /// Unique step identifier
+    /// A unique identifier for the step.
     pub id: String,
-    /// Human-readable step name
+    /// A human-readable name for the step.
     pub name: String,
-    /// Step description for logging
+    /// A description of the step's purpose, used for logging.
     pub description: String,
-    /// Step dependencies (must complete before this step)
+    /// A list of step IDs that must be completed before this step can be executed.
     pub depends_on: Vec<String>,
-    /// Step action to execute
+    /// The action that this step will perform.
     pub action: StepAction,
-    /// Conditional execution logic
+    /// The condition under which this step will be executed.
     pub condition: Option<StepCondition>,
-    /// Retry configuration
+    /// The configuration for retrying this step if it fails.
     pub retry: RetryConfig,
-    /// Timeout configuration
+    /// The maximum duration that this step is allowed to run.
     pub timeout: Duration,
-    /// Whether failure of this step should fail the entire workflow
+    /// If true, the entire workflow will fail if this step fails.
     pub critical: bool,
 }
 
-/// Step action types
+/// Defines the possible actions that a `WorkflowStep` can perform.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StepAction {
-    /// Cost-aware AI assessment - quick evaluation to determine AI strategy
+    /// Performs a quick evaluation to determine the most cost-effective AI strategy.
     CostAwareAssessment {
+        /// The maximum time in milliseconds for the assessment.
         max_assessment_time_ms: u64,
+        /// The complexity threshold to trigger more intensive AI usage.
         complexity_threshold: f64,
+        /// If true, enables a quick static analysis as part of the assessment.
         enable_quick_static_analysis: bool,
     },
-    /// OXC parsing and semantic analysis
+    /// Parses the source code using OXC to generate an AST and semantic model.
     OxcParse {
+        /// The source type (e.g., "typescript", "javascript").
         source_type: String,
+        /// If true, enables strict mode parsing.
         strict_mode: bool,
     },
-    /// OXC rule execution
+    /// Executes a set of OXC linting rules against the code.
     OxcRules {
+        /// A list of rule categories to execute.
         rule_categories: Vec<String>,
+        /// If true, enhances the rules with AI-powered analysis.
         ai_enhanced: bool,
     },
-    /// Behavioral behavioral analysis
+    /// Performs behavioral analysis on the code to find patterns and anti-patterns.
     BehavioralBehavioral {
+        /// If true, enables a hybrid analysis combining static and dynamic techniques.
         enable_hybrid_analysis: bool,
+        /// The confidence threshold for reporting behavioral patterns.
         confidence_threshold: f64,
+        /// The maximum time in milliseconds for the analysis.
         max_analysis_time_ms: u64,
     },
-    /// OXC type analysis
+    /// Performs type analysis on the code using OXC.
     OxcTypeAnalysis {
+        /// If true, enables strict type checking.
         strict_types: bool,
+        /// If true, enables type inference for variables without explicit types.
         inference: bool,
     },
-    /// AI enhancement via provider router (supports multiple LLMs)
+    /// Enhances the code using an AI provider, routed through the provider router.
     AiEnhancement {
+        /// The name of the AI provider to use.
         provider: String,
+        /// If true, enables COPRO prompt optimization.
         copro_optimization: bool,
     },
-    /// OXC code generation
+    /// Generates code from the modified AST using OXC.
     OxcCodegen {
+        /// If true, applies any fixes generated in previous steps.
         apply_fixes: bool,
+        /// If true, generates source maps for the transformed code.
         source_maps: bool,
     },
-    /// OXC formatting (stub)
+    /// Formats the code using the OXC formatter (currently a stub).
     OxcFormat {
+        /// The code style to apply (e.g., "google", "prettier").
         style: String,
+        /// If true, preserves the original OXC structure during formatting.
         preserve_oxc_structure: bool,
     },
-    /// Custom Rust function
+    /// Executes a custom Rust function defined within the workflow engine.
     CustomFunction {
+        /// The name of the custom function to execute.
         function_name: String,
+        /// A map of parameters to pass to the custom function.
         parameters: HashMap<String, serde_json::Value>,
     },
-    /// Session management for agent debugging
+    /// Creates a session directory for agent-based debugging and communication.
     CreateSessionDir {
+        /// The base path for the session directory.
         base_path: String,
+        /// A prefix for the session directory name.
         session_prefix: String,
     },
-    /// Write agent request to session file
+    /// Writes an agent request to a file within the session directory.
     WriteAgentRequest {
+        /// The type of the agent for which the request is being written.
         agent_type: String,
+        /// The request data to be serialized to JSON.
         request_data: serde_json::Value,
     },
-    /// Execute AI via provider router (supports Claude, Gemini, OpenAI)
+    /// Executes an AI provider via the provider router.
     ExecuteAIProvider {
+        /// The name of the prompt template to use.
         prompt_template: String,
+        /// The temperature setting for the AI model.
         temperature: f64,
+        /// The maximum number of tokens to generate.
         max_tokens: u32,
+        /// The session file to read the request from.
         session_file: String,
     },
-    /// Read agent response from session file
+    /// Reads an agent response from a file within the session directory.
     ReadAgentResponse {
+        /// The type of the agent from which the response is being read.
         agent_type: String,
+        /// The timeout in milliseconds to wait for the response file.
         timeout_ms: u64,
     },
-    /// Cleanup session directory
+    /// Cleans up a session directory, typically after a specified age.
     CleanupSession {
+        /// The maximum age in hours for a session directory to be kept.
         max_age_hours: u32,
     },
 }
 
-/// Step conditional execution
+/// Defines the conditions under which a `WorkflowStep` should be executed.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StepCondition {
-    /// Always execute
+    /// The step should always be executed.
     Always,
-    /// Execute only if previous step succeeded
+    /// The step should only be executed if the specified previous step succeeded.
     OnSuccess(String),
-    /// Execute only if previous step failed
+    /// The step should only be executed if the specified previous step failed.
     OnFailure(String),
-    /// Execute based on context value
+    /// The step should be executed based on the value of a key in the workflow context.
     ContextValue {
+        /// The key to check in the context data.
         key: String,
+        /// The operator to use for the comparison.
         operator: ConditionOperator,
+        /// The value to compare against.
         value: serde_json::Value,
     },
-    /// Complex boolean expression
+    /// The step should be executed based on the result of a complex boolean expression.
     Expression(String),
 }
 
-/// Condition operators
+/// Defines the operators that can be used in a `StepCondition::ContextValue`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConditionOperator {
+    /// Checks if the actual value is equal to the expected value.
     Equals,
+    /// Checks if the actual value is not equal to the expected value.
     NotEquals,
+    /// Checks if the actual value is greater than the expected value.
     GreaterThan,
+    /// Checks if the actual value is less than the expected value.
     LessThan,
+    /// Checks if the actual value contains the expected value.
     Contains,
+    /// Checks if the key exists in the context data.
     Exists,
 }
 
-/// Retry configuration
+/// Defines the configuration for retrying a failed `WorkflowStep`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetryConfig {
-    /// Maximum number of retry attempts
+    /// The maximum number of retry attempts.
     pub max_attempts: u32,
-    /// Delay between retries
+    /// The delay between retries.
     pub delay: Duration,
-    /// Exponential backoff multiplier
+    /// The multiplier for exponential backoff between retries.
     pub backoff_multiplier: f64,
-    /// Maximum delay between retries
+    /// The maximum delay between retries.
     pub max_delay: Duration,
 }
 
@@ -238,92 +278,91 @@ impl Default for RetryConfig {
     }
 }
 
-/// Workflow execution context
+/// Stores the shared context for a workflow execution.
 #[derive(Debug, Clone)]
 pub struct WorkflowContext {
-    /// Source code being processed
+    /// The source code being processed by the workflow.
     pub source_code: String,
-    /// File path being processed
+    /// The path of the file being processed.
     pub file_path: String,
-    /// Shared data between steps
+    /// A shared data map for steps to read from and write to.
     pub data: Arc<RwLock<HashMap<String, serde_json::Value>>>,
-    /// Step execution results
+    /// A map of step execution results.
     pub step_results: Arc<RwLock<HashMap<String, StepResult>>>,
-    /// Workflow configuration
+    /// The configuration for the workflow.
     pub config: MoonShineConfig,
 }
 
-/// Step execution result
+/// Represents the result of a single `WorkflowStep` execution.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StepResult {
-    /// Step ID
+    /// The ID of the step that was executed.
     pub step_id: String,
-    /// Execution success
+    /// If true, the step executed successfully.
     pub success: bool,
-    /// Execution time
+    /// The duration of the step's execution.
     pub duration: Duration,
-    /// Step output data
+    /// The output data generated by the step.
     pub output: serde_json::Value,
-    /// Error message if failed
+    /// An optional error message if the step failed.
     pub error: Option<String>,
-    /// Memory usage in bytes
+    /// The memory usage in bytes at the end of the step's execution.
     pub memory_used: u64,
-    /// Retry attempts made
+    /// The number of retry attempts made for this step.
     pub retry_count: u32,
 }
 
-/// Complete workflow execution result
+/// Represents the final result of a complete workflow execution.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowResult {
-    /// Overall success
+    /// If true, the entire workflow executed successfully.
     pub success: bool,
-    /// Total execution time
+    /// The total duration of the workflow's execution.
     pub total_duration: Duration,
-    /// Final transformed code
+    /// The final transformed code, if any.
     pub transformed_code: Option<String>,
-    /// All step results
+    /// A list of all step results.
     pub step_results: Vec<StepResult>,
-    /// Workflow statistics
+    /// Statistics about the workflow's execution.
     pub stats: WorkflowStats,
-    /// Final context data
+    /// The final state of the shared context data.
     pub final_context: HashMap<String, serde_json::Value>,
 }
 
-/// Workflow execution statistics
+/// Stores statistics about a workflow's execution.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowStats {
-    /// Total steps executed
+    /// The total number of steps in the workflow.
     pub total_steps: u32,
-    /// Steps that succeeded
+    /// The number of steps that executed successfully.
     pub successful_steps: u32,
-    /// Steps that failed
+    /// The number of steps that failed.
     pub failed_steps: u32,
-    /// Steps that were skipped
+    /// The number of steps that were skipped due to their conditions not being met.
     pub skipped_steps: u32,
-    /// Total retry attempts
+    /// The total number of retry attempts made across all steps.
     pub total_retries: u32,
-    /// Peak memory usage
+    /// The peak memory usage in bytes during the workflow's execution.
     pub peak_memory_bytes: u64,
-    /// Parallel execution efficiency
+    /// A factor representing the efficiency of parallel execution.
     pub parallelism_factor: f64,
 }
 
-/// Petgraph-based workflow engine with tokio coordination
+/// A petgraph-based workflow engine with Tokio coordination for executing complex analysis pipelines.
 pub struct WorkflowEngine {
-    /// Workflow DAG using petgraph
+    /// The directed acyclic graph (DAG) representing the workflow, built with `petgraph`.
     graph: DiGraph<WorkflowStep, ()>,
-    /// Node index mapping for step lookup
+    /// A map from step IDs to their corresponding node indices in the graph.
     node_map: HashMap<String, NodeIndex>,
-    /// Execution context
+    /// The shared execution context for the workflow.
     context: WorkflowContext,
-    /// Cancellation token for workflow termination
+    /// A token for cancelling the workflow's execution.
     cancellation_token: CancellationToken,
-    /// Maximum parallel steps
+    /// The maximum number of steps that can be executed in parallel.
     max_parallel: usize,
-    /// JSON rulebase loader with 832 rules
-    /// Internal toolchain for native implementations
+    /// The internal toolchain for native implementations of analysis tools.
     internal_toolchain: InternalToolchain,
-    /// Rule registry for filtering and configuration
+    /// The registry for managing and configuring linting rules.
     rule_registry: RuleRegistry,
 }
 
@@ -398,8 +437,13 @@ impl WorkflowEngine {
         Ok(self.get_rules_by_category(category))
     }
 
-    /// Create new workflow engine with petgraph DAG
-    pub fn new(steps: Vec<WorkflowStep>, source_code: String, file_path: String, config: MoonShineConfig) -> Result<Self> {
+    /// Creates a new `WorkflowEngine` with a given set of steps and context.
+    pub fn new(
+        steps: Vec<WorkflowStep>,
+        source_code: String,
+        file_path: String,
+        config: MoonShineConfig,
+    ) -> Result<Self> {
         let context = WorkflowContext {
             source_code,
             file_path,
@@ -453,7 +497,7 @@ impl WorkflowEngine {
         })
     }
 
-    /// Execute the complete workflow using petgraph topological sort
+    /// Executes the entire workflow, respecting dependencies and parallelizing where possible.
     pub async fn execute(&mut self) -> Result<WorkflowResult> {
         let start_time = Instant::now();
         let mut stats = WorkflowStats {
@@ -1652,7 +1696,7 @@ impl WorkflowEngine {
     }
 }
 
-/// Create the static analysis workflow for Moon Shine
+    /// Creates the static analysis workflow for Moon Shine.
 pub fn create_static_analysis_workflow() -> Vec<WorkflowStep> {
     vec![
         WorkflowStep {
@@ -1766,7 +1810,7 @@ pub fn create_static_analysis_workflow() -> Vec<WorkflowStep> {
     ]
 }
 
-/// Create AI agent-based workflow with session management and multi-LLM support
+    /// Creates an AI agent-based workflow with session management and multi-LLM support.
 pub fn create_ai_agent_workflow_with_session_management() -> Vec<WorkflowStep> {
     vec![
         // Session setup for agent debugging

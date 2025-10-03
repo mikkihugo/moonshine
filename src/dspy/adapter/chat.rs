@@ -25,7 +25,7 @@ use crate::data::{Example, Prediction};
 use crate::dspy::utils::get_iter_from_value;
 use crate::dspy::{Chat, Message, MetaSignature, LM};
 
-/// Implements the `Adapter` trait for chat-based AI models.
+/// An adapter for chat-based AI models that implements the `Adapter` trait.
 ///
 /// `ChatAdapter` is responsible for converting DSPy signatures and examples
 /// into a conversational format suitable for chat models, and for parsing
@@ -39,14 +39,19 @@ use crate::dspy::{Chat, Message, MetaSignature, LM};
 #[derive(Default, Clone)]
 pub struct ChatAdapter;
 
-/// Generates a type hint string based on the field's schema and data type.
+/// Generates a type hint string based on a field's schema and data type.
 ///
-/// This helper function is used to provide additional context to the AI model
-/// about the expected format of a field's value, especially when dealing with
-/// non-string types or specific JSON schemas.
+/// This helper function provides additional context to the AI model about the
+/// expected format of a field's value, especially for non-string types or
+/// fields with a specific JSON schema.
 ///
-/// @param field A `serde_json::Value` representing the field definition.
-/// @returns A `String` containing the type hint, or an empty string if no hint is needed.
+/// # Arguments
+///
+/// * `field` - A `serde_json::Value` representing the field definition.
+///
+/// # Returns
+///
+/// A `String` containing the type hint, or an empty string if no hint is needed.
 ///
 /// @category utility
 /// @safe team
@@ -73,8 +78,13 @@ impl ChatAdapter {
     /// This is used to describe the input and output fields to the AI model
     /// in the system message.
     ///
-    /// @param field_iter An iterator over `(field_name, field_value)` tuples.
-    /// @returns A `String` containing the formatted list of field attributes.
+    /// # Arguments
+    ///
+    /// * `field_iter` - An iterator over `(field_name, field_value)` tuples.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the formatted list of field attributes.
     ///
     /// @category formatting
     /// @safe team
@@ -100,8 +110,13 @@ impl ChatAdapter {
     ///
     /// This helps the AI understand the expected format of the data it needs to produce.
     ///
-    /// @param field_iter An iterator over `(field_name, field_value)` tuples.
-    /// @returns A `String` containing the formatted field structure.
+    /// # Arguments
+    ///
+    /// * `field_iter` - An iterator over `(field_name, field_value)` tuples.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the formatted field structure.
     ///
     /// @category formatting
     /// @safe team
@@ -151,8 +166,13 @@ impl ChatAdapter {
     /// The system message provides the AI with instructions about its role,
     /// the structure of inputs and outputs, and the overall task description.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @returns A `String` containing the formatted system message.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the formatted system message.
     ///
     /// @category formatting
     /// @safe team
@@ -173,8 +193,13 @@ impl ChatAdapter {
 
     /// Formats the description of input and output fields for the system message.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @returns A `String` describing the input and output fields.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    ///
+    /// # Returns
+    ///
+    /// A `String` describing the input and output fields.
     ///
     /// @category formatting
     /// @safe team
@@ -197,8 +222,13 @@ Your output fields are:
     ///
     /// This includes markers and schema hints to guide the AI's response generation.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @returns A `String` representing the structured fields.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    ///
+    /// # Returns
+    ///
+    /// A `String` representing the structured fields.
     ///
     /// @category formatting
     /// @safe team
@@ -222,8 +252,13 @@ Your output fields are:
     /// This provides the AI with its primary objective for the current interaction.
     /// If no specific instruction is provided in the signature, a default one is generated.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @returns A `String` containing the formatted task description.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the formatted task description.
     ///
     /// @category formatting
     /// @safe team
@@ -261,9 +296,14 @@ Your output fields are:
     /// The user message contains the actual input data for the AI to process,
     /// formatted according to the defined signature.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @param inputs The `Example` containing the input data.
-    /// @returns A `String` containing the formatted user message.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    /// * `inputs` - The `Example` containing the input data.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the formatted user message.
     ///
     /// @category formatting
     /// @safe team
@@ -315,9 +355,14 @@ Your output fields are:
     /// This method structures the AI's response according to the defined signature,
     /// including field markers and the completion marker.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @param outputs The `Example` containing the output data.
-    /// @returns A `String` containing the formatted assistant message.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    /// * `outputs` - The `Example` containing the output data.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the formatted assistant message.
     ///
     /// @category formatting
     /// @safe team
@@ -357,9 +402,14 @@ Your output fields are:
     /// These demonstrations are used to provide few-shot learning examples to the AI model,
     /// guiding its behavior based on successful past interactions.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @param demos A vector of `Example` instances representing the demonstrations.
-    /// @returns A `Chat` object containing the formatted demonstration messages.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    /// * `demos` - A vector of `Example` instances representing the demonstrations.
+    ///
+    /// # Returns
+    ///
+    /// A `Chat` object containing the formatted demonstration messages.
     ///
     /// @category formatting
     /// @safe team
@@ -388,9 +438,14 @@ impl Adapter for ChatAdapter {
     /// It constructs the system message, incorporates demonstration examples (if any),
     /// and formats the current user input into a complete chat history.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @param inputs The `Example` containing the current input data.
-    /// @returns A `Chat` object ready to be sent to the AI model.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    /// * `inputs` - The `Example` containing the current input data.
+    ///
+    /// # Returns
+    ///
+    /// A `Chat` object ready to be sent to the AI model.
     ///
     /// @category dspy-method
     /// @safe team
@@ -418,9 +473,14 @@ impl Adapter for ChatAdapter {
     /// handling various parsing scenarios and providing graceful error handling
     /// for malformed output.
     ///
-    /// @param signature The `MetaSignature` of the AI model.
-    /// @param response The raw `Message` received from the AI model.
-    /// @returns A `HashMap` where keys are field names and values are `serde_json::Value`.
+    /// # Arguments
+    ///
+    /// * `signature` - The `MetaSignature` of the AI model.
+    /// * `response` - The raw `Message` received from the AI model.
+    ///
+    /// # Returns
+    ///
+    /// A `HashMap` where keys are field names and values are `serde_json::Value`.
     ///
     /// @category dspy-method
     /// @safe team
@@ -486,10 +546,15 @@ impl Adapter for ChatAdapter {
     /// This method orchestrates the communication with the underlying AI model,
     /// including sending the formatted prompt and parsing the response.
     ///
-    /// @param lm A mutable reference to the `LM` (Language Model) instance.
-    /// @param signature The metadata signature of the AI model.
-    /// @param inputs The input example for the prediction.
-    /// @returns A `Result` containing a `Prediction` on success, or an `Error` on failure.
+    /// # Arguments
+    ///
+    /// * `lm` - A mutable reference to the `LM` (Language Model) instance.
+    /// * `signature` - The metadata signature of the AI model.
+    /// * `inputs` - The input example for the prediction.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `Prediction` on success, or an `Error` on failure.
     ///
     /// @category dspy-method
     /// @safe team

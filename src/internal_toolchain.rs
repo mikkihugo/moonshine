@@ -30,144 +30,253 @@ use oxc_semantic::{Semantic, SemanticBuilder};
 use oxc_span::SourceType;
 use serde::{Deserialize, Serialize};
 
-/// Lint configuration for Moon extension
+/// Configuration for the internal linter.
+///
+/// Defines which plugins and features to enable during linting.
 #[derive(Debug, Clone)]
 pub struct LintConfig {
+    /// Whether to enable automatic fixing of lint issues.
     pub enable_fix: bool,
+    /// Whether to enable the import plugin for module-related rules.
     pub import_plugin: bool,
+    /// Whether to enable the React plugin for JSX-specific rules.
     pub react_plugin: bool,
+    /// Whether to enable the JSX a11y plugin for accessibility rules.
     pub jsx_a11y_plugin: bool,
+    /// Whether to enable the TypeScript plugin for type-aware linting.
     pub typescript_plugin: bool,
 }
 
 // Lint diagnostic moved to avoid duplication - using the serializable version below
 
-/// Complete TypeScript compilation result (TSC replacement)
+/// Represents the result of a native TypeScript compilation.
+///
+/// This struct contains information about the success of the compilation,
+/// any diagnostics (errors and warnings), and the generated output files.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptCompilationResult {
+    /// Whether the compilation was successful.
     pub success: bool,
+    /// A list of syntax errors found during parsing.
     pub syntax_errors: Vec<CompilationDiagnostic>,
+    /// A list of type errors found during semantic analysis.
     pub type_errors: Vec<CompilationDiagnostic>,
+    /// A list of warnings generated during compilation.
     pub warnings: Vec<CompilationDiagnostic>,
+    /// The generated JavaScript code, if compilation was successful.
     pub generated_js: Option<String>,
+    /// The generated TypeScript declaration files (.d.ts), if applicable.
     pub declaration_files: Option<String>,
+    /// The generated source maps, if requested.
     pub source_maps: Option<String>,
 }
 
-/// Code linting result using internal linter
+/// Represents the result of a native code linting operation.
+///
+/// This struct contains all diagnostics (errors and warnings), fixable issues,
+/// and the auto-fixed code if applicable.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodeLintingResult {
+    /// A list of linting errors.
     pub errors: Vec<LintDiagnostic>,
+    /// A list of linting warnings.
     pub warnings: Vec<LintDiagnostic>,
+    /// A list of issues that can be automatically fixed.
     pub fixable_issues: Vec<FixableLintIssue>,
+    /// The code after automatic fixes have been applied.
     pub auto_fixed_code: Option<String>,
+    /// A list of the linting rules that were applied.
     pub rules_applied: Vec<String>,
 }
 
-/// Code formatting result using internal formatter
+/// Represents the result of a native code formatting operation.
+///
+/// This struct contains the formatted code and information about whether
+/// the original code was changed.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodeFormattingResult {
+    /// The code after formatting.
     pub formatted_code: String,
+    /// Whether the code was changed during formatting.
     pub changed: bool,
+    /// The generated source map, if requested.
     pub source_map: Option<String>,
+    /// A list of errors that occurred during formatting.
     pub formatting_errors: Vec<String>,
 }
 
-/// Documentation analysis result with comprehensive analysis
+/// Represents the result of a native documentation analysis.
+///
+/// This struct provides a comprehensive overview of the code's documentation,
+/// including coverage, documented items, and any issues found.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentationAnalysisResult {
+    /// The percentage of items that are documented.
     pub coverage_percentage: f32,
+    /// A list of items that have documentation.
     pub documented_items: Vec<DocumentedItem>,
+    /// A list of items that are missing documentation.
     pub missing_documentation: Vec<MissingDocumentation>,
+    /// A list of errors or warnings found in the documentation.
     pub documentation_errors: Vec<DocumentationError>,
+    /// The generated documentation in a standard format (e.g., Markdown).
     pub generated_docs: Option<String>,
 }
 
-/// Compilation diagnostic for TypeScript errors
+/// Represents a single diagnostic message from the TypeScript compiler.
+///
+/// This could be an error, warning, or other information related to
+/// syntax or type checking.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompilationDiagnostic {
+    /// The diagnostic message.
     pub message: String,
+    /// The path to the file where the diagnostic occurred.
     pub file_path: String,
+    /// The line number of the diagnostic.
     pub line: u32,
+    /// The column number of the diagnostic.
     pub column: u32,
+    /// The severity of the diagnostic (e.g., error, warning).
     pub severity: DiagnosticSeverity,
+    /// The error code associated with the diagnostic (e.g., "TS2322").
     pub error_code: Option<String>,
 }
 
-/// Lint diagnostic from OXLint
+/// Represents a single diagnostic message from the linter.
+///
+/// This includes information about the rule that was violated, the location
+/// of the issue, and whether a fix is available.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LintDiagnostic {
+    /// The name of the linting rule that was violated.
     pub rule_name: String,
+    /// The diagnostic message.
     pub message: String,
+    /// The path to the file where the diagnostic occurred.
     pub file_path: String,
+    /// The line number of the diagnostic.
     pub line: u32,
+    /// The column number of the diagnostic.
     pub column: u32,
+    /// The severity of the diagnostic (e.g., error, warning).
     pub severity: DiagnosticSeverity,
+    /// Whether an automatic fix is available for this issue.
     pub fix_available: bool,
 }
 
-/// Fixable lint issue with auto-fix suggestion
+/// Represents a lint issue that can be automatically fixed.
+///
+/// This includes the original and fixed text, allowing for a clear
+/// diff of the changes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FixableLintIssue {
+    /// The name of the linting rule that was violated.
     pub rule_name: String,
+    /// A description of the issue.
     pub description: String,
+    /// The original text of the code that has an issue.
     pub original_text: String,
+    /// The suggested text to fix the issue.
     pub fixed_text: String,
+    /// The line number where the issue starts.
     pub line: u32,
+    /// The column number where the issue starts.
     pub column: u32,
 }
 
-/// Documented item found in code
+/// Represents an item in the code that has JSDoc documentation.
+///
+/// This includes functions, classes, methods, etc., that have been documented.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentedItem {
+    /// The name of the documented item (e.g., function name, class name).
     pub name: String,
+    /// The type of the item (e.g., "function", "class", "method").
     pub item_type: String,
+    /// The documentation text associated with the item.
     pub documentation: String,
+    /// The line number where the item is defined.
     pub line: u32,
+    /// The column number where the item is defined.
     pub column: u32,
 }
 
-/// Missing documentation issue
+/// Represents an item in the code that is missing JSDoc documentation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MissingDocumentation {
+    /// The name of the item that is missing documentation.
     pub item_name: String,
+    /// The type of the item (e.g., "function", "class").
     pub item_type: String,
+    /// The line number where the item is defined.
     pub line: u32,
+    /// The column number where the item is defined.
     pub column: u32,
+    /// A suggestion for how to document the item.
     pub suggestion: String,
 }
 
-/// Documentation error or warning
+/// Represents an error or warning found in the JSDoc documentation.
+///
+/// This could include issues like incorrect tags or malformed comments.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentationError {
+    /// The error or warning message.
     pub message: String,
+    /// The line number where the error occurred.
     pub line: u32,
+    /// The column number where the error occurred.
     pub column: u32,
+    /// The severity of the documentation error.
     pub severity: DiagnosticSeverity,
 }
 
+/// Represents the severity of a diagnostic message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DiagnosticSeverity {
+    /// A critical error that prevents compilation or causes incorrect behavior.
     Error,
+    /// A warning about a potential issue that does not block compilation.
     Warning,
+    /// Informational message that does not indicate an issue.
     Info,
+    /// A hint or suggestion for code improvement.
     Hint,
 }
 
-/// Internal toolchain implementation coordinator
+/// The main coordinator for the internal, Rust-based toolchain.
+///
+/// This struct manages the memory allocator and provides methods for accessing
+/// the various tools like the compiler, linter, and formatter.
 pub struct InternalToolchain {
     allocator: Allocator,
 }
 
 impl InternalToolchain {
-    /// Create new internal toolchain coordinator
+    /// Creates a new `InternalToolchain` coordinator.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `InternalToolchain`.
     pub fn new() -> Self {
         Self {
             allocator: Allocator::default(),
         }
     }
 
-    /// **TYPESCRIPT COMPILATION**: Native TypeScript compilation
+    /// Compiles TypeScript code to JavaScript using the native Rust-based compiler.
+    ///
+    /// This function performs parsing, semantic analysis (type checking), and code generation.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The TypeScript code to compile.
+    /// * `file_path` - The path to the file being compiled, used to determine the source type.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `TypeScriptCompilationResult` on success, or an `Error` on failure.
     pub fn compile_typescript_natively(&self, code: &str, file_path: &str) -> Result<TypeScriptCompilationResult> {
         let source_type = SourceType::from_path(file_path).map_err(|e| Error::Processing(format!("Invalid source type: {}", e)))?;
 
@@ -206,7 +315,19 @@ impl InternalToolchain {
         Ok(result)
     }
 
-    /// **CODE LINTING**: Native linting (520+ rules)
+    /// Lints code using the native Rust-based linter, which includes over 520 rules.
+    ///
+    /// This function performs parsing and semantic analysis to provide comprehensive
+    /// code quality and correctness checks.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The code to lint.
+    /// * `file_path` - The path to the file being linted.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `CodeLintingResult` on success, or an `Error` on failure.
     pub fn lint_code_natively(&self, code: &str, file_path: &str) -> Result<CodeLintingResult> {
         let source_type = SourceType::from_path(file_path).map_err(|e| Error::Processing(format!("Invalid source type: {}", e)))?;
 
@@ -280,7 +401,20 @@ impl InternalToolchain {
         Ok(result)
     }
 
-    /// **CODE FORMATTING**: Native code formatting
+    /// Formats code using a native formatter.
+    ///
+    /// This function first attempts to use `dprint` if available, and falls back to the
+    /// built-in OXC code generator.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The code to format.
+    /// * `file_path` - The path to the file being formatted.
+    /// * `_options` - Codegen options (currently unused, intended for future use).
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `CodeFormattingResult` on success, or an `Error` on failure.
     pub fn format_code_natively(&self, code: &str, file_path: &str, _options: &CodegenOptions) -> Result<CodeFormattingResult> {
         // Try dprint first (temporary solution until oxc formatter is available)
         if let Ok(formatted_with_dprint) = self.format_with_dprint(code, file_path) {
@@ -367,7 +501,19 @@ impl InternalToolchain {
         })
     }
 
-    /// **DOCUMENTATION ANALYSIS**: Native documentation analysis
+    /// Analyzes JSDoc comments to assess documentation coverage and quality.
+    ///
+    /// This function parses the code with JSDoc support enabled, identifies
+    /// documentable items, and checks for missing or erroneous documentation.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The code to analyze for documentation.
+    /// * `file_path` - The path to the file being analyzed.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `DocumentationAnalysisResult` on success, or an `Error` on failure.
     pub fn analyze_documentation_natively(&self, code: &str, file_path: &str) -> Result<DocumentationAnalysisResult> {
         let source_type = SourceType::from_path(file_path).map_err(|e| Error::Processing(format!("Invalid source type: {}", e)))?;
 
@@ -420,7 +566,19 @@ impl InternalToolchain {
         Ok(result)
     }
 
-    /// **COMPLETE PIPELINE**: Run all tools in optimal order
+    /// Runs the complete internal toolchain pipeline on a file.
+    ///
+    /// This function orchestrates the execution of all tools in an optimal order:
+    /// compilation, linting, formatting, and documentation analysis.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The source code to process.
+    /// * `file_path` - The path to the file being processed.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a comprehensive `InternalToolchainResult` on success, or an `Error` on failure.
     pub fn process_file_with_internal_toolchain(&self, code: &str, file_path: &str) -> Result<InternalToolchainResult> {
         // 1. TypeScript compilation (type checking)
         let compilation = self.compile_typescript_natively(code, file_path)?;
@@ -542,7 +700,16 @@ impl InternalToolchain {
         Ok(docs)
     }
 
-    /// Minify JavaScript code for production optimization
+    /// Minifies JavaScript code for production optimization.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The JavaScript code to minify.
+    /// * `file_path` - The path to the file, used to determine source type.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the minified code as a `String` on success, or an `Error` on failure.
     pub fn minify_code_for_production(&self, code: &str, file_path: &str) -> Result<String> {
         let allocator = Allocator::default();
         let source_type = SourceType::from_path(file_path).unwrap_or_default();
@@ -566,7 +733,17 @@ impl InternalToolchain {
         Ok(output.source_text)
     }
 
-    /// Generate TypeScript declaration files using isolated declarations (20x faster than TSC)
+    /// Generates TypeScript declaration files (.d.ts) using isolated declarations,
+    /// which is significantly faster than a full type check.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The TypeScript code.
+    /// * `file_path` - The path to the file.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the declaration file content as a `String` on success, or an `Error` on failure.
     pub fn generate_typescript_declaration_files(&self, code: &str, file_path: &str) -> Result<String> {
         let allocator = Allocator::default();
         let source_type = SourceType::from_path(file_path).unwrap_or_default();
@@ -591,7 +768,18 @@ impl InternalToolchain {
         Ok(output.source_text)
     }
 
-    /// Mangle variable names for code obfuscation
+    /// Mangles variable names for code obfuscation, making the code harder to reverse-engineer.
+    ///
+    /// This process uses semantic analysis to ensure that mangling is done safely and does not break the code.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The code to mangle.
+    /// * `file_path` - The path to the file.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the mangled code as a `String` on success, or an `Error` on failure.
     pub fn mangle_code_for_obfuscation(&self, code: &str, file_path: &str) -> Result<String> {
         let allocator = Allocator::default();
         let source_type = SourceType::from_path(file_path).unwrap_or_default();
@@ -618,7 +806,16 @@ impl InternalToolchain {
         Ok(output.source_text)
     }
 
-    /// Complete production build pipeline: minify + mangle + optimize
+    /// Runs a complete production build pipeline, including mangling and minification.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The code to build for production.
+    /// * `file_path` - The path to the file.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the optimized code as a `String` on success, or an `Error` on failure.
     pub fn build_for_production_deployment(&self, code: &str, file_path: &str) -> Result<String> {
         // First mangle for obfuscation
         let mangled = self.mangle_code_for_obfuscation(code, file_path)?;
@@ -636,8 +833,21 @@ impl InternalToolchain {
         Ok(vec![])
     }
 
-    /// Quick code assessment for cost-aware rule execution
-    /// Returns complexity score to determine which rules to run
+    /// Performs a quick assessment of the code to determine its complexity and
+    /// estimate the number of issues, which helps in making cost-aware decisions
+    /// about which rules to run.
+    ///
+    /// # Arguments
+    ///
+    /// * `code` - The code to assess.
+    /// * `file_path` - The path to the file.
+    /// * `max_time` - The maximum time allowed for the assessment.
+    /// * `complexity_threshold` - The complexity score above which AI analysis is recommended.
+    /// * `enable_quick_static_analysis` - Whether to enable a fast static analysis pass.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a `QuickAssessment` struct on success, or an `Error` on failure.
     pub async fn assess_code_quickly(
         &self,
         code: &str,
@@ -685,15 +895,25 @@ impl InternalToolchain {
     }
 }
 
-/// Complete result from all internal toolchain operations
+/// Represents the complete result of running all internal toolchain operations on a file.
+///
+/// This struct consolidates the results from compilation, linting, formatting,
+/// and documentation analysis into a single object.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InternalToolchainResult {
+    /// The result of the TypeScript compilation.
     pub compilation: TypeScriptCompilationResult,
+    /// The result of the code linting.
     pub linting: CodeLintingResult,
+    /// The result of the code formatting.
     pub formatting: CodeFormattingResult,
+    /// The result of the documentation analysis.
     pub documentation: DocumentationAnalysisResult,
+    /// The final, formatted code after all operations.
     pub final_code: String,
+    /// The total number of errors from all toolchain operations.
     pub total_errors: usize,
+    /// The total number of warnings from all toolchain operations.
     pub total_warnings: usize,
 }
 

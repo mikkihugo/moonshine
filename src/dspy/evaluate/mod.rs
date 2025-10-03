@@ -13,6 +13,7 @@
 //! @complexity low
 //! @since 1.0.0
 
+/// Defines the `Evaluator` trait and related components for assessing DSPy modules.
 pub mod evaluator;
 
 pub use evaluator::*;

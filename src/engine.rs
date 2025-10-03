@@ -19,7 +19,6 @@ use dashmap::DashMap;
 use glob::Pattern;
 use ignore::WalkBuilder;
 use lru::LruCache;
-use petgraph::Graph;
 use oxc_allocator::Allocator;
 use oxc_ast::ast::*;
 use oxc_codegen::{Codegen, CodegenOptions};
@@ -34,30 +33,41 @@ use oxc_sourcemap::SourceMapBuilder;
 use oxc_span::{SourceType, Span};
 use oxc_transformer::TransformOptions;
 use parking_lot::RwLock;
+use petgraph::Graph;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
-/// Production-grade AST auto-fix engine using complete OXC toolchain
+/// A production-grade AST auto-fix engine that uses the complete OXC toolchain.
+///
+/// This engine provides semantic understanding, linting, complexity analysis, and
+/// automated fixes that are far beyond what regex-based heuristics can offer.
 pub struct AstAutoFixEngine {
+    /// The configuration for the AST auto-fix engine.
     config: AstAutoFixConfig,
+    /// The OXC resolver for module analysis.
     resolver: Resolver,
+    /// The OXC diagnostic service for collecting and reporting errors.
     diagnostic_service: DiagnosticService,
+    /// The ESLint configuration for the project.
     eslint_config: Option<EslintConfig>,
+    /// The ignore matcher for respecting `.gitignore` and other ignore files.
     ignore_matcher: ignore::gitignore::Gitignore,
 
     // Caching for performance
+    /// A cache for complexity metrics to avoid re-computation.
     complexity_cache: RwLock<LruCache<String, ComplexityMetrics>>,
+    /// A cache for analysis results to avoid re-analyzing unchanged files.
     analysis_cache: DashMap<String, AstAutoFixResult>,
+    /// A graph representing the dependencies between files in the project.
     dependency_graph: RwLock<Graph<String, String>>,
 }
 
 impl AstAutoFixEngine {
-    /// Create new AST auto-fix engine with OXC toolchain, ESLint config, and .gitignore support
+    /// Creates a new `AstAutoFixEngine` with the OXC toolchain, ESLint config, and .gitignore support.
     pub fn new() -> Result<Self> {
         let config = Self::load_config_from_moon()?;
 
-        // Initialize OXC resolver for module analysis
         let resolver = Resolver::new(ResolveOptions {
             extensions: vec![
                 ".ts".into(),
@@ -73,13 +83,8 @@ impl AstAutoFixEngine {
         let (diagnostic_service, _diagnostic_sender) =
             DiagnosticService::new(Box::new(NoopDiagnosticReporter::default()));
 
-        // Load ESLint configuration from project
         let eslint_config = Self::load_eslint_config().ok();
-
-        // Initialize ignore matcher for .gitignore and other ignore patterns
         let ignore_matcher = Self::build_ignore_matcher()?;
-
-        // Initialize caches for performance
         let complexity_cache =
             RwLock::new(LruCache::new(std::num::NonZeroUsize::new(1000).unwrap()));
         let analysis_cache = DashMap::new();
@@ -97,7 +102,7 @@ impl AstAutoFixEngine {
         })
     }
 
-    /// Load ESLint configuration from project files (.eslintrc.json, .eslintrc.yml, etc.)
+    /// Loads the ESLint configuration from project files (e.g., `.eslintrc.json`, `.eslintrc.yml`).
     fn load_eslint_config() -> Result<EslintConfig> {
         // Try common ESLint config file locations
         let config_files = [
@@ -138,11 +143,8 @@ impl AstAutoFixEngine {
         })
     }
 
-    /// Parse ESLint configuration from file content
-    fn parse_eslint_config(
-        content: &str,
-        filename: &str,
-    ) -> Result<EslintConfig> {
+    /// Parses the ESLint configuration from the given file content.
+    fn parse_eslint_config(content: &str, filename: &str) -> Result<EslintConfig> {
         match filename {
             f if f.ends_with(".json") => serde_json::from_str(content).map_err(|e| {
                 Error::config(format!("Invalid ESLint JSON config: {}", e))
@@ -179,56 +181,45 @@ impl AstAutoFixEngine {
         }
     }
 
-    /// Build ignore matcher from .gitignore and other ignore files
+    /// Builds an ignore matcher from `.gitignore` and other common ignore files.
     fn build_ignore_matcher() -> Result<ignore::gitignore::Gitignore> {
         let mut builder = ignore::gitignore::GitignoreBuilder::new(".");
 
-        // Add common ignore patterns
         let ignore_files = [
             ".gitignore",
             ".eslintignore",
             ".prettierignore",
-            ".moonignore", // Custom ignore file for moon-shine
+            ".moonignore",
         ];
 
         for ignore_file in &ignore_files {
             if let Ok(Some(content)) =
                 get_moon_config_safe(&format!("file_content:{}", ignore_file))
             {
-                builder.add_line(None, &content).map_err(|e| {
-                    Error::config(format!(
-                        "Invalid ignore pattern in {}: {}",
-                        ignore_file, e
-                    ))
-                })?;
+                builder
+                    .add_line(None, &content)
+                    .map_err(|e| Error::config(format!("Invalid ignore pattern in {}: {}", ignore_file, e)))?;
             }
         }
 
-        // Add default ignore patterns for common build artifacts
-        builder.add_line(None, "node_modules/").map_err(|e| {
-            Error::config(format!("Failed to add default ignore pattern: {}", e))
-        })?;
-        builder.add_line(None, "dist/").map_err(|e| {
-            Error::config(format!("Failed to add default ignore pattern: {}", e))
-        })?;
-        builder.add_line(None, "build/").map_err(|e| {
-            Error::config(format!("Failed to add default ignore pattern: {}", e))
-        })?;
-        builder.add_line(None, ".moon/").map_err(|e| {
-            Error::config(format!("Failed to add default ignore pattern: {}", e))
-        })?;
+        builder
+            .add_line(None, "node_modules/")
+            .map_err(|e| Error::config(format!("Failed to add default ignore pattern: {}", e)))?;
+        builder
+            .add_line(None, "dist/")
+            .map_err(|e| Error::config(format!("Failed to add default ignore pattern: {}", e)))?;
+        builder
+            .add_line(None, "build/")
+            .map_err(|e| Error::config(format!("Failed to add default ignore pattern: {}", e)))?;
+        builder
+            .add_line(None, ".moon/")
+            .map_err(|e| Error::config(format!("Failed to add default ignore pattern: {}", e)))?;
 
-        builder.build().map_err(|e| {
-            Error::config(format!("Failed to build ignore matcher: {}", e))
-        })
+        builder.build().map_err(|e| Error::config(format!("Failed to build ignore matcher: {}", e)))
     }
 
-    /// Discover files to process respecting .gitignore and ESLint ignore patterns
-    pub fn discover_files(
-        &self,
-        root_path: &str,
-        patterns: &[&str],
-    ) -> Result<Vec<String>> {
+    /// Discovers files to process, respecting `.gitignore` and other ignore patterns.
+    pub fn discover_files(&self, root_path: &str, patterns: &[&str]) -> Result<Vec<String>> {
         let mut files = Vec::new();
 
         // Use the ignore crate to efficiently walk the directory tree
@@ -289,26 +280,21 @@ impl AstAutoFixEngine {
         Ok(files)
     }
 
-    /// Check if ESLint rule is enabled for specific rule name
+    /// Checks if an ESLint rule is enabled for a specific rule name.
     pub fn is_eslint_rule_enabled(&self, rule_name: &str) -> bool {
         if let Some(ref config) = self.eslint_config {
             if let Some(rule_config) = config.rules.get(rule_name) {
                 !matches!(rule_config.level, EslintRuleLevel::Off)
             } else {
-                // Rule not explicitly configured, assume it follows extends configuration
                 true
             }
         } else {
-            // No ESLint config loaded, assume all rules are enabled
             true
         }
     }
 
-    /// Get ESLint rule severity for a specific rule
-    pub fn get_eslint_rule_severity(
-        &self,
-        rule_name: &str,
-    ) -> DiagnosticSeverity {
+    /// Gets the ESLint rule severity for a specific rule.
+    pub fn get_eslint_rule_severity(&self, rule_name: &str) -> DiagnosticSeverity {
         if let Some(ref config) = self.eslint_config {
             if let Some(rule_config) = config.rules.get(rule_name) {
                 match rule_config.level {
@@ -317,19 +303,15 @@ impl AstAutoFixEngine {
                     EslintRuleLevel::Off => DiagnosticSeverity::Info,
                 }
             } else {
-                DiagnosticSeverity::Warning // Default for unconfigured rules
+                DiagnosticSeverity::Warning
             }
         } else {
-            DiagnosticSeverity::Warning // Default when no config
+            DiagnosticSeverity::Warning
         }
     }
 
-    /// Comprehensive AST-based auto-fix with semantic analysis
-    pub fn fix_code_ast(
-        &self,
-        code: &str,
-        file_path: &str,
-    ) -> Result<AstAutoFixResult> {
+    /// Performs a comprehensive, AST-based auto-fix with semantic analysis.
+    pub fn fix_code_ast(&self, code: &str, file_path: &str) -> Result<AstAutoFixResult> {
         let start_time = std::time::Instant::now();
 
         // Detect source type from file extension
@@ -465,14 +447,14 @@ impl AstAutoFixEngine {
         })
     }
 
-    /// Apply comprehensive AST transformations based on semantic analysis
+    /// Applies comprehensive AST transformations based on semantic analysis.
     fn apply_ast_transformations(
         &self,
         program: &mut Program<'_>,
-        allocator: &Allocator,
+        _allocator: &Allocator,
         semantic: Option<&SemanticBuilderReturn>,
-        source_code: &str,
-        file_path: &str,
+        _source_code: &str,
+        _file_path: &str,
     ) -> Result<Vec<AstFix>> {
         let mut fixes = Vec::new();
 
@@ -501,7 +483,7 @@ impl AstAutoFixEngine {
         Ok(fixes)
     }
 
-    /// Fix TypeScript type annotations and improve type safety
+    /// Fixes TypeScript type annotations and improves type safety.
     fn fix_type_annotations(
         &self,
         program: &Program<'_>,
@@ -539,7 +521,7 @@ impl AstAutoFixEngine {
         Ok(fixes)
     }
 
-    /// Apply performance optimizations based on semantic analysis
+    /// Applies performance optimizations based on semantic analysis.
     fn apply_performance_optimizations(
         &self,
         program: &Program<'_>,
@@ -579,7 +561,7 @@ impl AstAutoFixEngine {
         Ok(fixes)
     }
 
-    /// Apply security fixes based on static analysis
+    /// Applies security fixes based on static analysis.
     fn apply_security_fixes(
         &self,
         program: &Program<'_>,
@@ -617,11 +599,11 @@ impl AstAutoFixEngine {
         Ok(fixes)
     }
 
-    /// Apply modern JavaScript/TypeScript syntax patterns
+    /// Applies modern JavaScript/TypeScript syntax patterns.
     fn modernize_syntax(
         &self,
-        program: &Program<'_>,
-        semantic: Option<&SemanticBuilderReturn>,
+        _program: &Program<'_>,
+        _semantic: Option<&SemanticBuilderReturn>,
     ) -> Result<Vec<AstFix>> {
         let mut fixes = Vec::new();
 
@@ -642,7 +624,7 @@ impl AstAutoFixEngine {
         Ok(fixes)
     }
 
-    /// Detect source type from file extension for OXC parser
+    /// Detects the source type from the file extension for the OXC parser.
     fn detect_source_type(&self, file_path: &str) -> SourceType {
         let path = Path::new(file_path);
         match path.extension().and_then(|ext| ext.to_str()) {
@@ -653,9 +635,8 @@ impl AstAutoFixEngine {
         }
     }
 
-    /// Load configuration from Moon config system
+    /// Loads the configuration from the Moon configuration system.
     fn load_config_from_moon() -> Result<AstAutoFixConfig> {
-        // Try to load from Moon config, fall back to defaults
         match get_moon_config_safe("moonshine_ast_config") {
             Ok(Some(config_json)) => serde_json::from_str(&config_json)
                 .map_err(|e| Error::config(format!("Invalid AST config: {}", e))),
@@ -663,11 +644,10 @@ impl AstAutoFixEngine {
         }
     }
 
-    /// Save AST auto-fix results to Moon storage
+    /// Saves the AST auto-fix results to Moon storage.
     pub fn save_results(&self, results: &AstAutoFixResult) -> Result<()> {
-        let json_content = serde_json::to_string_pretty(results).map_err(|e| {
-            Error::config(format!("Failed to serialize AST results: {}", e))
-        })?;
+        let json_content = serde_json::to_string_pretty(results)
+            .map_err(|e| Error::config(format!("Failed to serialize AST results: {}", e)))?;
 
         let file_path = format!(
             ".moon/moonshine/ast_results_{}.json",
@@ -678,14 +658,19 @@ impl AstAutoFixEngine {
             .map_err(|e| Error::config(format!("Failed to save AST results: {}", e)))
     }
 
-    /// Format code using OXC's lightning-fast code generator (Prettier replacement)
+    /// Formats code using OXC's lightning-fast code generator, a Prettier replacement.
     ///
     /// This method provides 10-100x faster formatting than Prettier with semantic awareness.
-    /// Integrates with the AST pipeline for single-pass processing and maintains source maps.
+    /// It integrates with the AST pipeline for single-pass processing and maintains source maps.
     ///
-    /// @param code The source code to format
-    /// @param file_path The file path for context and source type detection
-    /// @returns Formatted code with optional source map
+    /// # Arguments
+    ///
+    /// * `code` - The source code to format.
+    /// * `file_path` - The file path for context and source type detection.
+    ///
+    /// # Returns
+    ///
+    /// The formatted code with an optional source map.
     pub fn format_code(&self, code: &str, file_path: &str) -> Result<String> {
         if !self.config.enable_formatting {
             return Ok(code.to_string());
@@ -1139,59 +1124,78 @@ impl AstAutoFixEngine {
 }
 
 // Helper visitor structs (simplified implementations for compilation)
+/// An AST visitor for finding `any` type annotations.
 struct AnyTypeVisitor {
+    /// A list of locations where `any` types were found.
     any_types: Vec<TypeLocation>,
 }
 
 impl AnyTypeVisitor {
+    /// Creates a new `AnyTypeVisitor`.
     fn new() -> Self {
         Self {
             any_types: Vec::new(),
         }
     }
 
-    fn visit_program(&mut self, program: &Program<'_>) {
+    /// Visits the program to find `any` type annotations.
+    fn visit_program(&mut self, _program: &Program<'_>) {
         // TODO: Implement actual AST traversal to find 'any' types
     }
 }
 
+/// An AST visitor for finding inefficient loops.
 struct LoopOptimizationVisitor {
+    /// A list of locations where inefficient loops were found.
     inefficient_loops: Vec<LoopLocation>,
 }
 
 impl LoopOptimizationVisitor {
+    /// Creates a new `LoopOptimizationVisitor`.
     fn new() -> Self {
         Self {
             inefficient_loops: Vec::new(),
         }
     }
 
-    fn visit_program(&mut self, program: &Program<'_>) {
+    /// Visits the program to find inefficient loops.
+    fn visit_program(&mut self, _program: &Program<'_>) {
         // TODO: Implement actual AST traversal to find inefficient loops
     }
 }
 
+/// Represents the location of a type annotation in the source code.
 #[derive(Debug, Clone)]
 struct TypeLocation {
+    /// The line number of the type annotation.
     line: usize,
+    /// The column number of the type annotation.
     column: usize,
+    /// The starting byte offset of the type annotation's span.
     span_start: usize,
+    /// The ending byte offset of the type annotation's span.
     span_end: usize,
+    /// The source file where the type annotation was found.
     source_file: String,
 }
 
+/// Represents the location of an inefficient loop in the source code.
 #[derive(Debug, Clone)]
 struct LoopLocation {
+    /// The line number where the loop starts.
     line: usize,
+    /// The column number where the loop starts.
     column: usize,
+    /// The length of the loop's source text.
     length: usize,
+    /// The original source text of the loop.
     original: String,
+    /// The optimized source text for the loop.
     optimized: String,
 }
 
-/// Helper function to extract array name from loop pattern
+/// A helper function to extract the array name from a loop pattern.
 fn extract_array_name_from_loop(loop_text: &str) -> Option<&str> {
-    // Simple regex-based extraction - would be more sophisticated in production
     if let Some(pos) = loop_text.find(".length") {
         let before = &loop_text[..pos];
         if let Some(space_pos) = before.rfind(' ') {

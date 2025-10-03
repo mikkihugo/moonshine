@@ -22,7 +22,7 @@ use crate::provider_router::{get_ai_router, AIContext, AIRequest};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Multi-provider Language Model adapter for DSPy with intelligent routing.
+/// A multi-provider Language Model adapter for DSPy with intelligent routing.
 ///
 /// This struct implements the core logic for selecting and interacting with various
 /// AI providers based on the nature of the DSPy task. It handles prompt formatting,
@@ -42,13 +42,15 @@ pub struct AIProviderLM {
     /// A history of all interactions with this LM instance.
     pub history: Vec<LMResponse>,
     /// An optional preference for a specific AI provider, overriding intelligent selection.
-    pub provider_preference: Option<String>, // Optional provider override
+    pub provider_preference: Option<String>,
 }
 
 impl AIProviderLM {
     /// Creates a new builder for `AIProviderLM`.
     ///
-    /// @returns A new `AIProviderLMBuilder` instance.
+    /// # Returns
+    ///
+    /// A new `AIProviderLMBuilder` instance.
     ///
     /// @category constructor
     /// @safe team
@@ -65,16 +67,25 @@ impl AIProviderLM {
     /// into a prompt, infers the AI context, routes the request to the appropriate provider,
     /// and processes the AI's response.
     ///
-    /// @param messages The `Chat` object containing the conversation history and prompt.
-    /// @param signature A string representing the signature or task for the AI.
-    /// @returns A `Result` containing a tuple of `(Message, LmUsage)` on success, or an `Error` on failure.
+    /// # Arguments
+    ///
+    /// * `messages` - The `Chat` object containing the conversation history and prompt.
+    /// * `signature` - A string representing the signature or task for the AI.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a tuple of `(Message, LmUsage)` on success, or an `Error` on failure.
     ///
     /// @category dspy-method
     /// @safe team
     /// @mvp core
     /// @complexity high
     /// @since 1.0.0
-    pub async fn call(&mut self, messages: Chat, signature: &str) -> Result<(Message, super::usage::LmUsage)> {
+    pub async fn call(
+        &mut self,
+        messages: Chat,
+        signature: &str,
+    ) -> Result<(Message, super::usage::LmUsage)> {
         let start_time = std::time::Instant::now();
 
         // Convert DSPy chat format to AI provider prompt
@@ -114,8 +125,13 @@ impl AIProviderLM {
 
     /// Inspects the LM's interaction history.
     ///
-    /// @param n The number of most recent interactions to retrieve.
-    /// @returns A vector of references to `LMResponse` objects from the history.
+    /// # Arguments
+    ///
+    /// * `n` - The number of most recent interactions to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// A vector of references to `LMResponse` objects from the history.
     ///
     /// @category utility
     /// @safe team
@@ -131,9 +147,14 @@ impl AIProviderLM {
     /// This function formats the conversation history and signature into a coherent
     /// prompt that can be sent to the AI model.
     ///
-    /// @param chat The `Chat` object to convert.
-    /// @param signature The task signature string.
-    /// @returns A `Result` containing the formatted prompt string.
+    /// # Arguments
+    ///
+    /// * `chat` - The `Chat` object to convert.
+    /// * `signature` - The task signature string.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the formatted prompt string.
     ///
     /// @category utility
     /// @safe team
@@ -178,9 +199,14 @@ impl AIProviderLM {
     /// to determine the most appropriate `AIContext` (e.g., CodeFix, DSPyOptimization)
     /// for intelligent AI provider selection.
     ///
-    /// @param chat The `Chat` object to infer context from.
-    /// @param signature The task signature string.
-    /// @returns The inferred `AIContext`.
+    /// # Arguments
+    ///
+    /// * `chat` - The `Chat` object to infer context from.
+    /// * `signature` - The task signature string.
+    ///
+    /// # Returns
+    ///
+    /// The inferred `AIContext`.
     ///
     /// @category utility
     /// @safe team
@@ -239,8 +265,13 @@ impl AIProviderLM {
     /// This function uses keyword matching to infer the language, providing a basic
     /// language detection mechanism for AI context inference.
     ///
-    /// @param text The text content to analyze for language detection.
-    /// @returns The detected language as a `String` (e.g., "typescript", "python").
+    /// # Arguments
+    ///
+    /// * `text` - The text content to analyze for language detection.
+    ///
+    /// # Returns
+    ///
+    /// The detected language as a `String` (e.g., "typescript", "python").
     ///
     /// @category utility
     /// @safe team
@@ -270,16 +301,25 @@ impl AIProviderLM {
     /// This function sends the formatted prompt and inferred context to the `moon-shine`
     /// AI provider system, which handles provider selection and communication.
     ///
-    /// @param prompt The formatted prompt string to send to the AI.
-    /// @param context The inferred `AIContext` for the request.
-    /// @returns A `Result` containing an `AIResponse` on success, or an `Error` on failure.
+    /// # Arguments
+    ///
+    /// * `prompt` - The formatted prompt string to send to the AI.
+    /// * `context` - The inferred `AIContext` for the request.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing an `AIResponse` on success, or an `Error` on failure.
     ///
     /// @category dspy-method
     /// @safe team
     /// @mvp core
     /// @complexity medium
     /// @since 1.0.0
-    async fn execute_with_ai_provider(&self, prompt: &str, context: &AIContext) -> Result<crate::provider_router::AIResponse> {
+    async fn execute_with_ai_provider(
+        &self,
+        prompt: &str,
+        context: &AIContext,
+    ) -> Result<crate::provider_router::AIResponse> {
         let router = get_ai_router();
 
         let request = AIRequest {
@@ -294,7 +334,9 @@ impl AIProviderLM {
 
     /// Retrieves statistics about AI provider usage from the LM's history.
     ///
-    /// @returns A `HashMap` where keys are provider names and values are the count of requests.
+    /// # Returns
+    ///
+    /// A `HashMap` where keys are provider names and values are the count of requests.
     ///
     /// @category utility
     /// @safe team
@@ -330,7 +372,9 @@ impl AIProviderLM {
     ///
     /// This allows overriding the intelligent provider selection for certain operations.
     ///
-    /// @param provider An `Option<String>` representing the preferred provider name.
+    /// # Arguments
+    ///
+    /// * `provider` - An `Option<String>` representing the preferred provider name.
     ///
     /// @category configuration
     /// @safe team
@@ -342,7 +386,7 @@ impl AIProviderLM {
     }
 }
 
-/// Builder for `AIProviderLM`.
+/// A builder for creating `AIProviderLM` instances.
 ///
 /// This struct provides a fluent API for constructing `AIProviderLM` instances
 /// with optional session ID, configuration, and provider preferences.
@@ -354,11 +398,11 @@ impl AIProviderLM {
 /// @since 1.0.0
 #[derive(Debug)]
 pub struct AIProviderLMBuilder {
-    /// Optional session ID for the LM.
+    /// An optional session ID for the LM.
     session_id: Option<String>,
-    /// Optional `MoonShineConfig` for the LM.
+    /// An optional `MoonShineConfig` for the LM.
     config: Option<MoonShineConfig>,
-    /// Optional preferred provider name.
+    /// An optional preferred provider name.
     provider_preference: Option<String>,
 }
 
@@ -371,7 +415,9 @@ impl Default for AIProviderLMBuilder {
 impl AIProviderLMBuilder {
     /// Creates a new `AIProviderLMBuilder` instance.
     ///
-    /// @returns A new `AIProviderLMBuilder`.
+    /// # Returns
+    ///
+    /// A new `AIProviderLMBuilder`.
     ///
     /// @category constructor
     /// @safe team
@@ -388,8 +434,13 @@ impl AIProviderLMBuilder {
 
     /// Sets the session ID for the `AIProviderLM`.
     ///
-    /// @param session_id The session ID string.
-    /// @returns The builder instance for chaining.
+    /// # Arguments
+    ///
+    /// * `session_id` - The session ID string.
+    ///
+    /// # Returns
+    ///
+    /// The builder instance for chaining.
     ///
     /// @category builder-method
     /// @safe team
@@ -403,8 +454,13 @@ impl AIProviderLMBuilder {
 
     /// Sets the `MoonShineConfig` for the `AIProviderLM`.
     ///
-    /// @param config The `MoonShineConfig` instance.
-    /// @returns The builder instance for chaining.
+    /// # Arguments
+    ///
+    /// * `config` - The `MoonShineConfig` instance.
+    ///
+    /// # Returns
+    ///
+    /// The builder instance for chaining.
     ///
     /// @category builder-method
     /// @safe team
@@ -420,8 +476,13 @@ impl AIProviderLMBuilder {
     ///
     /// This is an optional override for the intelligent provider selection.
     ///
-    /// @param provider The name of the preferred provider.
-    /// @returns The builder instance for chaining.
+    /// # Arguments
+    ///
+    /// * `provider` - The name of the preferred provider.
+    ///
+    /// # Returns
+    ///
+    /// The builder instance for chaining.
     ///
     /// @category builder-method
     /// @safe team
@@ -435,7 +496,9 @@ impl AIProviderLMBuilder {
 
     /// Builds the `AIProviderLM` instance.
     ///
-    /// @returns The constructed `AIProviderLM` instance.
+    /// # Returns
+    ///
+    /// The constructed `AIProviderLM` instance.
     ///
     /// @category builder-method
     /// @safe team

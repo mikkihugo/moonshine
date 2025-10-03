@@ -30,8 +30,10 @@ const DEFAULT_MAX_SUGGESTIONS: u32 = 50;
 const DEFAULT_MIN_CONFIDENCE: f32 = 0.7;
 const DEFAULT_ENABLE_AUTO_FIX: bool = true;
 
-/// Configurable pattern structure for external configuration
-/// Enables loading patterns from JSON files for customization without recompilation
+/// Defines configurable patterns for code analysis, allowing customization without recompilation.
+///
+/// This structure holds vectors of string patterns that the `CodePatternMatcher` uses to
+/// identify various code constructs. It can be loaded from external JSON files.
 ///
 /// @category configuration
 /// @safe team
@@ -40,19 +42,30 @@ const DEFAULT_ENABLE_AUTO_FIX: bool = true;
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigurablePatterns {
+    /// Patterns for identifying functions and method declarations.
     pub function_patterns: Vec<String>,
+    /// Patterns for identifying conditional statements (e.g., `if`, `switch`).
     pub conditional_patterns: Vec<String>,
+    /// Patterns for identifying loop constructs (e.g., `for`, `while`, `map`).
     pub loop_patterns: Vec<String>,
+    /// Patterns for identifying comments.
     pub comment_patterns: Vec<String>,
+    /// Patterns for identifying test-related keywords (e.g., `describe`, `it`, `expect`).
     pub test_patterns: Vec<String>,
+    /// Patterns for identifying potential security vulnerabilities (e.g., `eval`, `innerHTML`).
     pub security_patterns: Vec<String>,
+    /// Patterns for identifying potential performance concerns (e.g., `console.log` in production).
     pub performance_patterns: Vec<String>,
+    /// Patterns for identifying TypeScript-specific syntax or usage (e.g., `: any`, `@ts-ignore`).
     pub typescript_patterns: Vec<String>,
+    /// Patterns for identifying documentation markers (e.g., `TODO`, `FIXME`).
     pub documentation_patterns: Vec<String>,
 }
 
-/// Moon task metrics structure for accurate code analysis
-/// Integrates with cloc, complexity analyzers, and other established tools
+/// Stores metrics gathered from Moon tasks for accurate code analysis.
+///
+/// This struct integrates with external tools like `cloc` and complexity analyzers
+/// to provide a comprehensive view of code quality.
 ///
 /// @category metrics
 /// @safe team
@@ -61,16 +74,23 @@ pub struct ConfigurablePatterns {
 /// @since 1.0.0
 #[derive(Debug, Clone, Default)]
 pub struct MoonTaskMetrics {
+    /// The total number of lines of code.
     pub lines_of_code: u32,
+    /// The cyclomatic complexity score of the code.
     pub cyclomatic_complexity: f32,
+    /// The maintainability index of the code.
     pub maintainability_index: f32,
+    /// A score representing the security posture of the code.
     pub security_score: f32,
+    /// The percentage of code covered by tests.
     pub test_coverage: f32,
+    /// The percentage of code that is documented.
     pub documentation_coverage: f32,
 }
 
-/// AST-based metrics structure for precise analysis
-/// Uses OXC AST parsing for accurate measurements
+/// Stores metrics derived from Abstract Syntax Tree (AST) analysis for precise measurements.
+///
+/// This struct uses the OXC AST parser to provide accurate metrics about the code's structure.
 ///
 /// @category metrics
 /// @safe team
@@ -79,13 +99,21 @@ pub struct MoonTaskMetrics {
 /// @since 1.0.0
 #[derive(Debug, Clone, Default)]
 pub struct AstBasedMetrics {
+    /// The cyclomatic complexity calculated from the AST.
     pub cyclomatic_complexity: f32,
+    /// The maximum nesting depth of control structures.
     pub max_nesting_depth: f32,
+    /// The average length of functions in lines of code.
     pub avg_function_length: f32,
+    /// The percentage of functions and methods that have documentation.
     pub documentation_coverage: f32,
+    /// The percentage of variables and function parameters that have explicit types.
     pub type_coverage: f32,
+    /// The total number of functions.
     pub function_count: u32,
+    /// The total number of classes.
     pub class_count: u32,
+    /// The total number of interfaces.
     pub interface_count: u32,
 }
 
@@ -595,7 +623,7 @@ pub struct DetailedCodeAnalysis {
 /// @since 1.0.0
 #[derive(Debug, Clone)]
 pub struct PatternMatch {
-    /// The 0-based line number where the pattern was found.
+    /// The 1-based line number where the pattern was found.
     pub line: u32,
     /// The 0-based column number where the pattern starts.
     pub column: u32,
@@ -605,7 +633,7 @@ pub struct PatternMatch {
     pub severity: MatchSeverity,
 }
 
-/// Defines severity levels for pattern matches.
+/// Defines the severity levels for pattern matches.
 ///
 /// @category enum
 /// @safe team
@@ -614,13 +642,13 @@ pub struct PatternMatch {
 /// @since 1.0.0
 #[derive(Debug, Clone, Copy)]
 pub enum MatchSeverity {
-    /// Low severity, indicating a minor concern.
+    /// A minor concern that has low impact.
     Low,
-    /// Medium severity, indicating a moderate concern.
+    /// A moderate concern that should be reviewed.
     Medium,
-    /// High severity, indicating a significant concern.
+    /// A significant concern that is likely to be a problem.
     High,
-    /// Critical severity, indicating a severe and potentially blocking issue.
+    /// A severe issue that requires immediate attention.
     Critical,
 }
 
@@ -653,9 +681,9 @@ impl Default for DetailedCodeAnalysis {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiSuggestion {
-    /// The 0-based line number where the suggestion applies.
+    /// The 1-based line number where the suggestion applies.
     pub line: u32,
-    /// The 0-based column number where the suggestion applies.
+    /// The 0-based column number where the suggestion starts.
     pub column: u32,
     /// A human-readable message describing the suggestion or issue.
     pub message: String,
@@ -702,6 +730,7 @@ pub enum SuggestionSeverity {
 }
 
 impl SuggestionSeverity {
+    /// Returns a numerical rank for the severity, where lower is more severe.
     #[inline]
     fn rank(self) -> u8 {
         match self {
@@ -882,19 +911,19 @@ pub struct PhaseResults {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisConfig {
-    /// Maximum suggestions to return after filtering and ranking.
+    /// The maximum number of suggestions to return after filtering and ranking.
     pub max_suggestions: u32,
-    /// Minimum confidence threshold for suggestions (0.0-1.0).
+    /// The minimum confidence threshold (0.0-1.0) for a suggestion to be included.
     pub min_confidence: f32,
-    /// Enable automatic fixes for high-confidence suggestions.
+    /// If true, enables automatic application of high-confidence fixes.
     pub enable_auto_fix: bool,
-    /// Enable parallel analysis of multiple files.
+    /// If true, enables parallel analysis of multiple files.
     pub parallel_analysis: bool,
-    /// Include detailed metrics in analysis results.
+    /// If true, includes detailed metrics in the analysis results.
     pub include_metrics: bool,
-    /// Analysis timeout in seconds.
+    /// The timeout for the analysis in seconds.
     pub timeout_seconds: u64,
-    /// Custom confidence thresholds per category.
+    /// A map of custom confidence thresholds per suggestion category.
     pub category_thresholds: HashMap<String, f32>,
 }
 
@@ -924,17 +953,17 @@ impl Default for AnalysisConfig {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TelemetryConfig {
-    /// Enable performance monitoring.
+    /// If true, enables performance monitoring.
     pub enable_monitoring: bool,
-    /// Enable detailed request tracing.
+    /// If true, enables detailed request tracing.
     pub enable_tracing: bool,
-    /// Sample rate for telemetry data (0.0-1.0).
+    /// The sample rate for telemetry data (0.0-1.0).
     pub sample_rate: f32,
-    /// Custom telemetry endpoint URL (optional).
+    /// An optional custom telemetry endpoint URL.
     pub endpoint: Option<String>,
-    /// Batch size for telemetry events.
+    /// The batch size for sending telemetry events.
     pub batch_size: u32,
-    /// Flush interval for telemetry events in seconds.
+    /// The interval in seconds for flushing telemetry events.
     pub flush_interval_seconds: u64,
 }
 
@@ -990,13 +1019,13 @@ pub struct ProviderConfig {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AuthType {
-    /// Authentication via an API key.
+    /// Authentication using an API key.
     ApiKey,
-    /// Authentication via a Bearer token.
+    /// Authentication using a Bearer token.
     Bearer,
-    /// Authentication via OAuth.
+    /// Authentication using the OAuth protocol.
     OAuth,
-    /// No authentication required.
+    /// No authentication is required.
     None,
 }
 
@@ -1118,17 +1147,17 @@ impl Default for QualityGateConfig {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationConfig {
-    /// Enable performance optimizations.
+    /// If true, enables performance optimizations.
     pub enabled: bool,
-    /// Maximum optimization iterations.
+    /// The maximum number of optimization iterations.
     pub max_iterations: usize,
-    /// Confidence threshold for optimizations.
+    /// The confidence threshold for accepting an optimization.
     pub confidence_threshold: f64,
-    /// Cache optimization results.
+    /// If true, enables caching of optimization results.
     pub enable_caching: bool,
-    /// Cache TTL in seconds.
+    /// The time-to-live (TTL) for the cache in seconds.
     pub cache_ttl_seconds: u64,
-    /// Optimize prompts using COPRO.
+    /// If true, enables prompt optimization using COPRO.
     pub enable_prompt_optimization: bool,
 }
 
@@ -1157,15 +1186,15 @@ impl Default for OptimizationConfig {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowConfig {
-    /// Enable workflow orchestration.
+    /// If true, enables workflow orchestration.
     pub enabled: bool,
-    /// Enable parallel processing of workflow phases.
+    /// If true, enables parallel processing of workflow phases.
     pub parallel_processing: bool,
-    /// Workflow timeout in seconds.
+    /// The timeout for the workflow in seconds.
     pub timeout_seconds: u64,
-    /// Retry configuration for resilient operations.
+    /// Configuration for retrying failed operations.
     pub retry_config: RetryConfig,
-    /// Definition of workflow phases.
+    /// The definition of the workflow phases.
     pub phases: Vec<WorkflowPhase>,
 }
 
@@ -1205,13 +1234,13 @@ pub struct WorkflowPhase {
 /// @since 1.0.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetryConfig {
-    /// Maximum retry attempts.
+    /// The maximum number of retry attempts.
     pub max_attempts: u32,
-    /// Initial retry delay in milliseconds.
+    /// The initial delay in milliseconds before the first retry.
     pub initial_delay_ms: u64,
-    /// Exponential backoff multiplier.
+    /// The multiplier for exponential backoff.
     pub backoff_multiplier: f32,
-    /// Maximum delay between retries.
+    /// The maximum delay in milliseconds between retries.
     pub max_delay_ms: u64,
 }
 
@@ -1272,23 +1301,23 @@ impl Default for WorkflowConfig {
 /// @complexity high
 /// @since 1.0.0
 pub struct AiLinter {
-    /// Maximum number of suggestions returned after filtering.
+    /// The maximum number of suggestions to return after filtering.
     pub max_suggestions: u32,
-    /// Minimum confidence threshold for keeping a suggestion.
+    /// The minimum confidence threshold for a suggestion to be kept.
     pub min_confidence: f32,
-    /// Whether automatic fixes should be applied when possible.
+    /// If true, automatic fixes will be applied when possible.
     pub enable_auto_fix: bool,
-    /// Unique session identifier used for telemetry and batching.
+    /// A unique identifier for the current session, used for telemetry and batching.
     pub session_id: String,
-    /// Language-specific confidence multipliers (language -> weight).
+    /// A map of language-specific confidence multipliers (language -> weight).
     pub language_preferences: HashMap<String, f32>,
-    /// Per-rule overrides (rule id -> enabled flag).
+    /// A map of per-rule overrides (rule id -> enabled flag).
     pub rule_overrides: HashMap<String, bool>,
-    /// Backing workspace configuration.
+    /// The backing workspace configuration.
     pub config: crate::config::MoonShineConfig,
-    /// Custom prompts injected from workspace or runtime.
+    /// A map of custom prompts injected from the workspace or at runtime.
     pub custom_prompts: HashMap<String, String>,
-    /// High-performance pattern matcher used for metrics calculations.
+    /// The high-performance pattern matcher used for metrics calculations.
     pub pattern_matcher: CodePatternMatcher,
 }
 

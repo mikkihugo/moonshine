@@ -5,52 +5,90 @@ use crate::rulebase::RuleResult as LintIssue;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-/// Response from Moon Shine processing with persistence data
+/// The response from a Moon Shine processing operation, including persistence data.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoonShineResponse {
+    /// If `true`, the operation was successful.
     pub success: bool,
+    /// A message describing the result of the operation.
     pub message: String,
+    /// The number of files that were processed.
     pub files_processed: u32,
+    /// The number of issues that were found.
     pub issues_found: u32,
+    /// The number of issues that were fixed.
     pub issues_fixed: u32,
+    /// The number of COPRO optimizations that were performed.
     pub copro_optimizations: u32,
+    /// The number of patterns that were learned.
     pub patterns_learned: u32,
+    /// The total processing time in milliseconds.
     pub processing_time_ms: u64,
+    /// A list of suggestions for improving the code.
     pub suggestions: Vec<LintIssue>,
+    /// The fixed code content, if any.
     pub fixed_content: Option<String>,
+    /// A list of insights about the code patterns that were found.
     pub pattern_insights: Option<Vec<String>>,
-
-    // Consolidated storage fields for simplified architecture
-    pub prompts_updates: Option<serde_json::Value>,  // For Moon to update .moon/moonshine/prompts.json
-    pub training_updates: Option<serde_json::Value>, // For Moon to update .moon/moonshine/training.json
-    pub session_state: Option<serde_json::Value>,    // Session state for Moon to manage
+    /// For Moon to update `.moon/moonshine/prompts.json`.
+    pub prompts_updates: Option<serde_json::Value>,
+    /// For Moon to update `.moon/moonshine/training.json`.
+    pub training_updates: Option<serde_json::Value>,
+    /// The session state for Moon to manage.
+    pub session_state: Option<serde_json::Value>,
 }
 
-/// Suggestion from analysis with optimized data types
-/// Code analysis results from WASM processing
+/// The results of a code analysis operation from WASM processing.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AnalysisResults {
+    /// A list of suggestions for improving the code.
     pub suggestions: Vec<crate::rulebase::RuleResult>,
+    /// A list of semantic warnings that were found.
     pub semantic_warnings: Vec<String>,
+    /// The TSDoc coverage of the analyzed code.
     pub tsdoc_coverage: f32,
+    /// The quality score of the analyzed code.
     pub quality_score: f32,
+    /// A list of parse errors that were found.
     pub parse_errors: Vec<String>,
+    /// A list of files that were ignored during the analysis.
     pub ignored_files: Vec<String>,
+    /// The AI model that was used for the analysis.
     pub ai_model: String,
 }
 
-/// Moon task request structure
+/// A request to a Moon task.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoonTaskRequest {
+    /// The ID of the session.
     pub session_id: String,
+    /// The path of the file to be processed.
     pub file_path: String,
+    /// The language of the file.
     pub language: String,
+    /// The content of the file.
     pub content: String,
+    /// The results of the initial analysis.
     pub analysis_results: AnalysisResults,
 }
 
 impl MoonTaskRequest {
-    pub fn new(file_path: String, language: String, content: String, analysis_results: AnalysisResults, session_id: String) -> Self {
+    /// Creates a new `MoonTaskRequest`.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_path` - The path of the file to be processed.
+    /// * `language` - The language of the file.
+    /// * `content` - The content of the file.
+    /// * `analysis_results` - The results of the initial analysis.
+    /// * `session_id` - The ID of the session.
+    pub fn new(
+        file_path: String,
+        language: String,
+        content: String,
+        analysis_results: AnalysisResults,
+        session_id: String,
+    ) -> Self {
         Self {
             session_id,
             file_path,
@@ -60,59 +98,90 @@ impl MoonTaskRequest {
         }
     }
 
+    /// Converts the request to a JSON string.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the JSON string or an error.
     pub fn to_json(&self) -> Result<String, Box<dyn std::error::Error>> {
         Ok(serde_json::to_string(self)?)
     }
 }
 
-/// Moon task response structure
+/// The response from a Moon task.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoonTaskResponse {
+    /// The ID of the session.
     pub session_id: String,
+    /// If `true`, the task was successful.
     pub success: bool,
+    /// The results from the various tools that were run.
     pub results: TaskResults,
+    /// The processing time in milliseconds.
     pub processing_time_ms: u64,
 }
 
-/// Task results from various tools
+/// The results from the various tools that were run in a Moon task.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaskResults {
+    /// The result of the TypeScript compilation.
     pub typescript: Option<TypeScriptResult>,
+    /// The result of the ESLint analysis.
     pub eslint: Option<EslintResult>,
+    /// The result of the Claude AI analysis.
     pub claude: Option<ClaudeResult>,
+    /// The result of the semantic validation.
     pub semantic_validation: Option<SemanticValidationResult>,
 }
 
-/// TypeScript compilation result
+/// The result of a TypeScript compilation.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TypeScriptResult {
+    /// If `true`, the compilation was successful.
     pub compilation_success: bool,
+    /// A list of type errors that were found.
     pub type_errors: Vec<String>,
 }
 
-/// ESLint analysis result
+/// The result of an ESLint analysis.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EslintResult {
+    /// If `true`, the analysis was successful.
     pub success: bool,
+    /// A list of issues that were found.
     pub issues: Vec<serde_json::Value>,
+    /// The number of fixes that were applied.
     pub fixes_applied: u32,
 }
 
-/// Claude AI analysis result
+/// The result of a Claude AI analysis.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClaudeResult {
+    /// If `true`, the analysis was successful.
     pub success: bool,
+    /// The fixed code content, if any.
     pub fixed_content: Option<String>,
+    /// The number of issues that were resolved.
     pub issues_resolved: u32,
 }
 
-/// Semantic validation result
+/// The result of a semantic validation.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SemanticValidationResult {
+    /// A list of unresolved warnings.
     pub unresolved_warnings: Vec<String>,
 }
 
-/// Detect programming language from file extension and configuration defaults
+/// Detects the programming language from a file extension and configuration defaults.
+///
+/// # Arguments
+///
+/// * `file_path` - The path of the file to detect the language for.
+/// * `config` - The Moon Shine configuration.
+///
+/// # Returns
+///
+/// The detected language as a string.
 pub fn detect_language(file_path: &str, config: &MoonShineConfig) -> String {
     let extension = Path::new(file_path).extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
@@ -129,6 +198,16 @@ pub fn detect_language(file_path: &str, config: &MoonShineConfig) -> String {
     }
 }
 
+/// Detects the programming language with a fallback to content-based detection and configuration defaults.
+///
+/// # Arguments
+///
+/// * `file_path` - The path of the file to detect the language for.
+/// * `config` - The Moon Shine configuration.
+///
+/// # Returns
+///
+/// The detected language as a string.
 fn detect_language_with_fallback(file_path: &str, config: &MoonShineConfig) -> String {
     if let Some(content_language) = detect_language_from_content(file_path) {
         return content_language;
@@ -141,13 +220,22 @@ fn detect_language_with_fallback(file_path: &str, config: &MoonShineConfig) -> S
     "typescript".to_string()
 }
 
-/// Content-based language detection using simple heuristics
+/// Detects the programming language from the file content using simple heuristics.
+///
+/// # Arguments
+///
+/// * `file_path` - The path of the file to detect the language for.
+///
+/// # Returns
+///
+/// An `Option` containing the detected language as a string.
 fn detect_language_from_content(file_path: &str) -> Option<String> {
-    // Read the file content if available; in WASM environments this may fail silently
     let content = std::fs::read_to_string(file_path).ok()?;
     let content_lower = content.to_lowercase();
 
-    if content_lower.contains("#!/usr/bin/env python") || content_lower.contains("import ") && content_lower.contains("def ") {
+    if content_lower.contains("#!/usr/bin/env python")
+        || content_lower.contains("import ") && content_lower.contains("def ")
+    {
         return Some("python".to_string());
     }
 
@@ -155,7 +243,10 @@ fn detect_language_from_content(file_path: &str) -> Option<String> {
         return Some("bash".to_string());
     }
 
-    if content_lower.contains("use ") && content_lower.contains("fn ") && content_lower.contains("impl ") {
+    if content_lower.contains("use ")
+        && content_lower.contains("fn ")
+        && content_lower.contains("impl ")
+    {
         return Some("rust".to_string());
     }
 
@@ -171,60 +262,92 @@ fn detect_language_from_content(file_path: &str) -> Option<String> {
         return Some("cpp".to_string());
     }
 
-    if content_lower.contains("<?php") || content_lower.contains("$") && content_lower.contains("function") {
+    if content_lower.contains("<?php")
+        || content_lower.contains('$') && content_lower.contains("function")
+    {
         return Some("php".to_string());
     }
 
-    if content_lower.contains("interface ") || content_lower.contains("type ") || content_lower.contains(": ") {
+    if content_lower.contains("interface ")
+        || content_lower.contains("type ")
+        || content_lower.contains(": ")
+    {
         return Some("typescript".to_string());
     }
 
-    if content_lower.contains("function ") || content_lower.contains("var ") || content_lower.contains("const ") {
+    if content_lower.contains("function ")
+        || content_lower.contains("var ")
+        || content_lower.contains("const ")
+    {
         return Some("javascript".to_string());
     }
 
     None
 }
 
-/// Production: Get configurable Moon task name based on analysis type and language
+/// Gets the configurable Moon task name based on the analysis type and language.
+///
+/// # Arguments
+///
+/// * `config` - The Moon Shine configuration.
+/// * `language` - The programming language of the file.
+///
+/// # Returns
+///
+/// The name of the Moon task to run.
 fn resolve_moon_task_name(config: &MoonShineConfig, language: &str) -> String {
     config.resolve_task_name(language)
 }
 
-/// Analyze file using extension analysis with configuration
-pub fn analyze_file_with_config(_content: &str, _language: &str, config: &MoonShineConfig) -> Result<AnalysisResults, Box<dyn std::error::Error>> {
-    // Extension is purely for coordination - no analysis
-    // All real analysis is done by the workflow phases via Moon tasks
+/// Analyzes a file using the extension analysis with the given configuration.
+///
+/// # Arguments
+///
+/// * `_content` - The content of the file.
+/// * `_language` - The programming language of the file.
+/// * `config` - The Moon Shine configuration.
+///
+/// # Returns
+///
+/// A `Result` containing the `AnalysisResults` or an error.
+pub fn analyze_file_with_config(
+    _content: &str,
+    _language: &str,
+    config: &MoonShineConfig,
+) -> Result<AnalysisResults, Box<dyn std::error::Error>> {
     Ok(AnalysisResults {
-        suggestions: Vec::new(),       // Populated by workflow phases
-        semantic_warnings: Vec::new(), // Populated by workflow phases
-        tsdoc_coverage: 0.0,           // Will be calculated by workflow
-        quality_score: 0.0,            // Will be calculated by workflow
+        suggestions: Vec::new(),
+        semantic_warnings: Vec::new(),
+        tsdoc_coverage: 0.0,
+        quality_score: 0.0,
         parse_errors: Vec::new(),
         ignored_files: Vec::new(),
         ai_model: config.ai_model.clone().unwrap_or_else(|| "sonnet".to_string()),
     })
 }
 
-/// Main AI linting function with file content and config provided by Moon host
+/// The main AI linting function, with file content and config provided by the Moon host.
+///
+/// # Arguments
+///
+/// * `file_path` - The path of the file to lint.
+/// * `content` - The content of the file.
+/// * `config` - The Moon Shine configuration.
+///
+/// # Returns
+///
+/// A `Result` containing the `MoonShineResponse` or an error.
 pub fn ai_lint_file_with_content(
     file_path: String,
     content: String,
     config: MoonShineConfig,
 ) -> std::result::Result<MoonShineResponse, Box<dyn std::error::Error>> {
-    // Generate a unique Claude session ID for this file's processing.
     let claude_session_id = uuid::Uuid::new_v4().to_string();
     let start_time = std::time::Instant::now();
 
-    // Step 1: Use file content provided by Moon host (already have it as parameter)
-
-    // Step 2: Detect language from file extension
     let language = detect_language(&file_path, &config);
-
-    // Step 3: Run initial analysis using extension config
     let analysis_results = analyze_file_with_config(&content, &language, &config)?;
 
-    // Step 4: Create Moon task request with JSON protocol
     let task_request = MoonTaskRequest::new(
         file_path.clone(),
         language.clone(),
@@ -233,14 +356,10 @@ pub fn ai_lint_file_with_content(
         claude_session_id.clone(),
     );
 
-    // Step 5: Execute Moon tasks via JSON communication
     let task_response = execute_moon_tasks(&task_request, &config)?;
-
-    // Step 6: Generate consolidated storage updates for Moon task persistence
     let training_updates = generate_training_updates_from_analysis(&analysis_results)?;
     let prompts_updates = generate_prompts_updates_for_persistence(&config)?;
 
-    // Step 7: Aggregate results and apply COPRO optimizations if enabled
     let final_response = aggregate_analysis_results(
         analysis_results,
         task_response,
@@ -252,41 +371,63 @@ pub fn ai_lint_file_with_content(
     Ok(final_response)
 }
 
-/// Execute Moon tasks for comprehensive analysis (real implementation using Moon PDK)
-fn execute_moon_tasks(request: &MoonTaskRequest, config: &MoonShineConfig) -> Result<MoonTaskResponse, Box<dyn std::error::Error>> {
+/// Executes Moon tasks for comprehensive analysis.
+///
+/// # Arguments
+///
+/// * `request` - The `MoonTaskRequest` to execute.
+/// * `config` - The Moon Shine configuration.
+///
+/// # Returns
+///
+/// A `Result` containing the `MoonTaskResponse` or an error.
+fn execute_moon_tasks(
+    request: &MoonTaskRequest,
+    config: &MoonShineConfig,
+) -> Result<MoonTaskResponse, Box<dyn std::error::Error>> {
     use crate::moon_pdk_interface::{execute_command, ExecCommandInput};
 
-    // Construct the command to execute Moon tasks
     let command_input = ExecCommandInput {
         command: "moon".to_string(),
         args: vec![
             "run".to_string(),
             resolve_moon_task_name(config, &request.language),
-            request.to_json()?, // Pass the request JSON as argument
+            request.to_json()?,
         ],
         env: std::collections::HashMap::new(),
         working_dir: None,
     };
 
-    // Execute the command via Moon host function
     let output = execute_command(command_input)?;
 
     if output.exit_code != 0 {
-        return Err(format!("Moon task command failed with exit code {}: {}", output.exit_code, output.stderr).into());
+        return Err(format!(
+            "Moon task command failed with exit code {}: {}",
+            output.exit_code, output.stderr
+        )
+        .into());
     }
 
-    // Parse the output from Moon task (expected to be JSON)
     let mut moon_response: MoonTaskResponse = serde_json::from_str(&output.stdout)?;
-    moon_response.session_id = request.session_id.clone(); // Ensure session_id is propagated
+    moon_response.session_id = request.session_id.clone();
 
     Ok(moon_response)
 }
 
-/// Generate training.json updates from analysis results for consolidated persistence
-fn generate_training_updates_from_analysis(analysis: &AnalysisResults) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error>> {
+/// Generates `training.json` updates from analysis results for consolidated persistence.
+///
+/// # Arguments
+///
+/// * `analysis` - The analysis results.
+///
+/// # Returns
+///
+/// A `Result` containing the JSON value for the training updates or an error.
+fn generate_training_updates_from_analysis(
+    analysis: &AnalysisResults,
+) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error>> {
     let mut patterns = serde_json::Map::new();
 
-    // Extract patterns from suggestions
     for suggestion in &analysis.suggestions {
         if let Some(frequency) = suggestion.pattern_frequency {
             if frequency > 0.0 {
@@ -302,7 +443,6 @@ fn generate_training_updates_from_analysis(analysis: &AnalysisResults) -> std::r
         }
     }
 
-    // Return update object for training.json
     Ok(serde_json::json!({
         "action": "update_training_data",
         "updates": {
@@ -316,11 +456,20 @@ fn generate_training_updates_from_analysis(analysis: &AnalysisResults) -> std::r
     }))
 }
 
-/// Generate prompts.json updates for consolidated persistence
-fn generate_prompts_updates_for_persistence(config: &MoonShineConfig) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error>> {
+/// Generates `prompts.json` updates for consolidated persistence.
+///
+/// # Arguments
+///
+/// * `config` - The Moon Shine configuration.
+///
+/// # Returns
+///
+/// A `Result` containing the JSON value for the prompts updates or an error.
+fn generate_prompts_updates_for_persistence(
+    config: &MoonShineConfig,
+) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error>> {
     let mut prompts = serde_json::Map::new();
 
-    // Use any custom prompts from config as optimized versions
     if let Some(custom_prompts) = &config.custom_prompts {
         for (rule_type, prompt) in custom_prompts {
             let prompt_data = serde_json::json!({
@@ -332,7 +481,6 @@ fn generate_prompts_updates_for_persistence(config: &MoonShineConfig) -> std::re
         }
     }
 
-    // Return update object for prompts.json
     Ok(serde_json::json!({
         "action": "update_prompts",
         "updates": {
@@ -345,8 +493,11 @@ fn generate_prompts_updates_for_persistence(config: &MoonShineConfig) -> std::re
     }))
 }
 
-/// Aggregate analysis results from extension and Moon tasks with consolidated persistence data
-/// Production: This function should be refactored into smaller, focused functions
+/// Aggregates analysis results from the extension and Moon tasks with consolidated persistence data.
+///
+/// # TODO
+///
+/// This function should be refactored into smaller, focused functions.
 fn aggregate_analysis_results(
     analysis_results: AnalysisResults,
     task_response: MoonTaskResponse,
@@ -371,9 +522,11 @@ fn aggregate_analysis_results(
 
     let fix_outcome = determine_fix_outcome(&results);
     let pattern_insights = generate_pattern_insights(quality_score, tsdoc_coverage, &results);
-    let (patterns_learned, copro_optimizations) = calculate_learning_counts(&training_updates, &prompts_updates, &semantic_warnings);
+    let (patterns_learned, copro_optimizations) =
+        calculate_learning_counts(&training_updates, &prompts_updates, &semantic_warnings);
     let total_issues = suggestions.len() + semantic_warnings.len();
-    let overall_success = determine_overall_success(task_success, fix_outcome.issues_fixed, suggestions.len());
+    let overall_success =
+        determine_overall_success(task_success, fix_outcome.issues_fixed, suggestions.len());
     let message = compose_analysis_message(total_issues, fix_outcome.issues_fixed);
     let session_state = build_session_state();
 
@@ -395,11 +548,15 @@ fn aggregate_analysis_results(
     }
 }
 
+/// The outcome of a fixing operation.
 struct FixOutcome {
+    /// The number of issues that were fixed.
     issues_fixed: u32,
+    /// The fixed code content, if any.
     fixed_content: Option<String>,
 }
 
+/// Determines the outcome of a fixing operation.
 fn determine_fix_outcome(results: &TaskResults) -> FixOutcome {
     if let Some(claude) = results.claude.as_ref() {
         if claude.success {
@@ -425,14 +582,22 @@ fn determine_fix_outcome(results: &TaskResults) -> FixOutcome {
     }
 }
 
-fn generate_pattern_insights(quality_score: f32, tsdoc_coverage: f32, results: &TaskResults) -> Option<Vec<String>> {
+/// Generates insights about the code patterns that were found.
+fn generate_pattern_insights(
+    quality_score: f32,
+    tsdoc_coverage: f32,
+    results: &TaskResults,
+) -> Option<Vec<String>> {
     let mut insights = vec![
         format!("Quality score: {:.2}", quality_score),
         format!("TSDoc coverage: {:.1}%", tsdoc_coverage * 100.0),
     ];
 
     if let Some(ts) = results.typescript.as_ref() {
-        insights.push(format!("TypeScript compilation success: {}", ts.compilation_success));
+        insights.push(format!(
+            "TypeScript compilation success: {}",
+            ts.compilation_success
+        ));
     }
 
     if let Some(eslint) = results.eslint.as_ref() {
@@ -441,7 +606,10 @@ fn generate_pattern_insights(quality_score: f32, tsdoc_coverage: f32, results: &
 
     if let Some(validation) = results.semantic_validation.as_ref() {
         if !validation.unresolved_warnings.is_empty() {
-            insights.push(format!("Semantic warnings outstanding: {}", validation.unresolved_warnings.len()));
+            insights.push(format!(
+                "Semantic warnings outstanding: {}",
+                validation.unresolved_warnings.len()
+            ));
         }
     }
 
@@ -452,7 +620,12 @@ fn generate_pattern_insights(quality_score: f32, tsdoc_coverage: f32, results: &
     }
 }
 
-fn calculate_learning_counts(training_updates: &serde_json::Value, prompts_updates: &serde_json::Value, semantic_warnings: &[String]) -> (u32, u32) {
+/// Calculates the number of patterns learned and COPRO optimizations performed.
+fn calculate_learning_counts(
+    training_updates: &serde_json::Value,
+    prompts_updates: &serde_json::Value,
+    semantic_warnings: &[String],
+) -> (u32, u32) {
     let learned_count = training_updates
         .get("updates")
         .and_then(|updates| updates.get("learned_patterns"))
@@ -470,14 +643,20 @@ fn calculate_learning_counts(training_updates: &serde_json::Value, prompts_updat
     (learned_count, optimized_count)
 }
 
+/// Determines the overall success of the operation.
 fn determine_overall_success(task_success: bool, issues_fixed: u32, suggestions_count: usize) -> bool {
     task_success && issues_fixed >= suggestions_count as u32
 }
 
+/// Composes a message summarizing the analysis results.
 fn compose_analysis_message(total_issues: usize, issues_fixed: u32) -> String {
-    format!("Analysis complete: {} issues found, {} issues flagged for fixing", total_issues, issues_fixed)
+    format!(
+        "Analysis complete: {} issues found, {} issues flagged for fixing",
+        total_issues, issues_fixed
+    )
 }
 
+/// Builds the session state to be persisted.
 fn build_session_state() -> serde_json::Value {
     serde_json::json!({
         "last_analysis": chrono::Utc::now().to_rfc3339(),
