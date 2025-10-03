@@ -1,6 +1,9 @@
 # moon.yml - Moon Shine Extension Configuration
 $schema: 'https://moonrepo.dev/schemas/project.json'
 
+# Project identifier for Moon
+id: 'moon-shine'
+
 type: 'library'
 language: 'rust'
 platform: 'rust'
@@ -51,6 +54,15 @@ tasks:
     command: |
       cargo clippy --target wasm32-unknown-unknown --all-features -- -D warnings
       cargo fmt --check
+    inputs:
+      - 'src/**/*'
+      - 'Cargo.toml'
+    options:
+      cache: true
+
+  # Type check (for Rust, this is built into cargo check)
+  type-check:
+    command: 'cargo check --target wasm32-unknown-unknown'
     inputs:
       - 'src/**/*'
       - 'Cargo.toml'

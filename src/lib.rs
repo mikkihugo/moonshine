@@ -38,7 +38,7 @@
 
 use crate::moon_host::{plugin_fn, FnResult, Json};
 
-#[cfg(all(test, not(feature = "wasm")))]
+#[cfg(test)]
 mod test_host_stubs;
 
 // Moon PDK test utilities - imported but may appear unused

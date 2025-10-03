@@ -281,10 +281,10 @@ mod tests {
     fn test_source_type_detection() {
         let transformer = OxcTransformer::default();
 
-        assert_eq!(transformer.detect_source_type("test.ts").kind(), SourceType::ts().kind());
-        assert_eq!(transformer.detect_source_type("test.tsx").kind(), SourceType::tsx().kind());
-        assert_eq!(transformer.detect_source_type("test.jsx").kind(), SourceType::jsx().kind());
-        assert_eq!(transformer.detect_source_type("test.js").kind(), SourceType::default().kind());
+        assert_eq!(transformer.detect_source_type("test.ts"), SourceType::ts());
+        assert_eq!(transformer.detect_source_type("test.tsx"), SourceType::tsx());
+        assert_eq!(transformer.detect_source_type("test.jsx"), SourceType::jsx());
+        assert_eq!(transformer.detect_source_type("test.js"), SourceType::default());
     }
 
     #[test]

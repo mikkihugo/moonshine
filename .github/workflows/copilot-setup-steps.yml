@@ -22,12 +22,17 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-wasip1
+          targets: wasm32-unknown-unknown
 
-      - name: Setup Moon
-        uses: moonrepo/setup-moon-action@v1
-        with:
-          auto-install: true
+      - name: Install Moon with proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash
+          echo "$HOME/.proto/bin" >> $GITHUB_PATH
+          
+      - name: Install Moon
+        run: |
+          export PATH="$HOME/.proto/bin:$PATH"
+          proto install moon
 
       - name: Install WASM dependencies
         run: |
@@ -53,7 +58,7 @@ jobs:
           key: ${{ runner.os }}-moon-${{ hashFiles('.moon/**/*') }}
 
       - name: Build WASM extension
-        run: moon run moon-shine:build
+        run: moon run moon-shine:build-wasm
         continue-on-error: true
 
       - name: Run type check
@@ -77,6 +82,6 @@ jobs:
           echo "✅ Moon installed"
           moon --version
           echo "✅ WASM target available"
-          rustup target list --installed | grep wasm32-wasip1
+          rustup target list --installed | grep wasm32-unknown-unknown
           echo "✅ Environment ready for Moon Shine development"
         continue-on-error: true
