@@ -62,7 +62,7 @@ pub struct ExecCommandOutput {
 ///
 /// A `Result` containing an `ExecCommandOutput` on success, or an error if the
 /// command fails or if not in a WASM environment.
-pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box<dyn std.error::Error>> {
+pub fn execute_command(input: ExecCommandInput) -> Result<ExecCommandOutput, Box<dyn std::error::Error>> {
     #[cfg(feature = "wasm")]
     {
         match unsafe { exec_command(Json(input)) } {
