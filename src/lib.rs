@@ -58,8 +58,7 @@ pub mod ai_assistance; // AI enhancement and suggestion system
 pub mod ai_code_fixer; // AI-powered code fixing
 pub mod analysis;
 pub mod config;
-pub mod data; // Shared data handling components
-pub mod dspy; // Embedded full DSPy framework <!-- TODO: Verify the completeness and fidelity of this DSPy implementation against the original Python framework. -->
+pub mod dspy; // Upstream DSPy implementation (dsrs) re-export
 pub mod error;
 pub mod extension;
 pub mod installation;
@@ -89,7 +88,7 @@ pub mod tsdoc; // Lightweight TSDoc analysis helpers // Rule generation template
 // Re-exports for convenience
 pub use analysis::MoonShineResponse;
 pub use config::{MoonShineArgs, MoonShineConfig};
-pub use data::{Example, Prediction}; // Add data types re-export
+pub use dspy::{Example, Prediction}; // Re-export upstream DSPy data types
 // Legacy exports removed - using modern Biome + AI system
 pub use extension::{ExecuteExtensionInput, ExtensionManifest};
 pub use oxc_adapter::{AiBehavioralAnalyzer, MultiEngineAnalyzer, MultiEngineConfig, OxcAdapter};

@@ -5,32 +5,17 @@
 //! This demonstrates our WASM-compatible signature macro system
 //! and explains DSPy's example/demo concept.
 
-use moon_shine::dspy::MetaSignature;
-use moon_shine::{signature, signature_impl};
+use moon_shine::dspy::{sign, Example, MetaSignature};
 use serde_json::json;
 use std::collections::HashMap;
 
 // Our macro generates a complete MetaSignature implementation
-signature! {
-    QuickCodeFixSignature {
-        inputs: {
-            code: String, "Code to analyze and fix";
-            language: String, "Programming language"
-        },
-        outputs: {
-            fixed_code: String, "The corrected code";
-            explanation: String, "What was fixed and why"
-        },
-        instruction: "Fix the provided code by addressing syntax and logic errors",
-        features: []
-    }
-}
-
 fn main() -> anyhow::Result<()> {
+    let mut signature = sign! {
+        (code: String, language: String) -> fixed_code: String, explanation: String
+    };
+    signature.update_instruction("Fix the provided code by addressing syntax and logic errors".to_string())?;
     println!("=== MetaSignature Quick Demo ===\n");
-
-    // Create signature instance using our macro-generated constructor
-    let mut signature = QuickCodeFixSignature::new();
 
     println!("📋 Signature Details:");
     println!("  • Instruction: {}", signature.instruction());
@@ -43,7 +28,7 @@ fn main() -> anyhow::Result<()> {
     println!("  The AI learns patterns from successful input-output examples.");
 
     // Create a training example (this teaches the AI how to fix code)
-    let training_example = moon_shine::data::Example::new(
+    let training_example = Example::new(
         HashMap::from([
             // Input example
             ("code".to_string(), json!("function add(a b) { return a + b }")),

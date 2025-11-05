@@ -3,9 +3,11 @@
 //! Provides AI-enhanced code analysis and suggestions for the OXC linting system.
 
 use crate::dspy::core::settings::Settings;
+use crate::dspy::{adapter::Adapter, ChatAdapter, LM};
 use anyhow::Result;
+use secrecy::SecretString;
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 /// AI enhancer for providing intelligent code suggestions and explanations
 pub struct AiEnhancer {
@@ -24,7 +26,7 @@ impl AiEnhancer {
 
     /// Enhance a diagnostic with AI suggestions
     pub fn enhance_diagnostic(&self, code: &str, message: &str) -> Vec<String> {
-        let model_name = self.settings.lm.config.ai.model.clone();
+        let model_name = self.settings.lm.config.model.clone();
 
         // basic heuristics: look for unwrap usage
         let mut suggestions = Vec::new();
@@ -115,10 +117,21 @@ impl AiEnhancer {
     }
 }
 
+fn default_settings() -> Settings {
+    let adapter: Arc<dyn Adapter> = Arc::new(ChatAdapter::default());
+    Settings {
+        lm: LM::builder()
+            .api_key(SecretString::new(String::new().into_boxed_str()))
+            .build(),
+        adapter,
+    }
+}
+
+
 impl Default for AiEnhancer {
     fn default() -> Self {
         Self {
-            settings: Settings::default(),
+            settings: default_settings(),
             cache: RwLock::new(HashMap::new()),
         }
     }
@@ -126,17 +139,17 @@ impl Default for AiEnhancer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dspy::core::settings::Settings;
     use crate::rulebase::RuleResult;
 
     #[test]
     fn test_new_and_default() {
-        let settings = Settings::default();
-        let enhancer = AiEnhancer::new(settings.clone()).unwrap();
-        assert_eq!(enhancer.settings.lm.session_id, settings.lm.session_id);
+        let settings = default_settings();
+        let model_name = settings.lm.config.model.clone();
+        let enhancer = AiEnhancer::new(settings).unwrap();
+        assert_eq!(enhancer.settings.lm.config.model, model_name);
 
         let default_enhancer = AiEnhancer::default();
-        assert_eq!(default_enhancer.settings.lm.session_id, Settings::default().lm.session_id);
+        assert_eq!(default_enhancer.settings.lm.config.model, "gpt-4o-mini");
     }
 
     #[test]

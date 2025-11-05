@@ -91,7 +91,7 @@ fn test_oxc_adapter_functionality() {
 #[test]
 fn test_dspy_optimization_setup() {
     // Test DSPy optimization setup
-    let optimizer = moon_shine::dspy::optimizer::copro::COPRO::new();
+    let optimizer = moon_shine::dspy::optimizer::copro::COPRO::builder().build();
     
     // Test basic optimization parameters
     assert!(optimizer.breadth > 0);
