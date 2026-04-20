@@ -9,16 +9,20 @@
     codingAgents.inputs.flake-utils.follows = "flake-utils";
   };
 
-  outputs = { nixpkgs, flake-utils, codingAgents, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
+  outputs = {
+    nixpkgs,
+    flake-utils,
+    codingAgents,
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (
+      system: let
         pkgs = import nixpkgs {
           inherit system;
           config = {
             allowUnfree = true;
           };
         };
-        inherit (pkgs) lib;
 
         baseTools = with pkgs; [
           nodejs_22
