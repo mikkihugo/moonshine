@@ -1,25 +1,5 @@
 {
   "nodes": {
-    "codingAgents": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1758979015,
-        "narHash": "sha256-A7k2uGZkMGWZ/U0KWs90Zjc+six0h9YGOV2oLs8jRu8=",
-        "path": "/home/mhugo/code/mhugo/coding-agents",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/mhugo/code/mhugo/coding-agents",
-        "type": "path"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -40,23 +20,22 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1762111121,
-        "narHash": "sha256-4vhDuZ7OZaZmKKrnDpxLZZpGIJvAeMtK6FKLJYUtAdw=",
+        "lastModified": 1783148766,
+        "narHash": "sha256-uslt2pqShTIXDdAHRHv2QkYLsVdY8Oqwz0EA48/RSM8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b3d51a0365f6695e7dd5cdf3e180604530ed33b4",
+        "rev": "a50de1b7d8a586adc18d2395c19de7d6058e6030",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "ref": "nixos-26.05",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
-        "codingAgents": "codingAgents",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
       }
